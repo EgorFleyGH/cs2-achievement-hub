@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>CS2 Achievement Hub</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#0d131a;
+    color:white;
+    font-family:"Segoe UI",sans-serif;
+    min-height:100vh;
+}
+
+/* ================= HEADER ================= */
+
+header{
+    height:60px;
+    background:#17202c;
+    border-bottom:2px solid #253344;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:0 35px;
+}
+
+.nav-left-box{
+    display:flex;
+    align-items:center;
+    gap:45px;
+}
+
+.nav-logo{
+    display:flex;
+    flex-direction:column;
+}
+
+.game{
+    font-size:10px;
+    color:#de9b35;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    font-weight:bold;
+}
+
+.site{
+    font-size:17px;
+    font-weight:bold;
+}
+
+nav{
+    display:flex;
+    height:60px;
+}
+
+.nav-tab{
+
+    background:none;
+    border:none;
+
+    color:#8fa0b5;
+
+    padding:0 20px;
+
+    cursor:pointer;
+
+    font-size:14px;
+    font-weight:bold;
+
+    text-transform:uppercase;
+
+    transition:.2s;
+
+    border-bottom:3px solid transparent;
+}
+
+.nav-tab:hover{
+
+    color:white;
+
+    background:rgba(255,255,255,.03);
+
+}
+
+.nav-tab.active{
+
+    color:#de9b35;
+
+    border-bottom-color:#de9b35;
+
+}
+
+/* ================= DONATE ================= */
+
+.donate-btn{
+
+    background:linear-gradient(135deg,#a4e00a,#76a805);
+
+    color:black;
+
+    padding:10px 18px;
+
+    border-radius:5px;
+
+    text-decoration:none;
+
+    font-weight:bold;
+
+    transition:.2s;
+
+}
+
+.donate-btn:hover{
+
+    transform:translateY(-2px);
+
+    filter:brightness(1.08);
+
+}
+
+/* ================= ОСНОВА ================= */
+
+.container{
+
+    width:100%;
+
+    max-width:1200px;
+
+    margin:auto;
+
+    padding:35px;
+
+}
+
+.screen{
+
+    display:none;
+
+}
+
+.screen.active{
+
+    display:block;
+
+}
+
+/* ================= ГЛАВНАЯ ================= */
+
+.menu-layout{
+
+    display:flex;
+
+    gap:45px;
+
+    align-items:center;
+
+}
+
+.menu-left{
+
+    flex:1;
+
+}
+
+.menu-right{
+
+    width:360px;
+
+}
+
+.logo-text{
+
+    color:#de9b35;
+
+    text-transform:uppercase;
+
+    letter-spacing:3px;
+
+    font-size:13px;
+
+}
+
+h1{
+
+    margin-top:8px;
+
+    margin-bottom:25px;
+
+    font-size:42px;
+
+    text-transform:uppercase;
+
+}
+
+.cs-btn{
+
+    background:linear-gradient(135deg,#e08b1b,#b8680d);
+
+    border:none;
+
+    color:white;
+
+    padding:14px 34px;
+
+    border-radius:5px;
+
+    font-size:16px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+.cs-btn:hover{
+
+    filter:brightness(1.08);
+
+}
+
+.news-item{
+
+    background:#111822;
+
+    border:1px solid #253344;
+
+    border-radius:6px;
+
+    padding:18px;
+
+    margin-bottom:15px;
+
+}
+
+.news-item h3{
+
+    color:#de9b35;
+
+    margin-bottom:8px;
+
+}
+
+.news-item p{
+
+    color:#8fa0b5;
+
+    line-height:1.5;
+
+}
+
+/* ================= КОНСТРУКТОР ================= */
+
+.work-zone{
+
+    display:flex;
+
+    gap:40px;
+
+    align-items:flex-start;
+
+}
+
+.panel{
+
+    width:330px;
+
+    background:#111822;
+
+    border:1px solid #253344;
+
+    border-radius:8px;
+
+    padding:22px;
+
+}
+
+.panel label{
+
+    display:block;
+
+    margin-bottom:6px;
+
+    font-size:12px;
+
+    color:#8fa0b5;
+
+    text-transform:uppercase;
+
+}
+
+.panel input,
+.panel textarea,
+.panel select{
+
+    width:100%;
+
+    margin-bottom:15px;
+
+    padding:10px;
+
+    background:#17202c;
+
+    border:1px solid #2b3d54;
+
+    color:white;
+
+    border-radius:5px;
+
+}
+
+.panel input:focus,
+.panel textarea:focus,
+.panel select:focus{
+
+    outline:none;
+
+    border-color:#de9b35;
+
+}
+
+.save-btn{
+
+    width:100%;
+
+    border:none;
+
+    background:#de9b35;
+
+    color:white;
+
+    padding:12px;
+
+    border-radius:5px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+}
+/* ================= КАРТОЧКИ ================= */
+
+.card{
+    width:100%;
+    background:#141c26;
+    border-radius:8px;
+    padding:18px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    position:relative;
+    transition:.2s;
+    margin-bottom:15px;
+}
+
+.card:hover{
+    transform:translateY(-3px);
+}
+
+.rarity-common{
+    border:2px solid #3a4b5f;
+}
+
+.rarity-common:hover{
+    border-color:#5b7390;
+    box-shadow:0 0 15px rgba(90,120,150,.35);
+}
+
+.rarity-gold{
+    border:2px solid #de9b35;
+    background:linear-gradient(145deg,#141c26,#1d2836);
+    box-shadow:0 0 18px rgba(222,155,53,.25);
+}
+
+.rarity-gold:hover{
+    box-shadow:0 0 25px rgba(222,155,53,.45);
+}
+
+.icon-box{
+
+    width:72px;
+    height:72px;
+
+    border-radius:6px;
+
+    background:#0d131a;
+
+    border:1px solid #2b3d54;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:32px;
+
+    flex-shrink:0;
+
+}
+
+.ach-title{
+
+    font-size:18px;
+
+    font-weight:bold;
+
+    margin-bottom:6px;
+
+}
+
+.rarity-gold .ach-title{
+
+    color:#ffd700;
+
+}
+
+.ach-desc{
+
+    color:#9daec2;
+
+    line-height:1.5;
+
+    font-size:14px;
+
+}
+
+/* ================= КНОПКИ ================= */
+
+.card-actions{
+
+    position:absolute;
+
+    right:18px;
+
+    top:18px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:10px;
+
+}
+
+.like-btn{
+
+    background:none;
+
+    border:none;
+
+    color:#9daec2;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+    transition:.2s;
+
+}
+
+.like-btn:hover{
+
+    color:#ff6060;
+
+}
+
+.like-btn:active{
+
+    transform:scale(1.2);
+
+}
+
+.check-btn{
+
+    background:#17202c;
+
+    color:white;
+
+    border:1px solid #2b3d54;
+
+    padding:7px 12px;
+
+    border-radius:5px;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+    font-size:12px;
+
+    font-weight:bold;
+
+}
+
+.check-btn:hover{
+
+    border-color:#de9b35;
+
+}
+
+.check-btn.done{
+
+    background:#a4e00a;
+
+    color:black;
+
+    border-color:#a4e00a;
+
+}
+
+/* ================= ГАЛЕРЕЯ ================= */
+
+.gallery-layout{
+
+    display:flex;
+
+    flex-direction:column;
+
+    width:100%;
+
+}
+
+.gallery-header{
+
+    text-align:center;
+
+    margin-bottom:30px;
+
+}
+
+.gallery-header h2{
+
+    font-size:34px;
+
+    margin-bottom:8px;
+
+    text-transform:uppercase;
+
+}
+
+.gallery-header p{
+
+    color:#8fa0b5;
+
+}
+
+.feed-container{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+/* ================= ПОДДЕРЖКА ================= */
+
+.support-box{
+
+    width:100%;
+
+    max-width:900px;
+
+    margin:40px auto;
+
+}
+
+.support-panel{
+
+    background:#111822;
+
+    border:1px solid #253344;
+
+    border-radius:8px;
+
+    padding:60px;
+
+    text-align:center;
+
+}
+
+.support-icon{
+
+    font-size:90px;
+
+    color:#de9b35;
+
+    margin-bottom:20px;
+
+}
+
+.support-email{
+
+    background:#17202c;
+
+    border:1px solid #253344;
+
+    border-radius:6px;
+
+    padding:18px;
+
+    margin:30px auto;
+
+    max-width:500px;
+
+    font-size:28px;
+
+    font-weight:bold;
+
+    color:#de9b35;
+
+}
+
+/* ================= СКРОЛЛ ================= */
+
+::-webkit-scrollbar{
+
+    width:8px;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:#253344;
+
+    border-radius:4px;
+
+}
+
+::-webkit-scrollbar-track{
+
+    background:#0d131a;
+
+}
+/* ===== дальше продолжим ===== */
+
+</style>
+
+</head>
+
+<body>
+<header>
+
+    <div class="nav-left-box">
+
+        <div class="nav-logo">
+            <span class="game">Counter-Strike 2</span>
+            <span class="site">Доска испытаний</span>
+        </div>
+
+        <nav>
+
+            <button class="nav-tab active"
+                    onclick="switchTab('scr-welcome',this)">
+                Главная
+            </button>
+
+            <button class="nav-tab"
+                    id="tab-editor"
+                    onclick="switchTab('scr-editor',this)">
+                Добавить квест
+            </button>
+
+            <button class="nav-tab"
+                    onclick="switchTab('scr-gallery',this)">
+                Все испытания
+            </button>
+            
+            <button class="nav-tab" onclick="switchTab('scr-profile', this)">
+                Профиль
+            </button>
+
+            <button class="nav-tab" onclick="switchTab('scr-auth', this)">
+                Аккаунт
+            </button>
+
+            <button class="nav-tab"
+                    onclick="switchTab('scr-support',this)">
+                Поддержка
+            </button>
+
+        </nav>
+
+    </div>
+
+    <a class="donate-btn"
+       href="https://www.donationalerts.com/r/egorfley"
+       target="_blank">
+
+        💰 Поддержать автора
+
+    </a>
+
+</header>
+
+<div class="container">
+
+<!-- ================= ГЛАВНАЯ ================= -->
+
+<div id="scr-welcome" class="screen active">
+
+    <div class="menu-layout">
+
+        <div class="menu-left">
+
+            <div class="logo-text">
+                Counter-Strike 2
+            </div>
+
+            <h1>Награды общины</h1>
+
+            <button class="cs-btn"
+                    onclick="document.getElementById('tab-editor').click()">
+
+                Придумать квест
+
+            </button>
+
+        </div>
+
+        <div class="menu-right">
+
+            <div class="news-item" style="border-color:#de9b35;position:relative;">
+
+                <span style="
+                    position:absolute;
+                    top:-10px;
+                    right:14px;
+                    background:#de9b35;
+                    color:#111822;
+                    font-size:10px;
+                    font-weight:bold;
+                    letter-spacing:1px;
+                    text-transform:uppercase;
+                    padding:3px 10px;
+                    border-radius:4px;
+                ">Beta</span>
+
+                <h3>🚀 Открытый бета-тест!</h3>
+
+                <p>
+                    Сайт запущен в открытом бета-тестировании.
+                    Часть функций может работать нестабильно —
+                    если найдёте баг или есть идея, пишите через
+                    раздел «Поддержка».
+                </p>
+
+            </div>
+
+            <div class="news-item">
+
+                <h3>Интерактивная лента</h3>
+
+                <p>
+                    Создавайте испытания для матчей CS2,
+                    публикуйте их и оценивайте работы других игроков.
+                </p>
+
+            </div>
+
+            <div class="news-item">
+
+                <h3>Система отметок</h3>
+
+                <p>
+                    Выполняйте задания в игре
+                    и отмечайте их кнопкой «Выполнено».
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= КОНСТРУКТОР ================= -->
+
+<div id="scr-editor" class="screen">
+
+    <div class="work-zone">
+
+        <div class="panel">
+
+            <label>Название квеста</label>
+
+            <input
+                id="in-title"
+                type="text"
+                maxlength="35"
+                value="Эйс на пистолетке">
+
+            <label>Описание</label>
+
+            <textarea
+                id="in-desc"
+                rows="4"
+                maxlength="140">Убейте всех пятерых противников из пистолета в первом раунде.</textarea>
+
+            <label>Редкость</label>
+
+            <select id="in-rarity">
+
+                <option value="rarity-common">
+                    Обычное
+                </option>
+
+                <option value="rarity-gold">
+                    Золотое
+                </option>
+
+            </select>
+
+            <label>Иконка</label>
+
+            <input
+                id="in-icon"
+                maxlength="2"
+                value="💣">
+
+            <button
+                id="btn-publish"
+                class="save-btn">
+
+                Опубликовать
+
+            </button>
+
+        </div>
+        <div class="card rarity-common" id="preview">
+
+            <div class="icon-box" id="ico-box">
+                💣
+            </div>
+
+            <div style="flex:1;">
+
+                <p class="ach-title" id="out-title">
+                    Эйс на пистолетке
+                </p>
+
+                <p class="ach-desc" id="out-desc">
+                    Убейте всех пятерых противников из пистолета в первом раунде.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================== -->
+<!-- ГАЛЕРЕЯ -->
+<!-- ===================================== -->
+
+<div id="scr-gallery" class="screen">
+
+    <div class="gallery-layout">
+
+        <div class="gallery-header">
+
+            <h2>Список испытаний</h2>
+
+            <p>
+                Выполняйте задания и отмечайте прогресс
+            </p>
+
+        </div>
+
+        <div
+            class="feed-container"
+            id="gallery-feed">
+        </div>
+
+    </div>
+
+</div>
+<!-- ================= ПРОФИЛЬ ================= -->
+
+<div id="scr-profile" class="screen">
+
+    <div class="support-box">
+
+        <div class="support-panel">
+        <img
+        id="profile-avatar"
+
+        src="https://placehold.co/180x180/png?text=%F0%9F%91%A4"
+
+        style="
+        width:180px;
+        height:180px;
+        border-radius:50%;
+        border:4px solid #de9b35;
+        object-fit:cover;
+        margin-bottom:25px;
+        ">
+        <input
+        type="file"
+        id="avatar-input"
+        accept="image/*"
+        style="display:none;">
+
+        <button
+        id="change-avatar"
+        class="save-btn"
+        style="width:220px;margin:15px auto;display:block;">
+
+        📷 Изменить аватар
+
+        </button>
+            
+            <h2 id="profile-name" style="color:#de9b35;margin-bottom:10px;">
+                FL
+            </h2>
+
+            <button id="change-name" class="save-btn" style="margin:20px auto 30px;width:220px;">
+                ✏️ Изменить ник
+            </button>            <p style="color:#8fa0b5;margin-bottom:35px;">
+                Игрок сообщества CS2 Challenges
+            </p>
+
+            <div class="card rarity-common" style="margin-bottom:25px;justify-content:center;">
+
+                <div style="width:100%;text-align:left;">
+
+                    <p><b>🏆 Создано испытаний:</b>
+                        <span id="profile-created">0</span>
+                    </p>
+
+                    <br>
+
+                    <p><b>❤️ Получено лайков:</b>
+                        <span id="profile-likes">0</span>
+                    </p>
+
+                    <br>
+
+                    <p><b>✅ Выполнено испытаний:</b>
+                        <span id="profile-completed">0</span>
+                    </p>
+
+                    <br>
+
+                    <p><b>⭐ Ранг:</b>
+                        <span id="profile-rank">Новичок</span>
+                    </p>
+
+                    <br>
+
+                    <p><b>📅 Регистрация:</b>
+                        <span id="profile-date"></span>
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="card rarity-gold">
+
+                <div class="icon-box">
+                    🏅
+                </div>
+
+                <div>
+
+                    <p class="ach-title">
+                        Лучший квест
+                    </p>
+
+                    <p class="ach-desc" id="best-quest">
+                        Пока нет созданных испытаний.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================== -->
+<!-- АККАУНТ (вход / регистрация) -->
+<!-- ===================================== -->
+
+<div id="scr-auth" class="screen">
+
+    <div style="width:100%;max-width:420px;margin:50px auto;">
+
+        <div class="panel" style="width:100%;">
+
+            <!-- Состояние: гость -->
+            <div id="auth-guest">
+
+                <div style="display:flex;gap:10px;margin-bottom:20px;">
+                    <button id="auth-tab-login" class="nav-tab active"
+                        style="flex:1;border-bottom:2px solid #de9b35;"
+                        onclick="setAuthMode('login')">Вход</button>
+                    <button id="auth-tab-register" class="nav-tab"
+                        style="flex:1;"
+                        onclick="setAuthMode('register')">Регистрация</button>
+                </div>
+
+                <div id="auth-error" style="
+                    display:none;
+                    background:#2c1414;
+                    border:1px solid #5c2626;
+                    color:#ff8080;
+                    padding:10px;
+                    border-radius:5px;
+                    margin-bottom:15px;
+                    font-size:13px;
+                "></div>
+
+                <label>Ник</label>
+                <input id="auth-username" type="text" placeholder="3-20 символов, латиница/цифры/_" maxlength="20">
+
+                <label>Пароль</label>
+                <input id="auth-password" type="password" placeholder="Минимум 6 символов">
+
+                <button id="auth-submit" class="save-btn" onclick="submitAuth()">Войти</button>
+
+            </div>
+
+            <!-- Состояние: авторизован -->
+            <div id="auth-user" style="display:none;text-align:center;">
+
+                <p style="color:#8fa0b5;margin-bottom:8px;">Вы вошли как</p>
+                <h2 style="color:#de9b35;margin-bottom:25px;" id="auth-username-display"></h2>
+
+                <button class="save-btn" style="background:#3a4b5f;" onclick="logout()">Выйти</button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================== -->
+<!-- ПОДДЕРЖКА -->
+<!-- ===================================== -->
+
+<div id="scr-support" class="screen">
+
+    <div
+        style="
+        width:100%;
+        max-width:900px;
+        margin:50px auto;
+        ">
+
+        <div
+            class="panel"
+            style="
+            width:100%;
+            text-align:center;
+            padding:60px;
+            ">
+
+            <div
+                style="
+                font-size:90px;
+                color:#de9b35;
+                margin-bottom:20px;
+                ">
+                ✉
+            </div>
+
+            <h2
+                style="
+                color:#de9b35;
+                margin-bottom:20px;
+                ">
+
+                Техническая поддержка
+
+            </h2>
+
+            <p
+                style="
+                color:#9daec2;
+                line-height:1.8;
+                margin-bottom:25px;
+                ">
+
+                Нашли ошибку?<br>
+                Есть предложение?<br>
+                Или хотите сообщить о проблеме?
+
+            </p>
+
+            <div
+                style="
+                background:#17202c;
+                border:1px solid #253344;
+                border-radius:6px;
+                padding:20px;
+                font-size:26px;
+                font-weight:bold;
+                color:#de9b35;
+                ">
+
+                egorfleyer@gmail.com
+
+            </div>
+
+            <p
+                style="
+                color:#8fa0b5;
+                margin-top:25px;
+                ">
+
+                Обычно отвечаем
+                в течение 24–48 часов.
+
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+<script>
+
+// =========================
+// Переключение вкладок
+// =========================
+
+function switchTab(screenId, btn){
+
+    document.querySelectorAll(".screen").forEach(screen=>{
+
+        screen.classList.remove("active");
+
+    });
+
+    document.querySelectorAll(".nav-tab").forEach(tab=>{
+
+        tab.classList.remove("active");
+
+    });
+
+    document.getElementById(screenId).classList.add("active");
+
+    btn.classList.add("active");
+
+}
+
+// =========================
+// Конструктор
+// =========================
+
+const titleInput=document.getElementById("in-title");
+const descInput=document.getElementById("in-desc");
+const iconInput=document.getElementById("in-icon");
+const rarityInput=document.getElementById("in-rarity");
+
+const preview=document.getElementById("preview");
+const previewTitle=document.getElementById("out-title");
+const previewDesc=document.getElementById("out-desc");
+const previewIcon=document.getElementById("ico-box");
+
+titleInput.oninput=()=>{
+
+    previewTitle.textContent=titleInput.value||"Название";
+
+}
+
+descInput.oninput=()=>{
+
+    previewDesc.textContent=descInput.value||"Описание";
+
+}
+
+iconInput.oninput=()=>{
+
+    previewIcon.textContent=iconInput.value||"❓";
+
+}
+
+rarityInput.onchange=()=>{
+
+    preview.className="card "+rarityInput.value;
+
+}
+
+// =========================
+// Испытания (хранятся в localStorage)
+// =========================
+
+const feed=document.getElementById("gallery-feed");
+
+let challenges=JSON.parse(localStorage.getItem("challenges"));
+
+if(!challenges){
+
+    // Стартовые примеры — показываются только один раз,
+    // дальше пользователь работает со своими данными.
+    challenges=[
+        {
+            id:cryptoId(),
+            icon:"🏆",
+            title:"Глобал в душе",
+            desc:"Выиграть 10 матчей подряд в Premier в одиночку.",
+            rarity:"rarity-gold",
+            likes:12,
+            liked:false,
+            done:false
+        },
+        {
+            id:cryptoId(),
+            icon:"💣",
+            title:"Ниндзя-дефьюз",
+            desc:"Обезвредить бомбу в дыму, пока все враги живы.",
+            rarity:"rarity-common",
+            likes:8,
+            liked:false,
+            done:false
+        }
+    ];
+
+    saveChallenges();
+
+}
+
+function cryptoId(){
+
+    return Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+
+}
+
+function saveChallenges(){
+
+    localStorage.setItem("challenges",JSON.stringify(challenges));
+
+}
+
+// Безопасный рендер: весь пользовательский текст идёт через
+// textContent, а не innerHTML — так теги/скрипты не выполнятся.
+
+function renderCard(item){
+
+    const card=document.createElement("div");
+    card.className="card "+item.rarity;
+    card.dataset.id=item.id;
+
+    const iconBox=document.createElement("div");
+    iconBox.className="icon-box";
+    iconBox.textContent=item.icon||"❓";
+
+    const info=document.createElement("div");
+    info.style.flex="1";
+
+    const title=document.createElement("p");
+    title.className="ach-title";
+    title.textContent=item.title||"Без названия";
+
+    const desc=document.createElement("p");
+    desc.className="ach-desc";
+    desc.textContent=item.desc||"Нет описания";
+
+    info.append(title,desc);
+
+    const actions=document.createElement("div");
+    actions.className="card-actions";
+
+    const likeBtn=document.createElement("button");
+    likeBtn.className="like-btn";
+    likeBtn.onclick=()=>like(item.id);
+    const likeSpan=document.createElement("span");
+    likeSpan.textContent=item.likes;
+    likeBtn.append("❤️ ",likeSpan);
+    if(item.liked) likeBtn.style.color="#ff5555";
+
+    const checkBtn=document.createElement("button");
+    checkBtn.className="check-btn"+(item.done?" done":"");
+    checkBtn.textContent=item.done?"Выполнено ✓":"Выполнить";
+    checkBtn.onclick=()=>toggleDone(item.id);
+
+    actions.append(likeBtn,checkBtn);
+    card.append(iconBox,info,actions);
+
+    return card;
+
+}
+
+function renderGallery(){
+
+    feed.innerHTML="";
+
+    challenges.forEach(item=>{
+
+        feed.appendChild(renderCard(item));
+
+    });
+
+}
+
+renderGallery();
+
+// =========================
+// Лайки
+// =========================
+
+function like(id){
+
+    const item=challenges.find(c=>c.id===id);
+
+    if(!item||item.liked) return;
+
+    item.liked=true;
+
+    item.likes++;
+
+    profile.likes++;
+
+    saveChallenges();
+
+    saveProfile();
+
+    renderGallery();
+
+    updateProfile();
+
+}
+
+// =========================
+// Выполнено
+// =========================
+
+function toggleDone(id){
+
+    const item=challenges.find(c=>c.id===id);
+
+    if(!item) return;
+
+    item.done=!item.done;
+
+    profile.completed+=item.done?1:-1;
+
+    if(profile.completed<0){
+
+        profile.completed=0;
+
+    }
+
+    saveChallenges();
+
+    saveProfile();
+
+    renderGallery();
+
+    updateProfile();
+
+}
+
+// =========================
+// Публикация
+// =========================
+
+document.getElementById("btn-publish").onclick=function(){
+
+    const newItem={
+        id:cryptoId(),
+        icon:iconInput.value||"❓",
+        title:titleInput.value||"Без названия",
+        desc:descInput.value||"Нет описания",
+        rarity:rarityInput.value,
+        likes:0,
+        liked:false,
+        done:false
+    };
+
+    challenges.unshift(newItem);
+
+    saveChallenges();
+
+    renderGallery();
+
+    profile.created++;
+
+    profile.bestQuest=newItem.title;
+
+    saveProfile();
+
+    updateProfile();
+
+    alert("Испытание опубликовано!");
+
+    titleInput.value="";
+
+    descInput.value="";
+
+    iconInput.value="💣";
+
+    rarityInput.value="rarity-common";
+
+    preview.className="card rarity-common";
+
+    previewTitle.textContent="Название";
+
+    previewDesc.textContent="Описание";
+
+    previewIcon.textContent="💣";
+
+}
+// ==========================
+// ПРОФИЛЬ
+// ==========================
+
+let profile = JSON.parse(localStorage.getItem("profile"));
+
+if(!profile){
+
+    profile={
+
+        created:0,
+        likes:0,
+        completed:0,
+        bestQuest:"Пока нет созданных испытаний.",
+        date:new Date().toLocaleDateString("ru-RU"),
+        name:"FL",
+        avatar:"",
+
+    };
+
+    saveProfile();
+
+}
+
+function saveProfile(){
+
+    localStorage.setItem("profile",JSON.stringify(profile));
+
+}
+
+function updateProfile(){
+
+    document.getElementById("profile-created").textContent=profile.created;
+
+    document.getElementById("profile-likes").textContent=profile.likes;
+
+    document.getElementById("profile-completed").textContent=profile.completed;
+
+    document.getElementById("best-quest").textContent=profile.bestQuest;
+
+    document.getElementById("profile-date").textContent=profile.date;
+
+    document.getElementById("profile-name").textContent=profile.name;
+
+    if(profile.avatar!=""){
+
+    document.getElementById("profile-avatar").src=profile.avatar;
+
+}
+
+    let rank="Новичок";
+
+    if(profile.created>=5){
+
+        rank="Опытный";
+
+    }
+
+    if(profile.created>=15){
+
+        rank="Ветеран";
+
+    }
+
+    if(profile.created>=30){
+
+        rank="Легенда";
+
+    }
+
+    document.getElementById("profile-rank").textContent=rank;
+
+}
+
+updateProfile();
+
+document.getElementById("change-name").onclick=function(){
+
+let name=prompt("Введите новый ник",profile.name);
+
+if(!name) return;
+
+profile.name=name;
+
+saveProfile();
+
+updateProfile();
+
+}
+
+document.getElementById("change-avatar").onclick=function(){
+
+document.getElementById("avatar-input").click();
+
+}
+
+document.getElementById("avatar-input").addEventListener("change",function(){
+
+let file=this.files[0];
+
+if(!file) return;
+
+let reader=new FileReader();
+
+reader.onload=function(){
+
+profile.avatar=reader.result;
+
+saveProfile();
+
+updateProfile();
+
+}
+
+reader.readAsDataURL(file);
+
+});
+
+
+// ==========================
+// АККАУНТ (вход / регистрация через сервер)
+// ==========================
+
+let authMode="login";
+
+function setAuthMode(mode){
+
+    authMode=mode;
+
+    document.getElementById("auth-tab-login").classList.toggle("active",mode==="login");
+    document.getElementById("auth-tab-register").classList.toggle("active",mode==="register");
+
+    document.getElementById("auth-submit").textContent=mode==="login"?"Войти":"Зарегистрироваться";
+
+    hideAuthError();
+
+}
+
+function showAuthError(message){
+
+    const box=document.getElementById("auth-error");
+    box.textContent=message;
+    box.style.display="block";
+
+}
+
+function hideAuthError(){
+
+    document.getElementById("auth-error").style.display="none";
+
+}
+
+async function submitAuth(){
+
+    hideAuthError();
+
+    const username=document.getElementById("auth-username").value.trim();
+    const password=document.getElementById("auth-password").value;
+
+    try{
+
+        const res=await fetch("/api/"+authMode,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({username,password})
+        });
+
+        const data=await res.json();
+
+        if(!res.ok){
+            showAuthError(data.error||"Что-то пошло не так");
+            return;
+        }
+
+        onAuthSuccess(data.username);
+
+    }catch(e){
+
+        showAuthError("Не удалось связаться с сервером");
+
+    }
+
+}
+
+async function logout(){
+
+    await fetch("/api/logout",{method:"POST"});
+
+    document.getElementById("auth-guest").style.display="block";
+    document.getElementById("auth-user").style.display="none";
+
+    document.getElementById("auth-username").value="";
+    document.getElementById("auth-password").value="";
+
+    profile.name="Гость";
+    saveProfile();
+    updateProfile();
+
+}
+
+function onAuthSuccess(username){
+
+    document.getElementById("auth-guest").style.display="none";
+    document.getElementById("auth-user").style.display="block";
+    document.getElementById("auth-username-display").textContent=username;
+
+    // Имя в профиле теперь берётся из аккаунта, а не из ручного "FL"
+    profile.name=username;
+    saveProfile();
+    updateProfile();
+
+}
+
+async function checkAuth(){
+
+    try{
+
+        const res=await fetch("/api/me");
+
+        if(res.ok){
+            const data=await res.json();
+            onAuthSuccess(data.username);
+        }
+
+    }catch(e){
+        // сервер недоступен — просто оставляем форму входа
+    }
+
+}
+
+checkAuth();
+
+</script>
+
+</body>
+
+</html>
