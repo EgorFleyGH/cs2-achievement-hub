@@ -7,6 +7,8 @@ const cookieParser = require("cookie-parser");
 
 const authRoutes = require("./routes/auth");
 
+const questsRouter = require("./routes/quests");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isProd = process.env.NODE_ENV === "production";
@@ -17,6 +19,7 @@ app.set("trust proxy", 1);
 
 app.use(express.json());
 app.use(cookieParser());
+app.use("/api/quests", questsRouter);
 
 app.use(
   session({

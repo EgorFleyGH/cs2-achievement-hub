@@ -803,14 +803,14 @@ h1{
                 id="in-title"
                 type="text"
                 maxlength="35"
-                value="Эйс на пистолетке">
+                value="">
 
             <label>Описание</label>
 
             <textarea
                 id="in-desc"
                 rows="4"
-                maxlength="140">Убейте всех пятерых противников из пистолета в первом раунде.</textarea>
+                maxlength="140"></textarea>
 
             <label>Редкость</label>
 
@@ -831,7 +831,7 @@ h1{
             <input
                 id="in-icon"
                 maxlength="2"
-                value="💣">
+                value="">
 
             <button
                 id="btn-publish"
@@ -845,17 +845,17 @@ h1{
         <div class="card rarity-common" id="preview">
 
             <div class="icon-box" id="ico-box">
-                💣
+                
             </div>
 
             <div style="flex:1;">
 
                 <p class="ach-title" id="out-title">
-                    Эйс на пистолетке
+                    
                 </p>
 
                 <p class="ach-desc" id="out-desc">
-                    Убейте всех пятерых противников из пистолета в первом раунде.
+                 
                 </p>
 
             </div>
@@ -1219,32 +1219,7 @@ if(!challenges){
     // Стартовые примеры — показываются только один раз,
     // дальше пользователь работает со своими данными.
     challenges=[
-        {
-            id:cryptoId(),
-            icon:"🏆",
-            title:"Глобал в душе",
-            desc:"Выиграть 10 матчей подряд в Premier в одиночку.",
-            rarity:"rarity-gold",
-            likes:12,
-            liked:false,
-            done:false
-        },
-        {
-            id:cryptoId(),
-            icon:"💣",
-            title:"Ниндзя-дефьюз",
-            desc:"Обезвредить бомбу в дыму, пока все враги живы.",
-            rarity:"rarity-common",
-            likes:8,
-            liked:false,
-            done:false
-        }
-    ];
-
-    saveChallenges();
-
-}
-
+       
 function cryptoId(){
 
     return Date.now().toString(36)+Math.random().toString(36).slice(2,8);
@@ -1380,18 +1355,60 @@ function toggleDone(id){
 // Публикация
 // =========================
 
-document.getElementById("btn-publish").onclick=function(){
+document.getElementById('btn-publish').onclick = async () => {
 
-    const newItem={
-        id:cryptoId(),
-        icon:iconInput.value||"❓",
-        title:titleInput.value||"Без названия",
-        desc:descInput.value||"Нет описания",
-        rarity:rarityInput.value,
-        likes:0,
-        liked:false,
-        done:false
-    };
+    if (!tIn.value.trim()) {
+        alert("Введите название квеста.");
+        return;
+    }
+
+    try {
+
+        const response = await fetch("/api/quests", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                title: tIn.value,
+                desc: dIn.value,
+                icon: fIn.value,
+                rarity: rIn.value
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            alert(result.error || "Ошибка публикации.");
+            return;
+        }
+
+        alert("Квест опубликован!");
+
+        // Очищаем форму
+        tIn.value = "";
+        dIn.value = "";
+        fIn.value = "💣";
+        rIn.value = "rarity-common";
+
+        // Обновляем превью
+        tOut.textContent = "Название квеста";
+        dOut.textContent = "Описание задания...";
+        iBox.textContent = "💣";
+        previewCard.className = "card rarity-common";
+
+        // Пока просто перезагружаем страницу,
+        // позже заменим на автоматическое обновление списка
+        location.reload();
+
+    } catch (err) {
+        console.error(err);
+        alert("Не удалось подключиться к серверу.");
+    }
+
+};
 
     challenges.unshift(newItem);
 
@@ -1669,6 +1686,51 @@ async function checkAuth(){
 }
 
 checkAuth();
+
+async function loadQuests() {
+
+    const feed = document.getElementById("gallery-feed");
+
+    feed.innerHTML = "";
+
+    const response = await fetch("/api/quests");
+
+    const quests = await response.json();
+
+    quests.forEach(q => {
+
+        const card = document.createElement("div");
+
+        card.className = "card " + q.rarity;
+
+        card.innerHTML = `
+            <div class="icon-box">${q.icon}</div>
+
+            <div style="flex:1">
+                <p class="ach-title">${q.title}</p>
+                <p class="ach-desc">${q.desc}</p>
+                <p style="font-size:11px;color:#de9b35;">
+                    Автор: ${q.author}
+                </p>
+            </div>
+
+            <div class="card-actions">
+
+                <button class="like-btn">
+                    ❤️ <span>${q.likes}</span>
+                </button>
+
+            </div>
+        `;
+
+        feed.appendChild(card);
+
+    });
+
+}
+
+loadQuests();
+
 
 </script>
 
