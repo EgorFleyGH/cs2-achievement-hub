@@ -1441,7 +1441,7 @@ if(!profile){
         completed:0,
         bestQuest:"Пока нет созданных испытаний.",
         date:new Date().toLocaleDateString("ru-RU"),
-        name:"FL",
+        name:"",
         avatar:"",
 
     };
@@ -1501,6 +1501,18 @@ function updateProfile(){
 }
 
 updateProfile();
+
+updateProfile();
+
+if (!profile.name) {
+    const newName = prompt("Добро пожаловать! Введите ваш ник:");
+
+    if (newName && newName.trim() !== "") {
+        profile.name = newName.trim();
+        saveProfile();
+        updateProfile();
+    }
+}
 
 document.getElementById("change-name").onclick=function(){
 
