@@ -6,7 +6,6 @@ const {
   likeChallenge,
   toggleChallengeDone
 } = require("../db");
-const { OWNER_USERNAME } = require("../config");
 
 const router = express.Router();
 
@@ -36,7 +35,6 @@ function serializeChallenge(challenge, userId) {
     desc: challenge.desc,
     rarity: challenge.rarity,
     authorUsername: challenge.authorUsername,
-    authorIsOwner: challenge.authorUsername === OWNER_USERNAME,
     likes: challenge.likedBy.length,
     liked: userId ? challenge.likedBy.includes(userId) : false,
     done: userId ? challenge.completedBy.includes(userId) : false

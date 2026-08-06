@@ -6,7 +6,8 @@ const session = require("express-session");
 const cookieParser = require("cookie-parser");
 
 const authRoutes = require("./routes/auth");
-const challengeRoutes = require("./routes/challenges");
+
+const questsRouter = require("./routes/quests");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,6 +19,7 @@ app.set("trust proxy", 1);
 
 app.use(express.json());
 app.use(cookieParser());
+app.use("/api/quests", questsRouter);
 
 app.use(
   session({
@@ -35,7 +37,6 @@ app.use(
 );
 
 app.use("/api", authRoutes);
-app.use("/api", challengeRoutes);
 
 // Отдаём фронтенд как статику
 app.use(express.static(path.join(__dirname, "public")));

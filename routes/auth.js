@@ -2,7 +2,6 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
 const { findUserByUsername, createUser } = require("../db");
-const { OWNER_USERNAME } = require("../config");
 
 const router = express.Router();
 
@@ -53,7 +52,7 @@ router.post("/register", authLimiter, (req, res) => {
   req.session.userId = user.id;
   req.session.username = user.username;
 
-  res.status(201).json({ id: user.id, username: user.username, isOwner: user.username === OWNER_USERNAME });
+  res.status(201).json({ id: user.id, username: user.username });
 });
 
 // =========================
@@ -77,7 +76,7 @@ router.post("/login", authLimiter, (req, res) => {
   req.session.userId = user.id;
   req.session.username = user.username;
 
-  res.json({ id: user.id, username: user.username, isOwner: user.username === OWNER_USERNAME });
+  res.json({ id: user.id, username: user.username });
 });
 
 // =========================
@@ -97,7 +96,7 @@ router.get("/me", (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ error: "Не авторизован" });
   }
-  res.json({ id: req.session.userId, username: req.session.username, isOwner: req.session.username === OWNER_USERNAME });
+  res.json({ id: req.session.userId, username: req.session.username });
 });
 
 module.exports = router;
