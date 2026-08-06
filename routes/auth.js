@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
 const { findUserByUsername, createUser } = require("../db");
+const { OWNER_USERNAME } = require("../config");
 
 const router = express.Router();
 
@@ -32,7 +33,7 @@ function validateCredentials(username, password) {
 // =========================
 // Регистрация
 // =========================
-router.post("/register", authLimiter, (req, res) => {
+router.post("/register", authLimiter, async (req, res) => {
   const { username, password } = req.body || {};
 
   const error = validateCredentials(username, password);
@@ -40,43 +41,53 @@ router.post("/register", authLimiter, (req, res) => {
     return res.status(400).json({ error });
   }
 
-  const existing = findUserByUsername(username);
-  if (existing) {
-    return res.status(409).json({ error: "Такой ник уже занят" });
+  try {
+    const existing = await findUserByUsername(username);
+    if (existing) {
+      return res.status(409).json({ error: "Такой ник уже занят" });
+    }
+
+    const hash = bcrypt.hashSync(password, 10);
+
+    const user = await createUser(username, hash);
+
+    req.session.userId = user.id;
+    req.session.username = user.username;
+
+    res.status(201).json({ id: user.id, username: user.username, isOwner: user.username === OWNER_USERNAME });
+  } catch (e) {
+    console.error("Ошибка регистрации:", e);
+    res.status(500).json({ error: "Не удалось зарегистрироваться, попробуйте позже" });
   }
-
-  const hash = bcrypt.hashSync(password, 10);
-
-  const user = createUser(username, hash);
-
-  req.session.userId = user.id;
-  req.session.username = user.username;
-
-  res.status(201).json({ id: user.id, username: user.username });
 });
 
 // =========================
 // Вход
 // =========================
-router.post("/login", authLimiter, (req, res) => {
+router.post("/login", authLimiter, async (req, res) => {
   const { username, password } = req.body || {};
 
   if (typeof username !== "string" || typeof password !== "string") {
     return res.status(400).json({ error: "Некорректные данные" });
   }
 
-  const user = findUserByUsername(username);
+  try {
+    const user = await findUserByUsername(username);
 
-  // Намеренно одинаковое сообщение для "нет юзера" и "неверный пароль" —
-  // чтобы нельзя было угадывать существующие ники перебором.
-  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-    return res.status(401).json({ error: "Неверный ник или пароль" });
+    // Намеренно одинаковое сообщение для "нет юзера" и "неверный пароль" —
+    // чтобы нельзя было угадывать существующие ники перебором.
+    if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+      return res.status(401).json({ error: "Неверный ник или пароль" });
+    }
+
+    req.session.userId = user.id;
+    req.session.username = user.username;
+
+    res.json({ id: user.id, username: user.username, isOwner: user.username === OWNER_USERNAME });
+  } catch (e) {
+    console.error("Ошибка входа:", e);
+    res.status(500).json({ error: "Не удалось войти, попробуйте позже" });
   }
-
-  req.session.userId = user.id;
-  req.session.username = user.username;
-
-  res.json({ id: user.id, username: user.username });
 });
 
 // =========================
@@ -96,7 +107,7 @@ router.get("/me", (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ error: "Не авторизован" });
   }
-  res.json({ id: req.session.userId, username: req.session.username });
+  res.json({ id: req.session.userId, username: req.session.username, isOwner: req.session.username === OWNER_USERNAME });
 });
 
 module.exports = router;

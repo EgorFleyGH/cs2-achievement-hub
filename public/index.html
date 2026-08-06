@@ -6,6 +6,8 @@
 
 <title>CS2 Achievement Hub</title>
 
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
 <style>
 
 *{
@@ -684,7 +686,7 @@ h1{
                 Профиль
             </button>
 
-            <button class="nav-tab" onclick="switchTab('scr-auth', this)">
+            <button id="tab-auth" class="nav-tab" onclick="switchTab('scr-auth', this)">
                 Аккаунт
             </button>
 
@@ -803,14 +805,14 @@ h1{
                 id="in-title"
                 type="text"
                 maxlength="35"
-                value="">
+                value="Эйс на пистолетке">
 
             <label>Описание</label>
 
             <textarea
                 id="in-desc"
                 rows="4"
-                maxlength="140"></textarea>
+                maxlength="140">Убейте всех пятерых противников из пистолета в первом раунде.</textarea>
 
             <label>Редкость</label>
 
@@ -831,7 +833,7 @@ h1{
             <input
                 id="in-icon"
                 maxlength="2"
-                value="">
+                value="💣">
 
             <button
                 id="btn-publish"
@@ -845,17 +847,17 @@ h1{
         <div class="card rarity-common" id="preview">
 
             <div class="icon-box" id="ico-box">
-                
+                💣
             </div>
 
             <div style="flex:1;">
 
                 <p class="ach-title" id="out-title">
-                    
+                    Эйс на пистолетке
                 </p>
 
                 <p class="ach-desc" id="out-desc">
-                 
+                    Убейте всех пятерых противников из пистолета в первом раунде.
                 </p>
 
             </div>
@@ -927,9 +929,25 @@ h1{
 
         </button>
             
-            <h2 id="profile-name" style="color:#de9b35;margin-bottom:10px;">
-                FL
+            <h2 id="profile-name" style="color:#de9b35;margin-bottom:10px;display:inline-block;">
+                Гость
             </h2>
+
+            <span id="profile-owner-badge" style="
+                display:none;
+                margin-left:8px;
+                background:#de9b35;
+                color:#111822;
+                font-size:11px;
+                font-weight:bold;
+                letter-spacing:0.5px;
+                text-transform:uppercase;
+                padding:3px 9px;
+                border-radius:4px;
+                vertical-align:middle;
+            ">👑 Владелец</span>
+
+            <br>
 
             <button id="change-name" class="save-btn" style="margin:20px auto 30px;width:220px;">
                 ✏️ Изменить ник
@@ -1046,7 +1064,21 @@ h1{
             <div id="auth-user" style="display:none;text-align:center;">
 
                 <p style="color:#8fa0b5;margin-bottom:8px;">Вы вошли как</p>
-                <h2 style="color:#de9b35;margin-bottom:25px;" id="auth-username-display"></h2>
+                <h2 style="color:#de9b35;margin-bottom:8px;" id="auth-username-display"></h2>
+
+                <span id="auth-owner-badge" style="
+                    display:none;
+                    margin-bottom:17px;
+                    background:#de9b35;
+                    color:#111822;
+                    font-size:11px;
+                    font-weight:bold;
+                    letter-spacing:0.5px;
+                    text-transform:uppercase;
+                    padding:3px 9px;
+                    border-radius:4px;
+                ">👑 Владелец</span>
+                <br>
 
                 <button class="save-btn" style="background:#3a4b5f;" onclick="logout()">Выйти</button>
 
@@ -1207,31 +1239,12 @@ rarityInput.onchange=()=>{
 }
 
 // =========================
-// Испытания (хранятся в localStorage)
+// Испытания (общие для всех, хранятся на сервере)
 // =========================
 
 const feed=document.getElementById("gallery-feed");
 
-let challenges=JSON.parse(localStorage.getItem("challenges"));
-
-if(!challenges){
-
-    // Стартовые примеры — показываются только один раз,
-    // дальше пользователь работает со своими данными.
-    challenges=[];
-
-       
-function cryptoId(){
-
-    return Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-
-}
-
-function saveChallenges(){
-
-    localStorage.setItem("challenges",JSON.stringify(challenges));
-
-}
+let challenges=[];
 
 // Безопасный рендер: весь пользовательский текст идёт через
 // textContent, а не innerHTML — так теги/скрипты не выполнятся.
@@ -1257,7 +1270,14 @@ function renderCard(item){
     desc.className="ach-desc";
     desc.textContent=item.desc||"Нет описания";
 
-    info.append(title,desc);
+    const author=document.createElement("p");
+    author.style.cssText="color:#5b7390;font-size:11px;margin-top:6px;";
+    author.textContent="Автор: "+(item.authorUsername||"неизвестен");
+    if(item.authorIsOwner){
+        author.append(" 👑");
+    }
+
+    info.append(title,desc,author);
 
     const actions=document.createElement("div");
     actions.className="card-actions";
@@ -1286,6 +1306,16 @@ function renderGallery(){
 
     feed.innerHTML="";
 
+    if(challenges.length===0){
+
+        const empty=document.createElement("p");
+        empty.style.cssText="color:#5b7390;text-align:center;padding:20px;";
+        empty.textContent="Пока нет испытаний — стань первым, кто опубликует своё!";
+        feed.appendChild(empty);
+        return;
+
+    }
+
     challenges.forEach(item=>{
 
         feed.appendChild(renderCard(item));
@@ -1294,31 +1324,57 @@ function renderGallery(){
 
 }
 
-renderGallery();
+async function loadChallenges(){
+
+    try{
+
+        const res=await fetch("/api/challenges");
+        challenges=await res.json();
+
+    }catch(e){
+
+        challenges=[];
+
+    }
+
+    renderGallery();
+    recomputeProfileStats();
+
+}
+
+loadChallenges();
+
+function goToAuthTab(message){
+
+    if(message) alert(message);
+    document.getElementById("tab-auth").click();
+
+}
 
 // =========================
 // Лайки
 // =========================
 
-function like(id){
+async function like(id){
 
-    const item=challenges.find(c=>c.id===id);
+    try{
 
-    if(!item||item.liked) return;
+        const res=await fetch(`/api/challenges/${id}/like`,{method:"POST"});
 
-    item.liked=true;
+        if(res.status===401){
+            goToAuthTab("Чтобы ставить лайки, нужно войти в аккаунт");
+            return;
+        }
 
-    item.likes++;
+        if(!res.ok) return;
 
-    profile.likes++;
+        await loadChallenges();
 
-    saveChallenges();
+    }catch(e){
 
-    saveProfile();
+        alert("Не удалось связаться с сервером");
 
-    renderGallery();
-
-    updateProfile();
+    }
 
 }
 
@@ -1326,29 +1382,26 @@ function like(id){
 // Выполнено
 // =========================
 
-function toggleDone(id){
+async function toggleDone(id){
 
-    const item=challenges.find(c=>c.id===id);
+    try{
 
-    if(!item) return;
+        const res=await fetch(`/api/challenges/${id}/done`,{method:"POST"});
 
-    item.done=!item.done;
+        if(res.status===401){
+            goToAuthTab("Чтобы отмечать выполнение, нужно войти в аккаунт");
+            return;
+        }
 
-    profile.completed+=item.done?1:-1;
+        if(!res.ok) return;
 
-    if(profile.completed<0){
+        await loadChallenges();
 
-        profile.completed=0;
+    }catch(e){
+
+        alert("Не удалось связаться с сервером");
 
     }
-
-    saveChallenges();
-
-    saveProfile();
-
-    renderGallery();
-
-    updateProfile();
 
 }
 
@@ -1356,97 +1409,60 @@ function toggleDone(id){
 // Публикация
 // =========================
 
-document.getElementById('btn-publish').onclick = async () => {
+document.getElementById("btn-publish").onclick=async function(){
 
-    if (!tIn.value.trim()) {
-        alert("Введите название квеста.");
+    if(!currentUser){
+        goToAuthTab("Чтобы публиковать испытания, нужно войти в аккаунт");
         return;
     }
 
-    try {
+    try{
 
-        const response = await fetch("/api/quests", {
-            method: "POST",
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                title: tIn.value,
-                desc: dIn.value,
-                icon: fIn.value,
-                rarity: rIn.value
+        const res=await fetch("/api/challenges",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+                icon:iconInput.value||"❓",
+                title:titleInput.value||"Без названия",
+                desc:descInput.value||"Нет описания",
+                rarity:rarityInput.value
             })
         });
 
-        const result = await response.json();
+        const data=await res.json();
 
-        if (!response.ok) {
-            alert(result.error || "Ошибка публикации.");
+        if(!res.ok){
+            alert(data.error||"Не удалось опубликовать испытание");
             return;
         }
 
-        alert("Квест опубликован!");
+        await loadChallenges();
 
-        // Очищаем форму
-        tIn.value = "";
-        dIn.value = "";
-        fIn.value = "💣";
-        rIn.value = "rarity-common";
+        alert("Испытание опубликовано!");
 
-        // Обновляем превью
-        tOut.textContent = "Название квеста";
-        dOut.textContent = "Описание задания...";
-        iBox.textContent = "💣";
-        previewCard.className = "card rarity-common";
+        titleInput.value="";
+        descInput.value="";
+        iconInput.value="💣";
+        rarityInput.value="rarity-common";
 
-        // Пока просто перезагружаем страницу,
-        // позже заменим на автоматическое обновление списка
-        location.reload();
+        preview.className="card rarity-common";
+        previewTitle.textContent="Название";
+        previewDesc.textContent="Описание";
+        previewIcon.textContent="💣";
 
-    } catch (err) {
-        console.error(err);
-        alert("Не удалось подключиться к серверу.");
+    }catch(e){
+
+        alert("Не удалось связаться с сервером");
+
     }
-
-};
-
-    challenges.unshift(newItem);
-
-    saveChallenges();
-
-    renderGallery();
-
-    profile.created++;
-
-    profile.bestQuest=newItem.title;
-
-    saveProfile();
-
-    updateProfile();
-
-    alert("Испытание опубликовано!");
-
-    titleInput.value="";
-
-    descInput.value="";
-
-    iconInput.value="💣";
-
-    rarityInput.value="rarity-common";
-
-    preview.className="card rarity-common";
-
-    previewTitle.textContent="Название";
-
-    previewDesc.textContent="Описание";
-
-    previewIcon.textContent="💣";
 
 }
 // ==========================
 // ПРОФИЛЬ
 // ==========================
+
+let currentUser=null;
+let isOwnerAccount=false;
 
 let profile = JSON.parse(localStorage.getItem("profile"));
 
@@ -1459,7 +1475,7 @@ if(!profile){
         completed:0,
         bestQuest:"Пока нет созданных испытаний.",
         date:new Date().toLocaleDateString("ru-RU"),
-        name:"",
+        name:"Гость",
         avatar:"",
 
     };
@@ -1470,7 +1486,49 @@ if(!profile){
 
 function saveProfile(){
 
+    // Сохраняем только то, что реально локальное (аватар, дату первого
+    // захода) — created/likes/completed теперь всегда пересчитываются
+    // из общих данных сервера и не хранятся здесь как источник истины.
     localStorage.setItem("profile",JSON.stringify(profile));
+
+}
+
+// Пересчитывает created/likes/completed/bestQuest на основе общего
+// списка квестов с сервера — так статистика всегда актуальна и общая
+// для всех устройств, где заходишь под одним аккаунтом.
+function recomputeProfileStats(){
+
+    if(!currentUser){
+
+        profile.created=0;
+        profile.likes=0;
+        profile.completed=0;
+        profile.bestQuest="Войдите в аккаунт, чтобы видеть статистику.";
+
+        updateProfile();
+        return;
+
+    }
+
+    const own=challenges.filter(c=>c.authorUsername===currentUser);
+
+    profile.created=own.length;
+    profile.likes=own.reduce((sum,c)=>sum+c.likes,0);
+    profile.completed=challenges.filter(c=>c.done).length;
+
+    if(own.length===0){
+
+        profile.bestQuest="Пока нет созданных испытаний.";
+
+    }else{
+
+        const best=own.reduce((a,b)=>b.likes>a.likes?b:a);
+        profile.bestQuest=best.title;
+
+    }
+
+    saveProfile();
+    updateProfile();
 
 }
 
@@ -1520,17 +1578,6 @@ function updateProfile(){
 
 updateProfile();
 
-updateProfile();
-
-if (!profile.name) {
-    const newName = prompt("Добро пожаловать! Введите ваш ник:");
-
-    if (newName && newName.trim() !== "") {
-        profile.name = newName.trim();
-        saveProfile();
-        updateProfile();
-    }
-}
 
 document.getElementById("change-name").onclick=function(){
 
@@ -1630,7 +1677,7 @@ async function submitAuth(){
             return;
         }
 
-        onAuthSuccess(data.username);
+        onAuthSuccess(data.username,data.isOwner);
 
     }catch(e){
 
@@ -1651,12 +1698,19 @@ async function logout(){
     document.getElementById("auth-password").value="";
 
     profile.name="Гость";
+    currentUser=null;
+    isOwnerAccount=false;
     saveProfile();
     updateProfile();
+    renderOwnerBadges();
+
+    // Перезагружаем ленту — лайки/выполнено теперь должны показываться
+    // как у гостя (без личных отметок).
+    loadChallenges();
 
 }
 
-function onAuthSuccess(username){
+function onAuthSuccess(username,isOwner){
 
     document.getElementById("auth-guest").style.display="none";
     document.getElementById("auth-user").style.display="block";
@@ -1664,8 +1718,26 @@ function onAuthSuccess(username){
 
     // Имя в профиле теперь берётся из аккаунта, а не из ручного "FL"
     profile.name=username;
+    currentUser=username;
+    isOwnerAccount=!!isOwner;
     saveProfile();
     updateProfile();
+
+    renderOwnerBadges();
+
+    // Перезагружаем ленту — подтягиваем личные лайки/статусы выполнения
+    // и пересчитываем статистику под этот аккаунт.
+    loadChallenges();
+
+}
+
+function renderOwnerBadges(){
+
+    const authBadge=document.getElementById("auth-owner-badge");
+    const profileBadge=document.getElementById("profile-owner-badge");
+
+    if(authBadge) authBadge.style.display=isOwnerAccount?"inline-block":"none";
+    if(profileBadge) profileBadge.style.display=isOwnerAccount?"inline-block":"none";
 
 }
 
@@ -1677,7 +1749,7 @@ async function checkAuth(){
 
         if(res.ok){
             const data=await res.json();
-            onAuthSuccess(data.username);
+            onAuthSuccess(data.username,data.isOwner);
         }
 
     }catch(e){
@@ -1687,51 +1759,6 @@ async function checkAuth(){
 }
 
 checkAuth();
-
-async function loadQuests() {
-
-    const feed = document.getElementById("gallery-feed");
-
-    feed.innerHTML = "";
-
-    const response = await fetch("/api/quests");
-
-    const quests = await response.json();
-
-    quests.forEach(q => {
-
-        const card = document.createElement("div");
-
-        card.className = "card " + q.rarity;
-
-        card.innerHTML = `
-            <div class="icon-box">${q.icon}</div>
-
-            <div style="flex:1">
-                <p class="ach-title">${q.title}</p>
-                <p class="ach-desc">${q.desc}</p>
-                <p style="font-size:11px;color:#de9b35;">
-                    Автор: ${q.author}
-                </p>
-            </div>
-
-            <div class="card-actions">
-
-                <button class="like-btn">
-                    ❤️ <span>${q.likes}</span>
-                </button>
-
-            </div>
-        `;
-
-        feed.appendChild(card);
-
-    });
-
-}
-
-loadQuests();
-
 
 </script>
 

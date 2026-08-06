@@ -1,66 +1,92 @@
-# CS2 Achievement Hub — сервер
+# CS2 Achievement Hub
 
-Node.js + Express + SQLite. Сервер раздаёт фронтенд (папка `public/`)
-и предоставляет API для регистрации/входа.
+A community hub for Counter-Strike 2 players to create, publish, and track
+custom in-game challenges. Build a challenge, share it with the community,
+like the ones you enjoy, and mark them as completed once you've pulled them off.
 
-## Запуск локально
+## 🚧 Status: Open Beta
 
-Нужен установленный Node.js (18+).
+This project is currently in **Open Beta**. Expect occasional bugs and
+rough edges — feedback is very welcome.
+
+- 🌐 **Language:** Russian only for now. English localization is planned
+  for a future update.
+- 🛠️ **Want to help with development?** Reach out on Discord: **egorfleisky**
+
+## Features
+
+- Create custom CS2 challenges with a title, description, icon, and rarity
+- Publish challenges to a shared feed — visible to every user, on every device
+- Like challenges and mark them as completed (per-account, not per-browser)
+- User accounts with real registration/login (hashed passwords, server-side sessions)
+- Personal profile with stats and rank progression, computed live from shared data
+- Owner badge for the site's creator account
+
+## Tech stack
+
+- **Frontend:** Vanilla HTML/CSS/JS (no framework, single-page tab layout)
+- **Backend:** Node.js + Express
+- **Auth:** bcrypt password hashing, httpOnly session cookies, rate-limited login/register
+- **Database:** PostgreSQL, hosted on Supabase (free tier, persists across deploys)
+
+## Running locally
+
+Requires Node.js 18+ and a Supabase project (see below).
 
 ```bash
 npm install
 cp .env.example .env
-# открой .env и замени SESSION_SECRET на любую случайную строку
+# open .env and fill in SESSION_SECRET and DATABASE_URL
 npm start
 ```
 
-Сайт будет доступен на http://localhost:3000
+The site will be available at http://localhost:3000. On first start, the
+server automatically creates the required tables in your database.
 
-## Как устроена регистрация
+## Setting up the database (Supabase)
 
-- `POST /api/register` — { username, password } → создаёт пользователя,
-  пароль хешируется через bcrypt (в базе пароль в открытом виде не хранится)
-- `POST /api/login` — { username, password } → проверяет пароль, выдаёт сессию
-- `POST /api/logout` — завершает сессию
-- `GET /api/me` — возвращает текущего пользователя по cookie-сессии
+1. Create a free project at [supabase.com](https://supabase.com)
+2. Go to **Connect** (top of the project dashboard) → **Session pooler** →
+   copy the connection string (URI)
+3. Replace `[YOUR-PASSWORD]` in that string with your database password
+4. Put the full string into `DATABASE_URL` — locally in `.env`, and on
+   Render as an Environment Variable (never commit it to Git)
 
-Сессия хранится в httpOnly-cookie — из JS её нельзя прочитать напрямую,
-это защищает от кражи сессии через XSS.
+Tables (`users`, `challenges`) are created automatically on first server
+start — no manual SQL needed.
 
-Ограничение: 20 попыток входа/регистрации за 15 минут с одного IP
-(защита от перебора паролей).
+## How authentication works
 
-## ⚠️ Важно про хранение данных на Render (бесплатный тариф)
+- `POST /api/register` — { username, password } → creates a user; the
+  password is hashed with bcrypt and never stored in plain text
+- `POST /api/login` — { username, password } → verifies credentials, starts a session
+- `POST /api/logout` — ends the session
+- `GET /api/me` — returns the currently logged-in user based on the session cookie
 
-Пользователи хранятся в файле `data.json` на диске сервера (простое
-JSON-хранилище — выбрано специально, чтобы не требовать компиляции
-нативных модулей при установке). На бесплатном плане Render диск
-**не гарантированно переживает** передеплой или перезапуск инстанса —
-это значит, что список зарегистрированных пользователей может
-обнулиться.
+Sessions are stored in an httpOnly cookie, which JavaScript cannot read
+directly — this protects against session theft via XSS.
 
-Варианты:
-1. **Оставить как есть** — нормально для тестов и бета-теста, но
-   предупреди пользователей, что аккаунты иногда могут слетать.
-2. **Перейти на Render PostgreSQL (free)** — переживает рестарты сервиса,
-   но сама база **удаляется через 30 дней** на бесплатном тарифе.
-3. **Взять внешнюю бесплатную БД** (например, Supabase Postgres — есть
-   постоянный бесплатный тариф) — самый надёжный вариант, если нужно,
-   чтобы аккаунты не пропадали. Могу помочь переехать на неё позже.
+Rate limit: 20 login/register attempts per 15 minutes per IP (brute-force protection).
 
-## Деплой на Render
+## Deploying to Render
 
-1. Залей эту папку (`cs2-server/`) в отдельный GitHub-репозиторий
-   (или в подпапку существующего — тогда в настройках Render укажи
-   Root Directory).
-2. На render.com → New → Web Service → подключи репозиторий.
-3. Настройки:
+1. Push this folder (`cs2-server/`) to a GitHub repository (or a
+   subfolder of an existing one — in that case set Root Directory in
+   Render's settings).
+2. On render.com → New → Web Service → connect the repository.
+3. Settings:
    - **Build Command:** `npm install`
    - **Start Command:** `npm start`
    - **Environment → Add Variable:**
-     - `SESSION_SECRET` = длинная случайная строка
+     - `SESSION_SECRET` = a long random string
      - `NODE_ENV` = `production`
-4. Deploy. Render сам определит порт через переменную `PORT`.
+     - `DATABASE_URL` = your Supabase connection string (Session pooler)
+4. Deploy. Render assigns the port automatically via the `PORT` env variable.
 
-После деплоя сайт будет на `https://твой-сервис.onrender.com`, и там же
-будет работать вкладка «Аккаунт» с настоящей регистрацией.
+Because data now lives in Supabase (not on Render's disk), redeploying
+the service no longer wipes user accounts or published challenges.
+
+## Contact / Contributing
+
+This is a solo hobby project currently in open beta. If you'd like to help
+with development, report a bug, or suggest a feature, message **egorfleisky** on Discord.
