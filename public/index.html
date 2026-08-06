@@ -6,8 +6,6 @@
 
 <title>CS2 Achievement Hub</title>
 
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
-
 <style>
 
 *{
@@ -929,25 +927,9 @@ h1{
 
         </button>
             
-            <h2 id="profile-name" style="color:#de9b35;margin-bottom:10px;display:inline-block;">
+            <h2 id="profile-name" style="color:#de9b35;margin-bottom:10px;">
                 Гость
             </h2>
-
-            <span id="profile-owner-badge" style="
-                display:none;
-                margin-left:8px;
-                background:#de9b35;
-                color:#111822;
-                font-size:11px;
-                font-weight:bold;
-                letter-spacing:0.5px;
-                text-transform:uppercase;
-                padding:3px 9px;
-                border-radius:4px;
-                vertical-align:middle;
-            ">👑 Владелец</span>
-
-            <br>
 
             <button id="change-name" class="save-btn" style="margin:20px auto 30px;width:220px;">
                 ✏️ Изменить ник
@@ -1064,21 +1046,7 @@ h1{
             <div id="auth-user" style="display:none;text-align:center;">
 
                 <p style="color:#8fa0b5;margin-bottom:8px;">Вы вошли как</p>
-                <h2 style="color:#de9b35;margin-bottom:8px;" id="auth-username-display"></h2>
-
-                <span id="auth-owner-badge" style="
-                    display:none;
-                    margin-bottom:17px;
-                    background:#de9b35;
-                    color:#111822;
-                    font-size:11px;
-                    font-weight:bold;
-                    letter-spacing:0.5px;
-                    text-transform:uppercase;
-                    padding:3px 9px;
-                    border-radius:4px;
-                ">👑 Владелец</span>
-                <br>
+                <h2 style="color:#de9b35;margin-bottom:25px;" id="auth-username-display"></h2>
 
                 <button class="save-btn" style="background:#3a4b5f;" onclick="logout()">Выйти</button>
 
@@ -1273,9 +1241,6 @@ function renderCard(item){
     const author=document.createElement("p");
     author.style.cssText="color:#5b7390;font-size:11px;margin-top:6px;";
     author.textContent="Автор: "+(item.authorUsername||"неизвестен");
-    if(item.authorIsOwner){
-        author.append(" 👑");
-    }
 
     info.append(title,desc,author);
 
@@ -1462,7 +1427,6 @@ document.getElementById("btn-publish").onclick=async function(){
 // ==========================
 
 let currentUser=null;
-let isOwnerAccount=false;
 
 let profile = JSON.parse(localStorage.getItem("profile"));
 
@@ -1677,7 +1641,7 @@ async function submitAuth(){
             return;
         }
 
-        onAuthSuccess(data.username,data.isOwner);
+        onAuthSuccess(data.username);
 
     }catch(e){
 
@@ -1699,10 +1663,8 @@ async function logout(){
 
     profile.name="Гость";
     currentUser=null;
-    isOwnerAccount=false;
     saveProfile();
     updateProfile();
-    renderOwnerBadges();
 
     // Перезагружаем ленту — лайки/выполнено теперь должны показываться
     // как у гостя (без личных отметок).
@@ -1710,7 +1672,7 @@ async function logout(){
 
 }
 
-function onAuthSuccess(username,isOwner){
+function onAuthSuccess(username){
 
     document.getElementById("auth-guest").style.display="none";
     document.getElementById("auth-user").style.display="block";
@@ -1719,25 +1681,12 @@ function onAuthSuccess(username,isOwner){
     // Имя в профиле теперь берётся из аккаунта, а не из ручного "FL"
     profile.name=username;
     currentUser=username;
-    isOwnerAccount=!!isOwner;
     saveProfile();
     updateProfile();
-
-    renderOwnerBadges();
 
     // Перезагружаем ленту — подтягиваем личные лайки/статусы выполнения
     // и пересчитываем статистику под этот аккаунт.
     loadChallenges();
-
-}
-
-function renderOwnerBadges(){
-
-    const authBadge=document.getElementById("auth-owner-badge");
-    const profileBadge=document.getElementById("profile-owner-badge");
-
-    if(authBadge) authBadge.style.display=isOwnerAccount?"inline-block":"none";
-    if(profileBadge) profileBadge.style.display=isOwnerAccount?"inline-block":"none";
 
 }
 
@@ -1749,7 +1698,7 @@ async function checkAuth(){
 
         if(res.ok){
             const data=await res.json();
-            onAuthSuccess(data.username,data.isOwner);
+            onAuthSuccess(data.username);
         }
 
     }catch(e){
