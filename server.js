@@ -7,6 +7,8 @@ const cookieParser = require("cookie-parser");
 
 const authRoutes = require("./routes/auth");
 const challengeRoutes = require("./routes/challenges");
+const newsRoutes = require("./routes/news");
+const adminRoutes = require("./routes/admin");
 const { initDb } = require("./db");
 
 const app = express();
@@ -37,6 +39,8 @@ app.use(
 
 app.use("/api", authRoutes);
 app.use("/api", challengeRoutes);
+app.use("/api", newsRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Отдаём фронтенд как статику
 app.use(express.static(path.join(__dirname, "public")));

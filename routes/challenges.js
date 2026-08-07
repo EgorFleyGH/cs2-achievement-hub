@@ -1,7 +1,7 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const {
-  getAllChallenges,
+  getApprovedChallenges,
   createChallenge,
   likeChallenge,
   toggleChallengeDone
@@ -44,12 +44,12 @@ function serializeChallenge(challenge, userId) {
 }
 
 // =========================
-// Список всех квестов (публично, логин не нужен)
+// Список одобренных квестов (публично, логин не нужен)
 // =========================
 router.get("/challenges", async (req, res) => {
   try {
     const userId = req.session.userId || null;
-    const challenges = await getAllChallenges();
+    const challenges = await getApprovedChallenges();
     res.json(challenges.map((c) => serializeChallenge(c, userId)));
   } catch (e) {
     console.error("Ошибка загрузки квестов:", e);
@@ -58,7 +58,7 @@ router.get("/challenges", async (req, res) => {
 });
 
 // =========================
-// Публикация нового квеста
+// Публикация нового квеста (уходит на модерацию)
 // =========================
 router.post("/challenges", requireAuth, publishLimiter, async (req, res) => {
   const { icon, title, desc, rarity } = req.body || {};
@@ -81,7 +81,11 @@ router.post("/challenges", requireAuth, publishLimiter, async (req, res) => {
       rarity
     });
 
-    res.status(201).json(serializeChallenge(challenge, req.session.userId));
+    // Квест ещё не виден в общей ленте — только после одобрения владельцем.
+    res.status(201).json({
+      ...serializeChallenge(challenge, req.session.userId),
+      pending: true
+    });
   } catch (e) {
     console.error("Ошибка публикации квеста:", e);
     res.status(500).json({ error: "Не удалось опубликовать испытание" });

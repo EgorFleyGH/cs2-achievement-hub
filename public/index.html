@@ -655,43 +655,110 @@ h1{
 </head>
 
 <body>
+
+<!-- Переключатель языка — всегда виден, фиксирован в углу экрана -->
+<div id="lang-switcher" style="
+    position:fixed;
+    top:14px;
+    right:14px;
+    z-index:2000;
+    display:flex;
+    gap:4px;
+    background:#111822;
+    border:1px solid #253344;
+    border-radius:6px;
+    padding:4px;
+">
+    <button id="lang-btn-ru" onclick="setLang('ru')" style="
+        border:none;
+        background:transparent;
+        color:#8fa0b5;
+        padding:5px 10px;
+        border-radius:4px;
+        cursor:pointer;
+        font-size:13px;
+        font-weight:bold;
+    ">RU</button>
+    <button id="lang-btn-en" onclick="setLang('en')" style="
+        border:none;
+        background:transparent;
+        color:#8fa0b5;
+        padding:5px 10px;
+        border-radius:4px;
+        cursor:pointer;
+        font-size:13px;
+        font-weight:bold;
+    ">EN</button>
+</div>
+
+<!-- Модалка выбора языка при первом заходе -->
+<div id="lang-modal" style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(5,8,12,0.85);
+    z-index:3000;
+    align-items:center;
+    justify-content:center;
+">
+    <div style="
+        background:#111822;
+        border:1px solid #253344;
+        border-radius:10px;
+        padding:35px;
+        text-align:center;
+        max-width:340px;
+    ">
+        <p style="color:#e6edf5;font-size:18px;margin-bottom:20px;">
+            Выберите язык / Choose language
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;">
+            <button onclick="setLang('ru');closeLangModal();" class="save-btn" style="width:120px;margin:0;">Русский</button>
+            <button onclick="setLang('en');closeLangModal();" class="save-btn" style="width:120px;margin:0;background:#3a4b5f;">English</button>
+        </div>
+    </div>
+</div>
 <header>
 
     <div class="nav-left-box">
 
         <div class="nav-logo">
             <span class="game">Counter-Strike 2</span>
-            <span class="site">Доска испытаний</span>
+            <span class="site" data-i18n="siteName">Доска испытаний</span>
         </div>
 
         <nav>
 
             <button class="nav-tab active"
-                    onclick="switchTab('scr-welcome',this)">
+                    onclick="switchTab('scr-welcome',this)" data-i18n="navHome">
                 Главная
             </button>
 
             <button class="nav-tab"
                     id="tab-editor"
-                    onclick="switchTab('scr-editor',this)">
+                    onclick="switchTab('scr-editor',this)" data-i18n="navAdd">
                 Добавить квест
             </button>
 
             <button class="nav-tab"
-                    onclick="switchTab('scr-gallery',this)">
+                    onclick="switchTab('scr-gallery',this)" data-i18n="navGallery">
                 Все испытания
             </button>
             
-            <button class="nav-tab" onclick="switchTab('scr-profile', this)">
+            <button class="nav-tab" onclick="switchTab('scr-profile', this)" data-i18n="navProfile">
                 Профиль
             </button>
 
-            <button id="tab-auth" class="nav-tab" onclick="switchTab('scr-auth', this)">
+            <button id="tab-auth" class="nav-tab" onclick="switchTab('scr-auth', this)" data-i18n="navAccount">
                 Аккаунт
             </button>
 
+            <button id="tab-admin" class="nav-tab" style="display:none;" onclick="switchTab('scr-admin', this)">
+                👑 Админ
+            </button>
+
             <button class="nav-tab"
-                    onclick="switchTab('scr-support',this)">
+                    onclick="switchTab('scr-support',this)" data-i18n="navSupport">
                 Поддержка
             </button>
 
@@ -701,7 +768,7 @@ h1{
 
     <a class="donate-btn"
        href="https://www.donationalerts.com/r/egorfley"
-       target="_blank">
+       target="_blank" data-i18n="donateBtn">
 
         💰 Поддержать автора
 
@@ -723,10 +790,10 @@ h1{
                 Counter-Strike 2
             </div>
 
-            <h1>Награды общины</h1>
+            <h1 data-i18n="heroTitle">Награды общины</h1>
 
             <button class="cs-btn"
-                    onclick="document.getElementById('tab-editor').click()">
+                    onclick="document.getElementById('tab-editor').click()" data-i18n="heroBtn">
 
                 Придумать квест
 
@@ -734,56 +801,7 @@ h1{
 
         </div>
 
-        <div class="menu-right">
-
-            <div class="news-item" style="border-color:#de9b35;position:relative;">
-
-                <span style="
-                    position:absolute;
-                    top:-10px;
-                    right:14px;
-                    background:#de9b35;
-                    color:#111822;
-                    font-size:10px;
-                    font-weight:bold;
-                    letter-spacing:1px;
-                    text-transform:uppercase;
-                    padding:3px 10px;
-                    border-radius:4px;
-                ">Beta</span>
-
-                <h3>🚀 Открытый бета-тест!</h3>
-
-                <p>
-                    Сайт запущен в открытом бета-тестировании.
-                    Часть функций может работать нестабильно —
-                    если найдёте баг или есть идея, пишите через
-                    раздел «Поддержка».
-                </p>
-
-            </div>
-
-            <div class="news-item">
-
-                <h3>Интерактивная лента</h3>
-
-                <p>
-                    Создавайте испытания для матчей CS2,
-                    публикуйте их и оценивайте работы других игроков.
-                </p>
-
-            </div>
-
-            <div class="news-item">
-
-                <h3>Система отметок</h3>
-
-                <p>
-                    Выполняйте задания в игре
-                    и отмечайте их кнопкой «Выполнено».
-                </p>
-
-            </div>
+        <div class="menu-right" id="news-feed">
 
         </div>
 
@@ -799,7 +817,7 @@ h1{
 
         <div class="panel">
 
-            <label>Название квеста</label>
+            <label data-i18n="editorTitleLabel">Название квеста</label>
 
             <input
                 id="in-title"
@@ -807,28 +825,28 @@ h1{
                 maxlength="35"
                 value="Эйс на пистолетке">
 
-            <label>Описание</label>
+            <label data-i18n="editorDescLabel">Описание</label>
 
             <textarea
                 id="in-desc"
                 rows="4"
                 maxlength="140">Убейте всех пятерых противников из пистолета в первом раунде.</textarea>
 
-            <label>Редкость</label>
+            <label data-i18n="editorRarityLabel">Редкость</label>
 
             <select id="in-rarity">
 
-                <option value="rarity-common">
+                <option value="rarity-common" data-i18n="rarityCommon">
                     Обычное
                 </option>
 
-                <option value="rarity-gold">
+                <option value="rarity-gold" data-i18n="rarityGold">
                     Золотое
                 </option>
 
             </select>
 
-            <label>Иконка</label>
+            <label data-i18n="editorIconLabel">Иконка</label>
 
             <input
                 id="in-icon"
@@ -837,7 +855,7 @@ h1{
 
             <button
                 id="btn-publish"
-                class="save-btn">
+                class="save-btn" data-i18n="editorPublishBtn">
 
                 Опубликовать
 
@@ -878,9 +896,9 @@ h1{
 
         <div class="gallery-header">
 
-            <h2>Список испытаний</h2>
+            <h2 data-i18n="galleryTitle">Список испытаний</h2>
 
-            <p>
+            <p data-i18n="gallerySubtitle">
                 Выполняйте задания и отмечайте прогресс
             </p>
 
@@ -923,7 +941,7 @@ h1{
         <button
         id="change-avatar"
         class="save-btn"
-        style="width:220px;margin:15px auto;display:block;">
+        style="width:220px;margin:15px auto;display:block;" data-i18n="profileChangeAvatar">
 
         📷 Изменить аватар
 
@@ -945,13 +963,13 @@ h1{
                 padding:3px 9px;
                 border-radius:4px;
                 vertical-align:middle;
-            ">👑 Владелец</span>
+            ">👑 <span data-i18n="ownerBadge">Владелец</span></span>
 
             <br>
 
-            <button id="change-name" class="save-btn" style="margin:20px auto 30px;width:220px;">
+            <button id="change-name" class="save-btn" style="margin:20px auto 30px;width:220px;" data-i18n="profileChangeName">
                 ✏️ Изменить ник
-            </button>            <p style="color:#8fa0b5;margin-bottom:35px;">
+            </button>            <p style="color:#8fa0b5;margin-bottom:35px;" data-i18n="profileTagline">
                 Игрок сообщества CS2 Challenges
             </p>
 
@@ -959,31 +977,31 @@ h1{
 
                 <div style="width:100%;text-align:left;">
 
-                    <p><b>🏆 Создано испытаний:</b>
+                    <p><b data-i18n="profileStatCreated">🏆 Создано испытаний:</b>
                         <span id="profile-created">0</span>
                     </p>
 
                     <br>
 
-                    <p><b>❤️ Получено лайков:</b>
+                    <p><b data-i18n="profileStatLikes">❤️ Получено лайков:</b>
                         <span id="profile-likes">0</span>
                     </p>
 
                     <br>
 
-                    <p><b>✅ Выполнено испытаний:</b>
+                    <p><b data-i18n="profileStatCompleted">✅ Выполнено испытаний:</b>
                         <span id="profile-completed">0</span>
                     </p>
 
                     <br>
 
-                    <p><b>⭐ Ранг:</b>
+                    <p><b data-i18n="profileStatRank">⭐ Ранг:</b>
                         <span id="profile-rank">Новичок</span>
                     </p>
 
                     <br>
 
-                    <p><b>📅 Регистрация:</b>
+                    <p><b data-i18n="profileStatDate">📅 Регистрация:</b>
                         <span id="profile-date"></span>
                     </p>
 
@@ -999,7 +1017,7 @@ h1{
 
                 <div>
 
-                    <p class="ach-title">
+                    <p class="ach-title" data-i18n="profileBestQuestLabel">
                         Лучший квест
                     </p>
 
@@ -1033,10 +1051,10 @@ h1{
                 <div style="display:flex;gap:10px;margin-bottom:20px;">
                     <button id="auth-tab-login" class="nav-tab active"
                         style="flex:1;border-bottom:2px solid #de9b35;"
-                        onclick="setAuthMode('login')">Вход</button>
+                        onclick="setAuthMode('login')" data-i18n="authTabLogin">Вход</button>
                     <button id="auth-tab-register" class="nav-tab"
                         style="flex:1;"
-                        onclick="setAuthMode('register')">Регистрация</button>
+                        onclick="setAuthMode('register')" data-i18n="authTabRegister">Регистрация</button>
                 </div>
 
                 <div id="auth-error" style="
@@ -1050,20 +1068,20 @@ h1{
                     font-size:13px;
                 "></div>
 
-                <label>Ник</label>
-                <input id="auth-username" type="text" placeholder="3-20 символов, латиница/цифры/_" maxlength="20">
+                <label data-i18n="authUsernameLabel">Ник</label>
+                <input id="auth-username" type="text" data-i18n-placeholder="authUsernamePlaceholder" placeholder="3-20 символов, латиница/цифры/_" maxlength="20">
 
-                <label>Пароль</label>
-                <input id="auth-password" type="password" placeholder="Минимум 6 символов">
+                <label data-i18n="authPasswordLabel">Пароль</label>
+                <input id="auth-password" type="password" data-i18n-placeholder="authPasswordPlaceholder" placeholder="Минимум 6 символов">
 
-                <button id="auth-submit" class="save-btn" onclick="submitAuth()">Войти</button>
+                <button id="auth-submit" class="save-btn" onclick="submitAuth()" data-i18n="authLoginBtn">Войти</button>
 
             </div>
 
             <!-- Состояние: авторизован -->
             <div id="auth-user" style="display:none;text-align:center;">
 
-                <p style="color:#8fa0b5;margin-bottom:8px;">Вы вошли как</p>
+                <p style="color:#8fa0b5;margin-bottom:8px;" data-i18n="authLoggedInAs">Вы вошли как</p>
                 <h2 style="color:#de9b35;margin-bottom:8px;" id="auth-username-display"></h2>
 
                 <span id="auth-owner-badge" style="
@@ -1077,12 +1095,113 @@ h1{
                     text-transform:uppercase;
                     padding:3px 9px;
                     border-radius:4px;
-                ">👑 Владелец</span>
+                ">👑 <span data-i18n="ownerBadge">Владелец</span></span>
                 <br>
 
-                <button class="save-btn" style="background:#3a4b5f;" onclick="logout()">Выйти</button>
+                <button class="save-btn" style="background:#3a4b5f;" onclick="logout()" data-i18n="authLogoutBtn">Выйти</button>
 
             </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================== -->
+<!-- АДМИН-ПАНЕЛЬ (только для владельца) -->
+<!-- ===================================== -->
+
+<div id="scr-admin" class="screen">
+
+    <div style="max-width:900px;margin:30px auto;">
+
+        <div style="display:flex;gap:10px;margin-bottom:25px;flex-wrap:wrap;">
+            <button id="admin-tab-news" class="nav-tab active" onclick="setAdminMode('news')">Новости</button>
+            <button id="admin-tab-mod" class="nav-tab" onclick="setAdminMode('mod')">Модерация квестов</button>
+            <button id="admin-tab-users" class="nav-tab" onclick="setAdminMode('users')">Пользователи</button>
+            <button id="admin-tab-stats" class="nav-tab" onclick="setAdminMode('stats')">Статистика</button>
+        </div>
+
+        <!-- ==== НОВОСТИ ==== -->
+        <div id="admin-panel-news" class="panel" style="width:100%;">
+
+            <h3 style="color:#de9b35;margin-bottom:15px;">Добавить новость</h3>
+
+            <label>Заголовок (RU)</label>
+            <input id="admin-news-title" type="text" maxlength="80" placeholder="Заголовок новости">
+
+            <label>Текст (RU)</label>
+            <textarea id="admin-news-body" maxlength="500" placeholder="Текст новости" style="
+                width:100%;
+                min-height:80px;
+                background:#0d1520;
+                border:1px solid #253344;
+                border-radius:5px;
+                color:#e6edf5;
+                padding:10px;
+                font-family:inherit;
+                resize:vertical;
+                margin-bottom:15px;
+            "></textarea>
+
+            <label>Заголовок (EN) — необязательно</label>
+            <input id="admin-news-title-en" type="text" maxlength="80" placeholder="News title in English">
+
+            <label>Текст (EN) — необязательно</label>
+            <textarea id="admin-news-body-en" maxlength="500" placeholder="News text in English" style="
+                width:100%;
+                min-height:80px;
+                background:#0d1520;
+                border:1px solid #253344;
+                border-radius:5px;
+                color:#e6edf5;
+                padding:10px;
+                font-family:inherit;
+                resize:vertical;
+                margin-bottom:10px;
+            "></textarea>
+
+            <p style="color:#8fa0b5;font-size:12px;line-height:1.6;margin-bottom:15px;">
+                Если не знаете английский/русский — воспользуйтесь переводчиком
+                (например, Google Translate или DeepL), или оставьте английские
+                поля пустыми и попросите кого-то из модераторов сделать перевод
+                позже через кнопку «Редактировать». Пока перевода нет,
+                англоязычным пользователям будет показан русский текст с пометкой.
+            </p>
+
+            <button class="save-btn" onclick="submitNews()">Опубликовать новость</button>
+
+            <h3 style="color:#de9b35;margin:30px 0 15px;">Существующие новости</h3>
+
+            <div id="admin-news-list"></div>
+
+        </div>
+
+        <!-- ==== МОДЕРАЦИЯ ==== -->
+        <div id="admin-panel-mod" class="panel" style="width:100%;display:none;">
+
+            <h3 style="color:#de9b35;margin-bottom:15px;">Квесты на модерации</h3>
+
+            <div id="admin-mod-list"></div>
+
+        </div>
+
+        <!-- ==== ПОЛЬЗОВАТЕЛИ ==== -->
+        <div id="admin-panel-users" class="panel" style="width:100%;display:none;">
+
+            <h3 style="color:#de9b35;margin-bottom:15px;">Пользователи</h3>
+
+            <div id="admin-users-list"></div>
+
+        </div>
+
+        <!-- ==== СТАТИСТИКА ==== -->
+        <div id="admin-panel-stats" class="panel" style="width:100%;display:none;">
+
+            <h3 style="color:#de9b35;margin-bottom:15px;">Статистика сайта</h3>
+
+            <div id="admin-stats-list" style="color:#8fa0b5;line-height:2;"></div>
 
         </div>
 
@@ -1124,7 +1243,7 @@ h1{
                 style="
                 color:#de9b35;
                 margin-bottom:20px;
-                ">
+                " data-i18n="supportTitle">
 
                 Техническая поддержка
 
@@ -1135,7 +1254,7 @@ h1{
                 color:#9daec2;
                 line-height:1.8;
                 margin-bottom:25px;
-                ">
+                " data-i18n="supportBody">
 
                 Нашли ошибку?<br>
                 Есть предложение?<br>
@@ -1162,7 +1281,7 @@ h1{
                 style="
                 color:#8fa0b5;
                 margin-top:25px;
-                ">
+                " data-i18n="supportReplyTime">
 
                 Обычно отвечаем
                 в течение 24–48 часов.
@@ -1175,6 +1294,210 @@ h1{
 
 </div>
 <script>
+
+// =========================
+// Локализация (RU / EN)
+// =========================
+
+const I18N={
+
+    ru:{
+        siteName:"Доска испытаний",
+        navHome:"Главная",
+        navAdd:"Добавить квест",
+        navGallery:"Все испытания",
+        navProfile:"Профиль",
+        navAccount:"Аккаунт",
+        navSupport:"Поддержка",
+        donateBtn:"💰 Поддержать автора",
+        heroTitle:"Награды общины",
+        heroBtn:"Придумать квест",
+        editorTitleLabel:"Название квеста",
+        editorDescLabel:"Описание",
+        editorRarityLabel:"Редкость",
+        rarityCommon:"Обычное",
+        rarityGold:"Золотое",
+        editorIconLabel:"Иконка",
+        editorPublishBtn:"Опубликовать",
+        galleryTitle:"Список испытаний",
+        gallerySubtitle:"Выполняйте задания и отмечайте прогресс",
+        galleryEmpty:"Пока нет испытаний — стань первым, кто опубликует своё!",
+        cardAuthor:"Автор: ",
+        cardAuthorUnknown:"неизвестен",
+        cardLike:"❤️ ",
+        cardDoBtn:"Выполнить",
+        cardDoneBtn:"Выполнено ✓",
+        cardDeleteTitle:"Удалить квест",
+        profileChangeAvatar:"📷 Изменить аватар",
+        ownerBadge:"Владелец",
+        profileChangeName:"✏️ Изменить ник",
+        profileTagline:"Игрок сообщества CS2 Challenges",
+        profileStatCreated:"🏆 Создано испытаний:",
+        profileStatLikes:"❤️ Получено лайков:",
+        profileStatCompleted:"✅ Выполнено испытаний:",
+        profileStatRank:"⭐ Ранг:",
+        profileStatDate:"📅 Регистрация:",
+        profileBestQuestLabel:"Лучший квест",
+        profileBestQuestEmpty:"Пока нет созданных испытаний.",
+        profileNoStatsGuest:"Войдите в аккаунт, чтобы видеть статистику.",
+        rankNovice:"Новичок",
+        rankExperienced:"Опытный",
+        rankVeteran:"Ветеран",
+        rankLegend:"Легенда",
+        authTabLogin:"Вход",
+        authTabRegister:"Регистрация",
+        authUsernameLabel:"Ник",
+        authUsernamePlaceholder:"3-20 символов, латиница/цифры/_",
+        authPasswordLabel:"Пароль",
+        authPasswordPlaceholder:"Минимум 6 символов",
+        authLoginBtn:"Войти",
+        authRegisterBtn:"Зарегистрироваться",
+        authLoggedInAs:"Вы вошли как",
+        authLogoutBtn:"Выйти",
+        authGoToLoginNeeded:"Чтобы ставить лайки, нужно войти в аккаунт",
+        authGoToLoginNeededDone:"Чтобы отмечать выполнение, нужно войти в аккаунт",
+        authGoToLoginNeededPublish:"Чтобы публиковать испытания, нужно войти в аккаунт",
+        supportTitle:"Техническая поддержка",
+        supportBody:"Нашли ошибку?<br>Есть предложение?<br>Или хотите сообщить о проблеме?",
+        supportReplyTime:"Обычно отвечаем в течение 24–48 часов.",
+        publishedAlert:"Испытание отправлено на модерацию! Оно появится в ленте после проверки владельцем сайта.",
+        serverErrorAlert:"Не удалось связаться с сервером",
+        newsEmpty:"Пока нет новостей.",
+        newsError:"Не удалось загрузить новости.",
+        guestName:"Гость"
+    },
+
+    en:{
+        siteName:"Challenge Board",
+        navHome:"Home",
+        navAdd:"Add Quest",
+        navGallery:"All Challenges",
+        navProfile:"Profile",
+        navAccount:"Account",
+        navSupport:"Support",
+        donateBtn:"💰 Support the author",
+        heroTitle:"Community Rewards",
+        heroBtn:"Create a quest",
+        editorTitleLabel:"Quest title",
+        editorDescLabel:"Description",
+        editorRarityLabel:"Rarity",
+        rarityCommon:"Common",
+        rarityGold:"Gold",
+        editorIconLabel:"Icon",
+        editorPublishBtn:"Publish",
+        galleryTitle:"Challenge list",
+        gallerySubtitle:"Complete tasks and track your progress",
+        galleryEmpty:"No challenges yet — be the first to publish one!",
+        cardAuthor:"Author: ",
+        cardAuthorUnknown:"unknown",
+        cardLike:"❤️ ",
+        cardDoBtn:"Complete",
+        cardDoneBtn:"Completed ✓",
+        cardDeleteTitle:"Delete quest",
+        profileChangeAvatar:"📷 Change avatar",
+        ownerBadge:"Owner",
+        profileChangeName:"✏️ Change nickname",
+        profileTagline:"CS2 Challenges community player",
+        profileStatCreated:"🏆 Challenges created:",
+        profileStatLikes:"❤️ Likes received:",
+        profileStatCompleted:"✅ Challenges completed:",
+        profileStatRank:"⭐ Rank:",
+        profileStatDate:"📅 Registered:",
+        profileBestQuestLabel:"Best quest",
+        profileBestQuestEmpty:"No challenges created yet.",
+        profileNoStatsGuest:"Log in to see your stats.",
+        rankNovice:"Novice",
+        rankExperienced:"Experienced",
+        rankVeteran:"Veteran",
+        rankLegend:"Legend",
+        authTabLogin:"Log in",
+        authTabRegister:"Sign up",
+        authUsernameLabel:"Username",
+        authUsernamePlaceholder:"3-20 characters, latin letters/digits/_",
+        authPasswordLabel:"Password",
+        authPasswordPlaceholder:"At least 6 characters",
+        authLoginBtn:"Log in",
+        authRegisterBtn:"Sign up",
+        authLoggedInAs:"Logged in as",
+        authLogoutBtn:"Log out",
+        authGoToLoginNeeded:"You need to log in to like challenges",
+        authGoToLoginNeededDone:"You need to log in to mark completion",
+        authGoToLoginNeededPublish:"You need to log in to publish challenges",
+        supportTitle:"Technical support",
+        supportBody:"Found a bug?<br>Have a suggestion?<br>Or want to report an issue?",
+        supportReplyTime:"We usually reply within 24–48 hours.",
+        publishedAlert:"Your challenge was sent for moderation! It will appear in the feed once approved by the site owner.",
+        serverErrorAlert:"Could not reach the server",
+        newsEmpty:"No news yet.",
+        newsError:"Failed to load news.",
+        guestName:"Guest"
+    }
+
+};
+
+let currentLang=localStorage.getItem("lang");
+
+function t(key){
+
+    const dict=I18N[currentLang]||I18N.ru;
+    return dict[key]!==undefined?dict[key]:(I18N.ru[key]||key);
+
+}
+
+function applyLanguage(){
+
+    document.querySelectorAll("[data-i18n]").forEach(el=>{
+
+        const key=el.getAttribute("data-i18n");
+        el.textContent=t(key);
+
+    });
+
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(el=>{
+
+        const key=el.getAttribute("data-i18n-placeholder");
+        el.setAttribute("placeholder",t(key));
+
+    });
+
+    document.getElementById("lang-btn-ru").style.background=(currentLang==="ru")?"#de9b35":"transparent";
+    document.getElementById("lang-btn-ru").style.color=(currentLang==="ru")?"#111822":"#8fa0b5";
+    document.getElementById("lang-btn-en").style.background=(currentLang==="en")?"#de9b35":"transparent";
+    document.getElementById("lang-btn-en").style.color=(currentLang==="en")?"#111822":"#8fa0b5";
+
+    // Кнопка "Войти"/"Зарегистрироваться" на вкладке Аккаунт зависит от режима —
+    // applyLanguage только меняет статичный текст, а setAuthMode переустановит
+    // правильный текст с учётом текущего режима после смены языка.
+    if(typeof authMode!=="undefined") setAuthMode(authMode);
+
+}
+
+function setLang(lang){
+
+    currentLang=lang;
+    localStorage.setItem("lang",lang);
+    applyLanguage();
+
+    // Обновляем контент, который приходит с сервера и зависит от языка.
+    if(typeof loadNews==="function") loadNews();
+    if(typeof loadChallenges==="function") loadChallenges();
+
+}
+
+function closeLangModal(){
+
+    document.getElementById("lang-modal").style.display="none";
+
+}
+
+if(!currentLang){
+
+    currentLang="ru";
+    document.getElementById("lang-modal").style.display="flex";
+
+}
+
+applyLanguage();
 
 // =========================
 // Переключение вкладок
@@ -1272,7 +1595,7 @@ function renderCard(item){
 
     const author=document.createElement("p");
     author.style.cssText="color:#5b7390;font-size:11px;margin-top:6px;";
-    author.textContent="Автор: "+(item.authorUsername||"неизвестен");
+    author.textContent=t("cardAuthor")+(item.authorUsername||t("cardAuthorUnknown"));
     if(item.authorIsOwner){
         author.append(" 👑");
     }
@@ -1287,15 +1610,27 @@ function renderCard(item){
     likeBtn.onclick=()=>like(item.id);
     const likeSpan=document.createElement("span");
     likeSpan.textContent=item.likes;
-    likeBtn.append("❤️ ",likeSpan);
+    likeBtn.append(t("cardLike"),likeSpan);
     if(item.liked) likeBtn.style.color="#ff5555";
 
     const checkBtn=document.createElement("button");
     checkBtn.className="check-btn"+(item.done?" done":"");
-    checkBtn.textContent=item.done?"Выполнено ✓":"Выполнить";
+    checkBtn.textContent=item.done?t("cardDoneBtn"):t("cardDoBtn");
     checkBtn.onclick=()=>toggleDone(item.id);
 
     actions.append(likeBtn,checkBtn);
+
+    if(isOwnerAccount){
+
+        const delBtn=document.createElement("button");
+        delBtn.className="like-btn";
+        delBtn.title=t("cardDeleteTitle");
+        delBtn.textContent="🗑️";
+        delBtn.onclick=()=>deleteChallengeAsOwner(item.id);
+        actions.append(delBtn);
+
+    }
+
     card.append(iconBox,info,actions);
 
     return card;
@@ -1310,7 +1645,7 @@ function renderGallery(){
 
         const empty=document.createElement("p");
         empty.style.cssText="color:#5b7390;text-align:center;padding:20px;";
-        empty.textContent="Пока нет испытаний — стань первым, кто опубликует своё!";
+        empty.textContent=t("galleryEmpty");
         feed.appendChild(empty);
         return;
 
@@ -1344,6 +1679,73 @@ async function loadChallenges(){
 
 loadChallenges();
 
+// =========================
+// Новости на главной (грузятся с сервера)
+// =========================
+
+async function loadNews(){
+
+    const container=document.getElementById("news-feed");
+
+    try{
+
+        const res=await fetch("/api/news?lang="+currentLang);
+        const news=await res.json();
+
+        container.innerHTML="";
+
+        if(news.length===0){
+
+            const empty=document.createElement("p");
+            empty.style.cssText="color:#5b7390;";
+            empty.textContent=t("newsEmpty");
+            container.appendChild(empty);
+            return;
+
+        }
+
+        news.forEach(item=>{
+
+            const card=document.createElement("div");
+            card.className="news-item";
+
+            const h3=document.createElement("h3");
+            h3.textContent=item.title;
+
+            const p=document.createElement("p");
+            p.textContent=item.body;
+
+            card.append(h3,p);
+
+            // Если владелец ещё не перевёл эту новость на английский —
+            // показываем русский текст, но с небольшой пометкой.
+            if(currentLang==="en"&&item.translated===false){
+
+                const note=document.createElement("p");
+                note.style.cssText="color:#5b7390;font-size:11px;margin-top:6px;";
+                note.textContent="(Not yet translated — showing original)";
+                card.appendChild(note);
+
+            }
+
+            container.appendChild(card);
+
+        });
+
+    }catch(e){
+
+        container.innerHTML="";
+        const err=document.createElement("p");
+        err.style.cssText="color:#5b7390;";
+        err.textContent=t("newsError");
+        container.appendChild(err);
+
+    }
+
+}
+
+loadNews();
+
 function goToAuthTab(message){
 
     if(message) alert(message);
@@ -1362,7 +1764,7 @@ async function like(id){
         const res=await fetch(`/api/challenges/${id}/like`,{method:"POST"});
 
         if(res.status===401){
-            goToAuthTab("Чтобы ставить лайки, нужно войти в аккаунт");
+            goToAuthTab(t("authGoToLoginNeeded"));
             return;
         }
 
@@ -1372,7 +1774,7 @@ async function like(id){
 
     }catch(e){
 
-        alert("Не удалось связаться с сервером");
+        alert(t("serverErrorAlert"));
 
     }
 
@@ -1389,7 +1791,7 @@ async function toggleDone(id){
         const res=await fetch(`/api/challenges/${id}/done`,{method:"POST"});
 
         if(res.status===401){
-            goToAuthTab("Чтобы отмечать выполнение, нужно войти в аккаунт");
+            goToAuthTab(t("authGoToLoginNeededDone"));
             return;
         }
 
@@ -1399,7 +1801,34 @@ async function toggleDone(id){
 
     }catch(e){
 
-        alert("Не удалось связаться с сервером");
+        alert(t("serverErrorAlert"));
+
+    }
+
+}
+
+// =========================
+// Удаление квеста владельцем (прямо из общей ленты)
+// =========================
+
+async function deleteChallengeAsOwner(id){
+
+    if(!confirm("Удалить этот квест насовсем?")) return;
+
+    try{
+
+        const res=await fetch(`/api/admin/challenges/${id}`,{method:"DELETE"});
+
+        if(!res.ok){
+            alert("Не удалось удалить квест");
+            return;
+        }
+
+        await loadChallenges();
+
+    }catch(e){
+
+        alert(t("serverErrorAlert"));
 
     }
 
@@ -1412,7 +1841,7 @@ async function toggleDone(id){
 document.getElementById("btn-publish").onclick=async function(){
 
     if(!currentUser){
-        goToAuthTab("Чтобы публиковать испытания, нужно войти в аккаунт");
+        goToAuthTab(t("authGoToLoginNeededPublish"));
         return;
     }
 
@@ -1438,7 +1867,7 @@ document.getElementById("btn-publish").onclick=async function(){
 
         await loadChallenges();
 
-        alert("Испытание опубликовано!");
+        alert(t("publishedAlert"));
 
         titleInput.value="";
         descInput.value="";
@@ -1452,7 +1881,7 @@ document.getElementById("btn-publish").onclick=async function(){
 
     }catch(e){
 
-        alert("Не удалось связаться с сервером");
+        alert(t("serverErrorAlert"));
 
     }
 
@@ -1473,9 +1902,9 @@ if(!profile){
         created:0,
         likes:0,
         completed:0,
-        bestQuest:"Пока нет созданных испытаний.",
+        bestQuest:t("profileBestQuestEmpty"),
         date:new Date().toLocaleDateString("ru-RU"),
-        name:"Гость",
+        name:t("guestName"),
         avatar:"",
 
     };
@@ -1503,7 +1932,7 @@ function recomputeProfileStats(){
         profile.created=0;
         profile.likes=0;
         profile.completed=0;
-        profile.bestQuest="Войдите в аккаунт, чтобы видеть статистику.";
+        profile.bestQuest=t("profileNoStatsGuest");
 
         updateProfile();
         return;
@@ -1518,7 +1947,7 @@ function recomputeProfileStats(){
 
     if(own.length===0){
 
-        profile.bestQuest="Пока нет созданных испытаний.";
+        profile.bestQuest=t("profileBestQuestEmpty");
 
     }else{
 
@@ -1552,23 +1981,23 @@ function updateProfile(){
 
 }
 
-    let rank="Новичок";
+    let rank=t("rankNovice");
 
     if(profile.created>=5){
 
-        rank="Опытный";
+        rank=t("rankExperienced");
 
     }
 
     if(profile.created>=15){
 
-        rank="Ветеран";
+        rank=t("rankVeteran");
 
     }
 
     if(profile.created>=30){
 
-        rank="Легенда";
+        rank=t("rankLegend");
 
     }
 
@@ -1635,7 +2064,7 @@ function setAuthMode(mode){
     document.getElementById("auth-tab-login").classList.toggle("active",mode==="login");
     document.getElementById("auth-tab-register").classList.toggle("active",mode==="register");
 
-    document.getElementById("auth-submit").textContent=mode==="login"?"Войти":"Зарегистрироваться";
+    document.getElementById("auth-submit").textContent=mode==="login"?t("authLoginBtn"):t("authRegisterBtn");
 
     hideAuthError();
 
@@ -1681,7 +2110,7 @@ async function submitAuth(){
 
     }catch(e){
 
-        showAuthError("Не удалось связаться с сервером");
+        showAuthError(t("serverErrorAlert"));
 
     }
 
@@ -1697,7 +2126,7 @@ async function logout(){
     document.getElementById("auth-username").value="";
     document.getElementById("auth-password").value="";
 
-    profile.name="Гость";
+    profile.name=t("guestName");
     currentUser=null;
     isOwnerAccount=false;
     saveProfile();
@@ -1735,9 +2164,11 @@ function renderOwnerBadges(){
 
     const authBadge=document.getElementById("auth-owner-badge");
     const profileBadge=document.getElementById("profile-owner-badge");
+    const adminTab=document.getElementById("tab-admin");
 
     if(authBadge) authBadge.style.display=isOwnerAccount?"inline-block":"none";
     if(profileBadge) profileBadge.style.display=isOwnerAccount?"inline-block":"none";
+    if(adminTab) adminTab.style.display=isOwnerAccount?"inline-block":"none";
 
 }
 
@@ -1759,6 +2190,352 @@ async function checkAuth(){
 }
 
 checkAuth();
+
+// ==========================
+// АДМИН-ПАНЕЛЬ (только владелец — но проверка реальной власти всегда на сервере)
+// ==========================
+
+let adminMode="news";
+
+function setAdminMode(mode){
+
+    adminMode=mode;
+
+    ["news","mod","users","stats"].forEach(m=>{
+
+        document.getElementById("admin-tab-"+m).classList.toggle("active",m===mode);
+        document.getElementById("admin-panel-"+m).style.display=(m===mode)?"block":"none";
+
+    });
+
+    if(mode==="news") loadAdminNews();
+    if(mode==="mod") loadAdminModeration();
+    if(mode==="users") loadAdminUsers();
+    if(mode==="stats") loadAdminStats();
+
+}
+
+// ---- Новости ----
+
+async function submitNews(){
+
+    const title=document.getElementById("admin-news-title").value.trim();
+    const body=document.getElementById("admin-news-body").value.trim();
+    const titleEn=document.getElementById("admin-news-title-en").value.trim();
+    const bodyEn=document.getElementById("admin-news-body-en").value.trim();
+
+    if(!title||!body){
+        alert("Заполни заголовок и текст");
+        return;
+    }
+
+    try{
+
+        const res=await fetch("/api/admin/news",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({title,body,titleEn,bodyEn})
+        });
+
+        const data=await res.json();
+
+        if(!res.ok){
+            alert(data.error||"Не удалось опубликовать новость");
+            return;
+        }
+
+        document.getElementById("admin-news-title").value="";
+        document.getElementById("admin-news-body").value="";
+        document.getElementById("admin-news-title-en").value="";
+        document.getElementById("admin-news-body-en").value="";
+
+        loadAdminNews();
+        loadNews();
+
+    }catch(e){
+
+        alert("Не удалось связаться с сервером");
+
+    }
+
+}
+
+async function loadAdminNews(){
+
+    const list=document.getElementById("admin-news-list");
+    list.textContent="Загрузка...";
+
+    try{
+
+        const res=await fetch("/api/admin/news");
+        const news=await res.json();
+
+        list.innerHTML="";
+
+        if(news.length===0){
+            list.textContent="Пока нет новостей.";
+            return;
+        }
+
+        news.forEach(item=>{
+
+            const card=document.createElement("div");
+            card.className="news-item";
+
+            const h3=document.createElement("h3");
+            h3.textContent=item.title;
+
+            const p=document.createElement("p");
+            p.textContent=item.body;
+
+            const enStatus=document.createElement("p");
+            enStatus.style.cssText="color:#5b7390;font-size:11px;margin-top:6px;";
+            enStatus.textContent=item.title_en?"🇬🇧 Английский перевод есть":"🇬🇧 Английского перевода пока нет";
+
+            const actions=document.createElement("div");
+            actions.style.cssText="display:flex;gap:8px;margin-top:10px;";
+
+            const delBtn=document.createElement("button");
+            delBtn.className="check-btn";
+            delBtn.textContent="Удалить";
+            delBtn.onclick=()=>deleteAdminNews(item.id);
+
+            actions.appendChild(delBtn);
+            card.append(h3,p,enStatus,actions);
+            list.appendChild(card);
+
+        });
+
+    }catch(e){
+
+        list.textContent="Не удалось загрузить новости.";
+
+    }
+
+}
+
+async function deleteAdminNews(id){
+
+    if(!confirm("Удалить эту новость?")) return;
+
+    try{
+
+        await fetch(`/api/admin/news/${id}`,{method:"DELETE"});
+        loadAdminNews();
+        loadNews();
+
+    }catch(e){
+
+        alert("Не удалось связаться с сервером");
+
+    }
+
+}
+
+// ---- Модерация квестов ----
+
+async function loadAdminModeration(){
+
+    const list=document.getElementById("admin-mod-list");
+    list.textContent="Загрузка...";
+
+    try{
+
+        const res=await fetch("/api/admin/challenges/pending");
+        const pending=await res.json();
+
+        list.innerHTML="";
+
+        if(pending.length===0){
+            list.textContent="Нет квестов, ожидающих проверки.";
+            return;
+        }
+
+        pending.forEach(item=>{
+
+            const card=document.createElement("div");
+            card.className="card rarity-common";
+
+            const iconBox=document.createElement("div");
+            iconBox.className="icon-box";
+            iconBox.textContent=item.icon||"❓";
+
+            const info=document.createElement("div");
+            info.style.flex="1";
+
+            const title=document.createElement("p");
+            title.className="ach-title";
+            title.textContent=item.title;
+
+            const desc=document.createElement("p");
+            desc.className="ach-desc";
+            desc.textContent=item.desc;
+
+            const author=document.createElement("p");
+            author.style.cssText="color:#5b7390;font-size:11px;margin-top:6px;";
+            author.textContent="Автор: "+item.authorUsername;
+
+            info.append(title,desc,author);
+
+            const actions=document.createElement("div");
+            actions.className="card-actions";
+
+            const approveBtn=document.createElement("button");
+            approveBtn.className="check-btn done";
+            approveBtn.textContent="✓ Принять";
+            approveBtn.onclick=()=>moderateChallenge(item.id,"approve");
+
+            const rejectBtn=document.createElement("button");
+            rejectBtn.className="like-btn";
+            rejectBtn.textContent="✕ Отклонить";
+            rejectBtn.onclick=()=>moderateChallenge(item.id,"reject");
+
+            actions.append(approveBtn,rejectBtn);
+            card.append(iconBox,info,actions);
+            list.appendChild(card);
+
+        });
+
+    }catch(e){
+
+        list.textContent="Не удалось загрузить квесты на модерации.";
+
+    }
+
+}
+
+async function moderateChallenge(id,action){
+
+    try{
+
+        const res=await fetch(`/api/admin/challenges/${id}/${action}`,{method:"POST"});
+
+        if(!res.ok){
+            alert("Не удалось выполнить действие");
+            return;
+        }
+
+        loadAdminModeration();
+        loadChallenges();
+
+    }catch(e){
+
+        alert("Не удалось связаться с сервером");
+
+    }
+
+}
+
+// ---- Пользователи ----
+
+async function loadAdminUsers(){
+
+    const list=document.getElementById("admin-users-list");
+    list.textContent="Загрузка...";
+
+    try{
+
+        const res=await fetch("/api/admin/users");
+        const users=await res.json();
+
+        list.innerHTML="";
+
+        users.forEach(u=>{
+
+            const row=document.createElement("div");
+            row.style.cssText="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #253344;";
+
+            const name=document.createElement("span");
+            name.textContent=u.username+(u.banned?" (заблокирован)":"");
+            name.style.color=u.banned?"#ff5555":"#e6edf5";
+
+            row.appendChild(name);
+
+            if(u.username!==currentUser){
+
+                const btn=document.createElement("button");
+                btn.className="check-btn";
+                btn.style.margin="0";
+                btn.textContent=u.banned?"Разбанить":"Забанить";
+                btn.onclick=()=>toggleUserBan(u.id,u.banned);
+
+                row.appendChild(btn);
+
+            }
+
+            list.appendChild(row);
+
+        });
+
+    }catch(e){
+
+        list.textContent="Не удалось загрузить пользователей.";
+
+    }
+
+}
+
+async function toggleUserBan(id,currentlyBanned){
+
+    const action=currentlyBanned?"unban":"ban";
+
+    try{
+
+        const res=await fetch(`/api/admin/users/${id}/${action}`,{method:"POST"});
+
+        if(!res.ok){
+            const data=await res.json();
+            alert(data.error||"Не удалось выполнить действие");
+            return;
+        }
+
+        loadAdminUsers();
+
+    }catch(e){
+
+        alert("Не удалось связаться с сервером");
+
+    }
+
+}
+
+// ---- Статистика ----
+
+async function loadAdminStats(){
+
+    const box=document.getElementById("admin-stats-list");
+    box.textContent="Загрузка...";
+
+    try{
+
+        const res=await fetch("/api/admin/stats");
+        const stats=await res.json();
+
+        box.innerHTML="";
+
+        const lines=[
+            ["Пользователей зарегистрировано",stats.users],
+            ["Квестов опубликовано",stats.challenges],
+            ["Квестов ждут модерации",stats.pendingChallenges],
+            ["Всего лайков",stats.totalLikes]
+        ];
+
+        lines.forEach(([label,value])=>{
+
+            const p=document.createElement("p");
+            p.textContent=label+": "+value;
+            box.appendChild(p);
+
+        });
+
+    }catch(e){
+
+        box.textContent="Не удалось загрузить статистику.";
+
+    }
+
+}
+
 
 </script>
 

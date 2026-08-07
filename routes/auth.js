@@ -80,6 +80,10 @@ router.post("/login", authLimiter, async (req, res) => {
       return res.status(401).json({ error: "Неверный ник или пароль" });
     }
 
+    if (user.banned) {
+      return res.status(403).json({ error: "Этот аккаунт заблокирован" });
+    }
+
     req.session.userId = user.id;
     req.session.username = user.username;
 
@@ -103,11 +107,24 @@ router.post("/logout", (req, res) => {
 // =========================
 // Текущая сессия
 // =========================
-router.get("/me", (req, res) => {
+router.get("/me", async (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ error: "Не авторизован" });
   }
-  res.json({ id: req.session.userId, username: req.session.username, isOwner: req.session.username === OWNER_USERNAME });
+
+  try {
+    const user = await findUserByUsername(req.session.username);
+
+    if (!user || user.banned) {
+      req.session.destroy(() => {});
+      return res.status(403).json({ error: "Этот аккаунт заблокирован" });
+    }
+
+    res.json({ id: req.session.userId, username: req.session.username, isOwner: req.session.username === OWNER_USERNAME });
+  } catch (e) {
+    console.error("Ошибка проверки сессии:", e);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
 });
 
 module.exports = router;
