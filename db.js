@@ -28,6 +28,7 @@ async function initDb() {
       username TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       banned BOOLEAN NOT NULL DEFAULT false,
+      avatar TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `);
@@ -38,12 +39,27 @@ async function initDb() {
       author_id INTEGER NOT NULL REFERENCES users(id),
       author_username TEXT NOT NULL,
       icon TEXT,
+      icon_image TEXT,
       title TEXT NOT NULL,
       description TEXT,
       rarity TEXT,
+      color TEXT,
       liked_by JSONB NOT NULL DEFAULT '[]'::jsonb,
       completed_by JSONB NOT NULL DEFAULT '[]'::jsonb,
       status TEXT NOT NULL DEFAULT 'approved',
+      reject_reason TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      type TEXT NOT NULL,
+      message TEXT NOT NULL,
+      challenge_id INTEGER,
+      read BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `);
@@ -66,7 +82,11 @@ async function initDb() {
   // На случай, если таблицы уже существовали до этого обновления —
   // добавляем недостающие колонки, не трогая существующие данные.
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS banned BOOLEAN NOT NULL DEFAULT false`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT`);
   await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'approved'`);
+  await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS icon_image TEXT`);
+  await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS color TEXT`);
+  await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS reject_reason TEXT`);
 
   // Наполняем новости стартовым содержимым один раз, если пусто —
   // дальше владелец сайта полностью управляет ими через админ-панель.
@@ -96,7 +116,7 @@ async function initDb() {
     );
   }
 
-  console.log("База данных готова (таблицы users, challenges, news)");
+  console.log("База данных готова (таблицы users, challenges, news, notifications)");
 }
 
 // =========================
@@ -134,6 +154,24 @@ async function setUserBanned(userId, banned) {
   return rows[0] || null;
 }
 
+async function setUserAvatar(userId, avatar) {
+  const { rows } = await pool.query(
+    "UPDATE users SET avatar = $1 WHERE id = $2 RETURNING id, username, avatar",
+    [avatar, userId]
+  );
+  return rows[0] || null;
+}
+
+// Публичный профиль — по нику. Отдаём только то, что не приватно:
+// без пароля, без статуса бана (это внутренняя информация).
+async function getUserPublicByUsername(username) {
+  const { rows } = await pool.query(
+    "SELECT id, username, avatar, created_at FROM users WHERE username = $1",
+    [username]
+  );
+  return rows[0] || null;
+}
+
 // =========================
 // Квесты (общие для всех)
 // =========================
@@ -144,18 +182,40 @@ function mapChallenge(r) {
     authorId: r.author_id,
     authorUsername: r.author_username,
     icon: r.icon,
+    iconImage: r.icon_image,
     title: r.title,
     desc: r.description,
     rarity: r.rarity,
+    color: r.color,
     likedBy: r.liked_by || [],
     completedBy: r.completed_by || [],
-    status: r.status
+    status: r.status,
+    rejectReason: r.reject_reason
   };
 }
 
 async function getApprovedChallenges() {
   const { rows } = await pool.query(
     "SELECT * FROM challenges WHERE status = 'approved' ORDER BY id DESC"
+  );
+  return rows.map(mapChallenge);
+}
+
+async function getApprovedChallengesByUsername(username) {
+  const { rows } = await pool.query(
+    "SELECT * FROM challenges WHERE status = 'approved' AND author_username = $1 ORDER BY id DESC",
+    [username]
+  );
+  return rows.map(mapChallenge);
+}
+
+// Все челленджи пользователя (в любом статусе) — для раздела
+// "Мои челленджи" в профиле, чтобы автор видел и то, что на
+// модерации или отклонено (с причиной).
+async function getChallengesByAuthorId(authorId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM challenges WHERE author_id = $1 ORDER BY id DESC",
+    [authorId]
   );
   return rows.map(mapChallenge);
 }
@@ -167,19 +227,20 @@ async function getPendingChallenges() {
   return rows.map(mapChallenge);
 }
 
-async function createChallenge(authorId, authorUsername, { icon, title, desc, rarity }) {
+async function createChallenge(authorId, authorUsername, { icon, iconImage, title, desc, color }) {
   const { rows } = await pool.query(
     `INSERT INTO challenges
-      (author_id, author_username, icon, title, description, rarity, liked_by, completed_by, status)
-     VALUES ($1, $2, $3, $4, $5, $6, '[]'::jsonb, '[]'::jsonb, 'pending')
+      (author_id, author_username, icon, icon_image, title, description, color, liked_by, completed_by, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, '[]'::jsonb, '[]'::jsonb, 'pending')
      RETURNING *`,
     [
       authorId,
       authorUsername,
       icon || "❓",
+      iconImage || null,
       title || "Без названия",
       desc || "",
-      rarity === "rarity-gold" ? "rarity-gold" : "rarity-common"
+      typeof color === "string" && color ? color : null
     ]
   );
   return mapChallenge(rows[0]);
@@ -202,10 +263,10 @@ async function likeChallenge(challengeId, userId) {
       "UPDATE challenges SET liked_by = $1 WHERE id = $2 RETURNING *",
       [JSON.stringify(likedBy), challengeId]
     );
-    return mapChallenge(updated.rows[0]);
+    return { challenge: mapChallenge(updated.rows[0]), isNewLike: true };
   }
 
-  return mapChallenge(rows[0]);
+  return { challenge: mapChallenge(rows[0]), isNewLike: false };
 }
 
 async function toggleChallengeDone(challengeId, userId) {
@@ -232,10 +293,10 @@ async function toggleChallengeDone(challengeId, userId) {
   return mapChallenge(updated.rows[0]);
 }
 
-async function setChallengeStatus(challengeId, status) {
+async function setChallengeStatus(challengeId, status, rejectReason) {
   const { rows } = await pool.query(
-    "UPDATE challenges SET status = $1 WHERE id = $2 RETURNING *",
-    [status, challengeId]
+    "UPDATE challenges SET status = $1, reject_reason = $2 WHERE id = $3 RETURNING *",
+    [status, status === "rejected" ? (rejectReason || null) : null, challengeId]
   );
   return rows[0] ? mapChallenge(rows[0]) : null;
 }
@@ -308,13 +369,53 @@ async function deleteNews(id) {
   return rows.length > 0;
 }
 
+// =========================
+// Уведомления
+// =========================
+
+async function createNotification(userId, type, message, challengeId) {
+  const { rows } = await pool.query(
+    `INSERT INTO notifications (user_id, type, message, challenge_id)
+     VALUES ($1, $2, $3, $4) RETURNING *`,
+    [userId, type, message, challengeId || null]
+  );
+  return rows[0];
+}
+
+async function getNotifications(userId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM notifications WHERE user_id = $1 ORDER BY id DESC LIMIT 50",
+    [userId]
+  );
+  return rows;
+}
+
+async function getUnreadNotificationCount(userId) {
+  const { rows } = await pool.query(
+    "SELECT COUNT(*)::int AS count FROM notifications WHERE user_id = $1 AND read = false",
+    [userId]
+  );
+  return rows[0].count;
+}
+
+async function markAllNotificationsRead(userId) {
+  await pool.query(
+    "UPDATE notifications SET read = true WHERE user_id = $1 AND read = false",
+    [userId]
+  );
+}
+
 module.exports = {
   initDb,
   findUserByUsername,
   createUser,
   getAllUsers,
   setUserBanned,
+  setUserAvatar,
+  getUserPublicByUsername,
   getApprovedChallenges,
+  getApprovedChallengesByUsername,
+  getChallengesByAuthorId,
   getPendingChallenges,
   createChallenge,
   likeChallenge,
@@ -325,5 +426,9 @@ module.exports = {
   getAllNews,
   createNews,
   updateNews,
-  deleteNews
+  deleteNews,
+  createNotification,
+  getNotifications,
+  getUnreadNotificationCount,
+  markAllNotificationsRead
 };

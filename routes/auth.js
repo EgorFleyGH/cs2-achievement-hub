@@ -1,7 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
-const { findUserByUsername, createUser } = require("../db");
+const { findUserByUsername, createUser, setUserAvatar } = require("../db");
 const { OWNER_USERNAME } = require("../config");
 
 const router = express.Router();
@@ -54,7 +54,7 @@ router.post("/register", authLimiter, async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
 
-    res.status(201).json({ id: user.id, username: user.username, isOwner: user.username === OWNER_USERNAME });
+    res.status(201).json({ id: user.id, username: user.username, avatar: user.avatar || "", isOwner: user.username === OWNER_USERNAME });
   } catch (e) {
     console.error("Ошибка регистрации:", e);
     res.status(500).json({ error: "Не удалось зарегистрироваться, попробуйте позже" });
@@ -87,7 +87,7 @@ router.post("/login", authLimiter, async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
 
-    res.json({ id: user.id, username: user.username, isOwner: user.username === OWNER_USERNAME });
+    res.json({ id: user.id, username: user.username, avatar: user.avatar || "", isOwner: user.username === OWNER_USERNAME });
   } catch (e) {
     console.error("Ошибка входа:", e);
     res.status(500).json({ error: "Не удалось войти, попробуйте позже" });
@@ -120,10 +120,42 @@ router.get("/me", async (req, res) => {
       return res.status(403).json({ error: "Этот аккаунт заблокирован" });
     }
 
-    res.json({ id: req.session.userId, username: req.session.username, isOwner: req.session.username === OWNER_USERNAME });
+    res.json({
+      id: req.session.userId,
+      username: req.session.username,
+      avatar: user.avatar || "",
+      isOwner: req.session.username === OWNER_USERNAME
+    });
   } catch (e) {
     console.error("Ошибка проверки сессии:", e);
     res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// =========================
+// Загрузка аватара (сохраняется на сервере — нужен, чтобы другие
+// игроки могли видеть его в вашем публичном профиле)
+// =========================
+router.post("/profile/avatar", async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Нужно войти в аккаунт" });
+  }
+
+  const { avatar } = req.body || {};
+
+  if (typeof avatar !== "string" || !avatar.startsWith("data:image/")) {
+    return res.status(400).json({ error: "Некорректный формат картинки" });
+  }
+  if (avatar.length > 1_500_000) {
+    return res.status(400).json({ error: "Картинка слишком большая" });
+  }
+
+  try {
+    const user = await setUserAvatar(req.session.userId, avatar);
+    res.json({ avatar: user.avatar });
+  } catch (e) {
+    console.error("Ошибка загрузки аватара:", e);
+    res.status(500).json({ error: "Не удалось сохранить аватар" });
   }
 });
 

@@ -9,7 +9,8 @@ const {
   getAllNews,
   createNews,
   updateNews,
-  deleteNews
+  deleteNews,
+  createNotification
 } = require("../db");
 const { OWNER_USERNAME } = require("../config");
 
@@ -92,15 +93,16 @@ router.get("/challenges/pending", async (req, res) => {
       pending.map((c) => ({
         id: c.id,
         icon: c.icon,
+        iconImage: c.iconImage,
         title: c.title,
         desc: c.desc,
-        rarity: c.rarity,
+        color: c.color,
         authorUsername: c.authorUsername
       }))
     );
   } catch (e) {
-    console.error("Ошибка загрузки квестов на модерации:", e);
-    res.status(500).json({ error: "Не удалось загрузить квесты на модерации" });
+    console.error("Ошибка загрузки челленджей на модерации:", e);
+    res.status(500).json({ error: "Не удалось загрузить челленджи на модерации" });
   }
 });
 
@@ -109,38 +111,60 @@ router.post("/challenges/:id/approve", async (req, res) => {
 
   try {
     const challenge = await setChallengeStatus(id, "approved");
-    if (!challenge) return res.status(404).json({ error: "Квест не найден" });
+    if (!challenge) return res.status(404).json({ error: "Челлендж не найден" });
+
+    await createNotification(
+      challenge.authorId,
+      "approved",
+      `✅ Ваш челлендж «${challenge.title}» одобрен и опубликован в общей ленте!`,
+      challenge.id
+    );
+
     res.json({ ok: true });
   } catch (e) {
-    console.error("Ошибка одобрения квеста:", e);
-    res.status(500).json({ error: "Не удалось одобрить квест" });
+    console.error("Ошибка одобрения челленджа:", e);
+    res.status(500).json({ error: "Не удалось одобрить челлендж" });
   }
 });
 
 router.post("/challenges/:id/reject", async (req, res) => {
   const id = Number(req.params.id);
+  const { reason } = req.body || {};
+
+  if (typeof reason === "string" && reason.length > 300) {
+    return res.status(400).json({ error: "Причина отклонения слишком длинная" });
+  }
 
   try {
-    const challenge = await setChallengeStatus(id, "rejected");
-    if (!challenge) return res.status(404).json({ error: "Квест не найден" });
+    const challenge = await setChallengeStatus(id, "rejected", typeof reason === "string" ? reason.trim() : "");
+    if (!challenge) return res.status(404).json({ error: "Челлендж не найден" });
+
+    const reasonText = challenge.rejectReason ? ` Причина: ${challenge.rejectReason}` : "";
+    await createNotification(
+      challenge.authorId,
+      "rejected",
+      `❌ Ваш челлендж «${challenge.title}» был отклонён.${reasonText}`,
+      challenge.id
+    );
+
     res.json({ ok: true });
   } catch (e) {
-    console.error("Ошибка отклонения квеста:", e);
-    res.status(500).json({ error: "Не удалось отклонить квест" });
+    console.error("Ошибка отклонения челленджа:", e);
+    res.status(500).json({ error: "Не удалось отклонить челлендж" });
   }
 });
 
-// Полное удаление — в том числе уже одобренных квестов.
+// Полное удаление — в том числе уже одобренных челленджей.
 router.delete("/challenges/:id", async (req, res) => {
   const id = Number(req.params.id);
 
   try {
     const deleted = await deleteChallenge(id);
-    if (!deleted) return res.status(404).json({ error: "Квест не найден" });
+    if (!deleted) return res.status(404).json({ error: "Челлендж не найден" });
     res.json({ ok: true });
   } catch (e) {
-    console.error("Ошибка удаления квеста:", e);
-    res.status(500).json({ error: "Не удалось удалить квест" });
+    console.error("Ошибка удаления челленджа:", e);
+    res.status(500).json({ error: "Не удалось удалить челлендж" });
   }
 });
 

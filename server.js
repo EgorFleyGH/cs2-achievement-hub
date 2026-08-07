@@ -9,6 +9,7 @@ const authRoutes = require("./routes/auth");
 const challengeRoutes = require("./routes/challenges");
 const newsRoutes = require("./routes/news");
 const adminRoutes = require("./routes/admin");
+const notificationRoutes = require("./routes/notifications");
 const { initDb } = require("./db");
 
 const app = express();
@@ -19,7 +20,9 @@ const isProd = process.env.NODE_ENV === "production";
 // не будет выставляться правильно за HTTPS-терминацией.
 app.set("trust proxy", 1);
 
-app.use(express.json());
+// Увеличенный лимит — аватарки и картинки-иконки челленджей
+// приходят как base64 (data URL) прямо в теле JSON-запроса.
+app.use(express.json({ limit: "2mb" }));
 app.use(cookieParser());
 
 app.use(
@@ -40,6 +43,7 @@ app.use(
 app.use("/api", authRoutes);
 app.use("/api", challengeRoutes);
 app.use("/api", newsRoutes);
+app.use("/api", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Отдаём фронтенд как статику

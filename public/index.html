@@ -103,6 +103,91 @@ nav{
 
 }
 
+/* ================= NOTIFICATIONS ================= */
+
+.notif-bell-wrap{
+    position:relative;
+    margin-right:10px;
+}
+
+.notif-bell{
+    background:none;
+    border:none;
+    color:#8fa0b5;
+    font-size:20px;
+    cursor:pointer;
+    position:relative;
+    padding:6px;
+}
+
+.notif-bell:hover{
+    color:white;
+}
+
+.notif-badge{
+    position:absolute;
+    top:0;
+    right:0;
+    background:#de3535;
+    color:white;
+    font-size:10px;
+    font-weight:bold;
+    border-radius:10px;
+    padding:1px 5px;
+    display:none;
+}
+
+.notif-dropdown{
+    display:none;
+    position:absolute;
+    right:0;
+    top:44px;
+    width:320px;
+    max-height:400px;
+    overflow-y:auto;
+    background:#17202c;
+    border:1px solid #253344;
+    border-radius:8px;
+    box-shadow:0 10px 25px rgba(0,0,0,.4);
+    z-index:50;
+}
+
+.notif-dropdown.open{
+    display:block;
+}
+
+.notif-item{
+    padding:12px 14px;
+    border-bottom:1px solid #253344;
+    font-size:13px;
+    color:#c9d4e0;
+    line-height:1.5;
+}
+
+.notif-item:last-child{
+    border-bottom:none;
+}
+
+.notif-item.unread{
+    background:rgba(222,155,53,.08);
+}
+
+.notif-empty{
+    padding:20px;
+    text-align:center;
+    color:#5b7390;
+    font-size:13px;
+}
+
+.author-link{
+    cursor:pointer;
+    text-decoration:underline dotted;
+}
+
+.author-link:hover{
+    color:#de9b35;
+}
+
 /* ================= DONATE ================= */
 
 .donate-btn{
@@ -388,6 +473,28 @@ h1{
 
 .rarity-gold:hover{
     box-shadow:0 0 25px rgba(222,155,53,.45);
+}
+
+/* Карточка с произвольным цветом рамки, выбранным автором в палитре.
+   Цвет проставляется инлайново через JS (--card-color), эти правила
+   просто используют переменную для рамки/подсветки/заголовка. */
+.card-colored{
+    border:2px solid var(--card-color,#3a4b5f);
+}
+
+.card-colored:hover{
+    box-shadow:0 0 20px var(--card-color-glow,rgba(90,120,150,.35));
+}
+
+.card-colored .ach-title{
+    color:var(--card-color,#e6edf5);
+}
+
+.icon-box img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    border-radius:6px;
 }
 
 .icon-box{
@@ -725,7 +832,7 @@ h1{
 
         <div class="nav-logo">
             <span class="game">Counter-Strike 2</span>
-            <span class="site" data-i18n="siteName">Доска испытаний</span>
+            <span class="site" data-i18n="siteName">Доска челленджей</span>
         </div>
 
         <nav>
@@ -738,15 +845,15 @@ h1{
             <button class="nav-tab"
                     id="tab-editor"
                     onclick="switchTab('scr-editor',this)" data-i18n="navAdd">
-                Добавить квест
+                Добавить челлендж
             </button>
 
             <button class="nav-tab"
                     onclick="switchTab('scr-gallery',this)" data-i18n="navGallery">
-                Все испытания
+                Все челленджи
             </button>
             
-            <button class="nav-tab" onclick="switchTab('scr-profile', this)" data-i18n="navProfile">
+            <button class="nav-tab" onclick="switchTab('scr-profile', this);loadMyChallenges();" data-i18n="navProfile">
                 Профиль
             </button>
 
@@ -765,6 +872,14 @@ h1{
 
         </nav>
 
+    </div>
+
+    <div class="notif-bell-wrap" id="notif-wrap" style="display:none;">
+        <button class="notif-bell" id="notif-bell" onclick="toggleNotifDropdown()">
+            🔔
+            <span class="notif-badge" id="notif-badge">0</span>
+        </button>
+        <div class="notif-dropdown" id="notif-dropdown"></div>
     </div>
 
     <a class="donate-btn"
@@ -796,7 +911,7 @@ h1{
             <button class="cs-btn"
                     onclick="document.getElementById('tab-editor').click()" data-i18n="heroBtn">
 
-                Придумать квест
+                Придумать челлендж
 
             </button>
 
@@ -818,7 +933,7 @@ h1{
 
         <div class="panel">
 
-            <label data-i18n="editorTitleLabel">Название квеста</label>
+            <label data-i18n="editorTitleLabel">Название челленджа</label>
 
             <input
                 id="in-title"
@@ -833,26 +948,36 @@ h1{
                 rows="4"
                 maxlength="140">Убейте всех пятерых противников из пистолета в первом раунде.</textarea>
 
-            <label data-i18n="editorRarityLabel">Редкость</label>
+            <label data-i18n="editorColorLabel">Цвет карточки</label>
 
-            <select id="in-rarity">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:15px;">
+                <input
+                    id="in-color"
+                    type="color"
+                    value="#de9b35"
+                    disabled
+                    style="width:50px;height:36px;padding:2px;border-radius:5px;border:1px solid #253344;background:#0d1520;cursor:pointer;">
 
-                <option value="rarity-common" data-i18n="rarityCommon">
-                    Обычное
-                </option>
+                <label style="display:flex;align-items:center;gap:6px;font-weight:normal;margin:0;">
+                    <input id="in-color-default" type="checkbox" checked style="width:auto;">
+                    <span data-i18n="editorColorDefault">Не менять цвет (по умолчанию)</span>
+                </label>
+            </div>
 
-                <option value="rarity-gold" data-i18n="rarityGold">
-                    Золотое
-                </option>
-
-            </select>
-
-            <label data-i18n="editorIconLabel">Иконка</label>
+            <label data-i18n="editorIconLabel">Иконка (эмодзи)</label>
 
             <input
                 id="in-icon"
                 maxlength="2"
                 value="💣">
+
+            <label data-i18n="editorAvatarLabel">Или загрузите картинку для челленджа</label>
+
+            <input
+                id="in-icon-image"
+                type="file"
+                accept="image/*"
+                style="margin-bottom:15px;">
 
             <button
                 id="btn-publish"
@@ -897,7 +1022,7 @@ h1{
 
         <div class="gallery-header">
 
-            <h2 data-i18n="galleryTitle">Список испытаний</h2>
+            <h2 data-i18n="galleryTitle">Список челленджей</h2>
 
             <p data-i18n="gallerySubtitle">
                 Выполняйте задания и отмечайте прогресс
@@ -978,7 +1103,7 @@ h1{
 
                 <div style="width:100%;text-align:left;">
 
-                    <p><b data-i18n="profileStatCreated">🏆 Создано испытаний:</b>
+                    <p><b data-i18n="profileStatCreated">🏆 Создано челленджей:</b>
                         <span id="profile-created">0</span>
                     </p>
 
@@ -990,7 +1115,7 @@ h1{
 
                     <br>
 
-                    <p><b data-i18n="profileStatCompleted">✅ Выполнено испытаний:</b>
+                    <p><b data-i18n="profileStatCompleted">✅ Выполнено челленджей:</b>
                         <span id="profile-completed">0</span>
                     </p>
 
@@ -1019,15 +1144,91 @@ h1{
                 <div>
 
                     <p class="ach-title" data-i18n="profileBestQuestLabel">
-                        Лучший квест
+                        Лучший челлендж
                     </p>
 
                     <p class="ach-desc" id="best-quest">
-                        Пока нет созданных испытаний.
+                        Пока нет созданных челленджей.
                     </p>
 
                 </div>
 
+            </div>
+
+            <div style="margin-top:30px;">
+                <h3 style="color:#de9b35;margin-bottom:15px;" data-i18n="profileMyChallengesTitle">
+                    Мои челленджи
+                </h3>
+                <div id="my-challenges-list"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================== -->
+<!-- ПУБЛИЧНЫЙ ПРОФИЛЬ ДРУГОГО ИГРОКА -->
+<!-- ===================================== -->
+
+<div id="scr-public-profile" class="screen">
+
+    <div class="support-box">
+
+        <div class="support-panel">
+
+            <button class="save-btn" style="background:#3a4b5f;width:160px;margin-bottom:20px;" onclick="switchTab('scr-gallery', document.querySelector('[onclick*=scr-gallery]'))" data-i18n="publicProfileBack">
+                ← Назад к списку
+            </button>
+
+            <img
+                id="public-profile-avatar"
+                src="https://placehold.co/180x180/png?text=%F0%9F%91%A4"
+                style="
+                width:180px;
+                height:180px;
+                border-radius:50%;
+                border:4px solid #de9b35;
+                object-fit:cover;
+                margin-bottom:25px;
+                ">
+
+            <h2 id="public-profile-name" style="color:#de9b35;margin-bottom:10px;display:inline-block;"></h2>
+
+            <span id="public-profile-owner-badge" style="
+                display:none;
+                margin-left:8px;
+                background:#de9b35;
+                color:#111822;
+                font-size:11px;
+                font-weight:bold;
+                letter-spacing:0.5px;
+                text-transform:uppercase;
+                padding:3px 9px;
+                border-radius:4px;
+                vertical-align:middle;
+            ">👑 <span data-i18n="ownerBadge">Владелец</span></span>
+
+            <br>
+
+            <div class="card rarity-common" style="margin:25px 0;justify-content:center;">
+                <div style="width:100%;text-align:left;">
+                    <p><b data-i18n="profileStatCreated">🏆 Создано челленджей:</b>
+                        <span id="public-profile-created">0</span>
+                    </p>
+                    <br>
+                    <p><b data-i18n="profileStatLikes">❤️ Получено лайков:</b>
+                        <span id="public-profile-likes">0</span>
+                    </p>
+                </div>
+            </div>
+
+            <div style="text-align:left;">
+                <h3 style="color:#de9b35;margin-bottom:15px;" data-i18n="publicProfileChallenges">
+                    Опубликованные челленджи
+                </h3>
+                <div id="public-profile-challenges"></div>
             </div>
 
         </div>
@@ -1119,7 +1320,7 @@ h1{
 
         <div style="display:flex;gap:10px;margin-bottom:25px;flex-wrap:wrap;">
             <button id="admin-tab-news" class="nav-tab active" onclick="setAdminMode('news')">Новости</button>
-            <button id="admin-tab-mod" class="nav-tab" onclick="setAdminMode('mod')">Модерация квестов</button>
+            <button id="admin-tab-mod" class="nav-tab" onclick="setAdminMode('mod')">Модерация челленджей</button>
             <button id="admin-tab-users" class="nav-tab" onclick="setAdminMode('users')">Пользователи</button>
             <button id="admin-tab-stats" class="nav-tab" onclick="setAdminMode('stats')">Статистика</button>
         </div>
@@ -1182,7 +1383,7 @@ h1{
         <!-- ==== МОДЕРАЦИЯ ==== -->
         <div id="admin-panel-mod" class="panel" style="width:100%;display:none;">
 
-            <h3 style="color:#de9b35;margin-bottom:15px;">Квесты на модерации</h3>
+            <h3 style="color:#de9b35;margin-bottom:15px;">Челленджи на модерации</h3>
 
             <div id="admin-mod-list"></div>
 
@@ -1303,44 +1504,55 @@ h1{
 const I18N={
 
     ru:{
-        siteName:"Доска испытаний",
+        siteName:"Доска челленджей",
         navHome:"Главная",
-        navAdd:"Добавить квест",
-        navGallery:"Все испытания",
+        navAdd:"Добавить челлендж",
+        navGallery:"Все челленджи",
         navProfile:"Профиль",
         navAccount:"Аккаунт",
         navSupport:"Поддержка",
         donateBtn:"💰 Поддержать автора",
         heroTitle:"Награды общины",
-        heroBtn:"Придумать квест",
-        editorTitleLabel:"Название квеста",
+        heroBtn:"Придумать челлендж",
+        editorTitleLabel:"Название челленджа",
         editorDescLabel:"Описание",
-        editorRarityLabel:"Редкость",
-        rarityCommon:"Обычное",
-        rarityGold:"Золотое",
-        editorIconLabel:"Иконка",
+        editorColorLabel:"Цвет карточки",
+        editorColorDefault:"Не менять цвет (по умолчанию)",
+        editorIconLabel:"Иконка (эмодзи)",
+        editorAvatarLabel:"Или загрузите картинку для челленджа",
         editorPublishBtn:"Опубликовать",
-        galleryTitle:"Список испытаний",
+        galleryTitle:"Список челленджей",
         gallerySubtitle:"Выполняйте задания и отмечайте прогресс",
-        galleryEmpty:"Пока нет испытаний — стань первым, кто опубликует своё!",
+        galleryEmpty:"Пока нет челленджей — стань первым, кто опубликует свой!",
         cardAuthor:"Автор: ",
         cardAuthorUnknown:"неизвестен",
         cardLike:"❤️ ",
         cardDoBtn:"Выполнить",
         cardDoneBtn:"Выполнено ✓",
-        cardDeleteTitle:"Удалить квест",
+        cardDeleteTitle:"Удалить челлендж",
         profileChangeAvatar:"📷 Изменить аватар",
         ownerBadge:"Владелец",
         profileChangeName:"✏️ Изменить ник",
         profileTagline:"Игрок сообщества CS2 Challenges",
-        profileStatCreated:"🏆 Создано испытаний:",
+        profileStatCreated:"🏆 Создано челленджей:",
         profileStatLikes:"❤️ Получено лайков:",
-        profileStatCompleted:"✅ Выполнено испытаний:",
+        profileStatCompleted:"✅ Выполнено челленджей:",
         profileStatRank:"⭐ Ранг:",
         profileStatDate:"📅 Регистрация:",
-        profileBestQuestLabel:"Лучший квест",
-        profileBestQuestEmpty:"Пока нет созданных испытаний.",
+        profileBestQuestLabel:"Лучший челлендж",
+        profileBestQuestEmpty:"Пока нет созданных челленджей.",
         profileNoStatsGuest:"Войдите в аккаунт, чтобы видеть статистику.",
+        profileMyChallengesTitle:"Мои челленджи",
+        myChallengesEmpty:"Вы ещё не создали ни одного челленджа.",
+        myChallengesGuest:"Войдите в аккаунт, чтобы видеть свои челленджи.",
+        statusPending:"⏳ На модерации",
+        statusApproved:"✅ Опубликован",
+        statusRejected:"❌ Отклонён",
+        rejectReasonLabel:"Причина отклонения: ",
+        publicProfileBack:"← Назад к списку",
+        publicProfileChallenges:"Опубликованные челленджи",
+        publicProfileEmpty:"Этот игрок пока не опубликовал ни одного челленджа.",
+        publicProfileNotFound:"Пользователь не найден.",
         rankNovice:"Новичок",
         rankExperienced:"Опытный",
         rankVeteran:"Ветеран",
@@ -1357,34 +1569,36 @@ const I18N={
         authLogoutBtn:"Выйти",
         authGoToLoginNeeded:"Чтобы ставить лайки, нужно войти в аккаунт",
         authGoToLoginNeededDone:"Чтобы отмечать выполнение, нужно войти в аккаунт",
-        authGoToLoginNeededPublish:"Чтобы публиковать испытания, нужно войти в аккаунт",
+        authGoToLoginNeededPublish:"Чтобы публиковать челленджи, нужно войти в аккаунт",
         supportTitle:"Техническая поддержка",
         supportBody:"Нашли ошибку?<br>Есть предложение?<br>Или хотите сообщить о проблеме?",
         supportReplyTime:"Обычно отвечаем в течение 24–48 часов.",
-        publishedAlert:"Испытание отправлено на модерацию! Оно появится в ленте после проверки владельцем сайта.",
+        publishedAlert:"Челлендж отправлен на модерацию! Он появится в ленте после проверки владельцем сайта.",
         serverErrorAlert:"Не удалось связаться с сервером",
         newsEmpty:"Пока нет новостей.",
         newsError:"Не удалось загрузить новости.",
-        guestName:"Гость"
+        guestName:"Гость",
+        notifEmpty:"Пока нет уведомлений.",
+        notifMarkRead:"Отметить всё прочитанным"
     },
 
     en:{
         siteName:"Challenge Board",
         navHome:"Home",
-        navAdd:"Add Quest",
+        navAdd:"Add Challenge",
         navGallery:"All Challenges",
         navProfile:"Profile",
         navAccount:"Account",
         navSupport:"Support",
         donateBtn:"💰 Support the author",
         heroTitle:"Community Rewards",
-        heroBtn:"Create a quest",
-        editorTitleLabel:"Quest title",
+        heroBtn:"Create a challenge",
+        editorTitleLabel:"Challenge title",
         editorDescLabel:"Description",
-        editorRarityLabel:"Rarity",
-        rarityCommon:"Common",
-        rarityGold:"Gold",
-        editorIconLabel:"Icon",
+        editorColorLabel:"Card color",
+        editorColorDefault:"Don't change the color (default)",
+        editorIconLabel:"Icon (emoji)",
+        editorAvatarLabel:"Or upload an image for the challenge",
         editorPublishBtn:"Publish",
         galleryTitle:"Challenge list",
         gallerySubtitle:"Complete tasks and track your progress",
@@ -1394,7 +1608,7 @@ const I18N={
         cardLike:"❤️ ",
         cardDoBtn:"Complete",
         cardDoneBtn:"Completed ✓",
-        cardDeleteTitle:"Delete quest",
+        cardDeleteTitle:"Delete challenge",
         profileChangeAvatar:"📷 Change avatar",
         ownerBadge:"Owner",
         profileChangeName:"✏️ Change nickname",
@@ -1404,9 +1618,20 @@ const I18N={
         profileStatCompleted:"✅ Challenges completed:",
         profileStatRank:"⭐ Rank:",
         profileStatDate:"📅 Registered:",
-        profileBestQuestLabel:"Best quest",
+        profileBestQuestLabel:"Best challenge",
         profileBestQuestEmpty:"No challenges created yet.",
         profileNoStatsGuest:"Log in to see your stats.",
+        profileMyChallengesTitle:"My challenges",
+        myChallengesEmpty:"You haven't created any challenges yet.",
+        myChallengesGuest:"Log in to see your challenges.",
+        statusPending:"⏳ Pending review",
+        statusApproved:"✅ Published",
+        statusRejected:"❌ Rejected",
+        rejectReasonLabel:"Rejection reason: ",
+        publicProfileBack:"← Back to list",
+        publicProfileChallenges:"Published challenges",
+        publicProfileEmpty:"This player hasn't published any challenges yet.",
+        publicProfileNotFound:"User not found.",
         rankNovice:"Novice",
         rankExperienced:"Experienced",
         rankVeteran:"Veteran",
@@ -1431,7 +1656,9 @@ const I18N={
         serverErrorAlert:"Could not reach the server",
         newsEmpty:"No news yet.",
         newsError:"Failed to load news.",
-        guestName:"Guest"
+        guestName:"Guest",
+        notifEmpty:"No notifications yet.",
+        notifMarkRead:"Mark all as read"
     }
 
 };
@@ -1532,12 +1759,16 @@ function switchTab(screenId, btn){
 const titleInput=document.getElementById("in-title");
 const descInput=document.getElementById("in-desc");
 const iconInput=document.getElementById("in-icon");
-const rarityInput=document.getElementById("in-rarity");
+const colorInput=document.getElementById("in-color");
+const colorDefaultCheckbox=document.getElementById("in-color-default");
+const iconImageInput=document.getElementById("in-icon-image");
 
 const preview=document.getElementById("preview");
 const previewTitle=document.getElementById("out-title");
 const previewDesc=document.getElementById("out-desc");
 const previewIcon=document.getElementById("ico-box");
+
+let pendingIconImage=null; // base64 data URL загруженной картинки-иконки
 
 titleInput.oninput=()=>{
 
@@ -1553,18 +1784,68 @@ descInput.oninput=()=>{
 
 iconInput.oninput=()=>{
 
-    previewIcon.textContent=iconInput.value||"❓";
+    if(!pendingIconImage) previewIcon.textContent=iconInput.value||"❓";
 
 }
 
-rarityInput.onchange=()=>{
+// Применяет цвет карточки (свой или дефолтный вид) к любому DOM-элементу карточки.
+function applyCardColor(cardEl, color){
 
-    preview.className="card "+rarityInput.value;
+    if(color){
+        cardEl.className="card card-colored";
+        cardEl.style.setProperty("--card-color",color);
+        cardEl.style.setProperty("--card-color-glow",color+"59"); // ~35% alpha
+    }else{
+        cardEl.className="card rarity-common";
+        cardEl.style.removeProperty("--card-color");
+        cardEl.style.removeProperty("--card-color-glow");
+    }
 
 }
+
+function updateColorPreview(){
+
+    applyCardColor(preview, colorDefaultCheckbox.checked?null:colorInput.value);
+
+}
+
+colorInput.oninput=updateColorPreview;
+
+colorDefaultCheckbox.onchange=()=>{
+
+    colorInput.disabled=colorDefaultCheckbox.checked;
+    updateColorPreview();
+
+}
+
+// Загрузка картинки для иконки челленджа — заменяет эмодзи в превью.
+iconImageInput.addEventListener("change",function(){
+
+    const file=this.files[0];
+    if(!file) return;
+
+    if(file.size>1_400_000){
+        alert(currentLang==="en"?"Image is too large (max ~1.4MB)":"Картинка слишком большая (макс. ~1.4МБ)");
+        this.value="";
+        return;
+    }
+
+    const reader=new FileReader();
+    reader.onload=function(){
+
+        pendingIconImage=reader.result;
+        previewIcon.innerHTML="";
+        const img=document.createElement("img");
+        img.src=pendingIconImage;
+        previewIcon.appendChild(img);
+
+    }
+    reader.readAsDataURL(file);
+
+});
 
 // =========================
-// Испытания (общие для всех, хранятся на сервере)
+// Челленджи (общие для всех, хранятся на сервере)
 // =========================
 
 const feed=document.getElementById("gallery-feed");
@@ -1577,12 +1858,18 @@ let challenges=[];
 function renderCard(item){
 
     const card=document.createElement("div");
-    card.className="card "+item.rarity;
+    applyCardColor(card, item.color||null);
     card.dataset.id=item.id;
 
     const iconBox=document.createElement("div");
     iconBox.className="icon-box";
-    iconBox.textContent=item.icon||"❓";
+    if(item.iconImage){
+        const img=document.createElement("img");
+        img.src=item.iconImage;
+        iconBox.appendChild(img);
+    }else{
+        iconBox.textContent=item.icon||"❓";
+    }
 
     const info=document.createElement("div");
     info.style.flex="1";
@@ -1597,7 +1884,14 @@ function renderCard(item){
 
     const author=document.createElement("p");
     author.style.cssText="color:#5b7390;font-size:11px;margin-top:6px;";
-    author.textContent=t("cardAuthor")+(item.authorUsername||t("cardAuthorUnknown"));
+    author.textContent=t("cardAuthor");
+    const authorName=document.createElement("span");
+    authorName.className="author-link";
+    authorName.textContent=item.authorUsername||t("cardAuthorUnknown");
+    if(item.authorUsername){
+        authorName.onclick=()=>viewProfile(item.authorUsername);
+    }
+    author.appendChild(authorName);
     if(item.authorIsOwner){
         author.append(" 👑");
     }
@@ -1815,14 +2109,14 @@ async function toggleDone(id){
 
 async function deleteChallengeAsOwner(id){
 
-    if(!confirm("Удалить этот квест насовсем?")) return;
+    if(!confirm("Удалить этот челлендж насовсем?")) return;
 
     try{
 
         const res=await fetch(`/api/admin/challenges/${id}`,{method:"DELETE"});
 
         if(!res.ok){
-            alert("Не удалось удалить квест");
+            alert("Не удалось удалить челлендж");
             return;
         }
 
@@ -1854,31 +2148,38 @@ document.getElementById("btn-publish").onclick=async function(){
             headers:{"Content-Type":"application/json"},
             body:JSON.stringify({
                 icon:iconInput.value||"❓",
+                iconImage:pendingIconImage||null,
                 title:titleInput.value||"Без названия",
                 desc:descInput.value||"Нет описания",
-                rarity:rarityInput.value
+                color:colorDefaultCheckbox.checked?null:colorInput.value
             })
         });
 
         const data=await res.json();
 
         if(!res.ok){
-            alert(data.error||"Не удалось опубликовать испытание");
+            alert(data.error||"Не удалось опубликовать челлендж");
             return;
         }
 
         await loadChallenges();
+        await loadMyChallenges();
 
         alert(t("publishedAlert"));
 
         titleInput.value="";
         descInput.value="";
         iconInput.value="💣";
-        rarityInput.value="rarity-common";
+        colorDefaultCheckbox.checked=true;
+        colorInput.disabled=true;
+        colorInput.value="#de9b35";
+        pendingIconImage=null;
+        iconImageInput.value="";
 
-        preview.className="card rarity-common";
+        updateColorPreview();
         previewTitle.textContent="Название";
         previewDesc.textContent="Описание";
+        previewIcon.innerHTML="";
         previewIcon.textContent="💣";
 
     }catch(e){
@@ -2036,9 +2337,15 @@ let file=this.files[0];
 
 if(!file) return;
 
+if(file.size>1_400_000){
+    alert(currentLang==="en"?"Image is too large (max ~1.4MB)":"Картинка слишком большая (макс. ~1.4МБ)");
+    this.value="";
+    return;
+}
+
 let reader=new FileReader();
 
-reader.onload=function(){
+reader.onload=async function(){
 
 profile.avatar=reader.result;
 
@@ -2046,11 +2353,187 @@ saveProfile();
 
 updateProfile();
 
+// Аватар сохраняется и на сервере — чтобы другие игроки видели
+// его в публичном профиле, а не только вы сами (localStorage).
+if(currentUser){
+
+    try{
+
+        await fetch("/api/profile/avatar",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({avatar:reader.result})
+        });
+
+    }catch(e){
+
+        alert(t("serverErrorAlert"));
+
+    }
+
+}
+
 }
 
 reader.readAsDataURL(file);
 
 });
+
+// ==========================
+// МОИ ЧЕЛЛЕНДЖИ (в профиле)
+// ==========================
+
+function renderMyChallengeCard(item){
+
+    const card=document.createElement("div");
+    applyCardColor(card, item.color||null);
+    card.style.marginBottom="12px";
+
+    const iconBox=document.createElement("div");
+    iconBox.className="icon-box";
+    if(item.iconImage){
+        const img=document.createElement("img");
+        img.src=item.iconImage;
+        iconBox.appendChild(img);
+    }else{
+        iconBox.textContent=item.icon||"❓";
+    }
+
+    const info=document.createElement("div");
+    info.style.flex="1";
+
+    const title=document.createElement("p");
+    title.className="ach-title";
+    title.textContent=item.title||"Без названия";
+
+    const desc=document.createElement("p");
+    desc.className="ach-desc";
+    desc.textContent=item.desc||"Нет описания";
+
+    const status=document.createElement("p");
+    status.style.cssText="font-size:12px;margin-top:8px;font-weight:bold;";
+    if(item.status==="pending"){
+        status.textContent=t("statusPending");
+        status.style.color="#de9b35";
+    }else if(item.status==="approved"){
+        status.textContent=t("statusApproved")+" · "+t("cardLike")+item.likes;
+        status.style.color="#5bde8a";
+    }else{
+        status.textContent=t("statusRejected");
+        status.style.color="#ff5555";
+    }
+
+    info.append(title,desc,status);
+
+    if(item.status==="rejected"&&item.rejectReason){
+        const reason=document.createElement("p");
+        reason.style.cssText="font-size:12px;color:#8fa0b5;margin-top:4px;";
+        reason.textContent=t("rejectReasonLabel")+item.rejectReason;
+        info.appendChild(reason);
+    }
+
+    card.append(iconBox,info);
+
+    return card;
+
+}
+
+async function loadMyChallenges(){
+
+    const list=document.getElementById("my-challenges-list");
+    if(!list) return;
+
+    if(!currentUser){
+        list.innerHTML="";
+        const p=document.createElement("p");
+        p.style.cssText="color:#5b7390;padding:10px 0;";
+        p.textContent=t("myChallengesGuest");
+        list.appendChild(p);
+        return;
+    }
+
+    try{
+
+        const res=await fetch("/api/challenges/mine");
+        const mine=await res.json();
+
+        list.innerHTML="";
+
+        if(mine.length===0){
+            const p=document.createElement("p");
+            p.style.cssText="color:#5b7390;padding:10px 0;";
+            p.textContent=t("myChallengesEmpty");
+            list.appendChild(p);
+            return;
+        }
+
+        mine.forEach(item=>list.appendChild(renderMyChallengeCard(item)));
+
+    }catch(e){
+
+        list.textContent=t("serverErrorAlert");
+
+    }
+
+}
+
+// ==========================
+// ПУБЛИЧНЫЙ ПРОФИЛЬ ДРУГОГО ИГРОКА
+// ==========================
+
+async function viewProfile(username){
+
+    const screen=document.getElementById("scr-public-profile");
+    const tabBtn=Array.from(document.querySelectorAll(".nav-tab")).find(b=>b.getAttribute("onclick")&&b.getAttribute("onclick").includes("scr-gallery"));
+
+    document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+    document.querySelectorAll(".nav-tab").forEach(tb=>tb.classList.remove("active"));
+    screen.classList.add("active");
+
+    document.getElementById("public-profile-name").textContent="…";
+    document.getElementById("public-profile-challenges").innerHTML="";
+
+    try{
+
+        const res=await fetch("/api/users/"+encodeURIComponent(username));
+
+        if(!res.ok){
+            document.getElementById("public-profile-name").textContent=t("publicProfileNotFound");
+            return;
+        }
+
+        const data=await res.json();
+
+        document.getElementById("public-profile-name").textContent=data.username;
+        document.getElementById("public-profile-owner-badge").style.display=data.isOwner?"inline-block":"none";
+        document.getElementById("public-profile-created").textContent=data.stats.created;
+        document.getElementById("public-profile-likes").textContent=data.stats.likes;
+
+        if(data.avatar){
+            document.getElementById("public-profile-avatar").src=data.avatar;
+        }else{
+            document.getElementById("public-profile-avatar").src="https://placehold.co/180x180/png?text=%F0%9F%91%A4";
+        }
+
+        const list=document.getElementById("public-profile-challenges");
+        list.innerHTML="";
+
+        if(data.challenges.length===0){
+            const p=document.createElement("p");
+            p.style.cssText="color:#5b7390;padding:10px 0;";
+            p.textContent=t("publicProfileEmpty");
+            list.appendChild(p);
+        }else{
+            data.challenges.forEach(item=>list.appendChild(renderCard(item)));
+        }
+
+    }catch(e){
+
+        document.getElementById("public-profile-name").textContent=t("serverErrorAlert");
+
+    }
+
+}
 
 
 // ==========================
@@ -2106,7 +2589,7 @@ async function submitAuth(){
             return;
         }
 
-        onAuthSuccess(data.username,data.isOwner);
+        onAuthSuccess(data.username,data.isOwner,data.avatar);
 
     }catch(e){
 
@@ -2127,19 +2610,24 @@ async function logout(){
     document.getElementById("auth-password").value="";
 
     profile.name=t("guestName");
+    profile.avatar="";
     currentUser=null;
     isOwnerAccount=false;
     saveProfile();
     updateProfile();
     renderOwnerBadges();
+    hideNotifDropdown();
+    updateNotifBadge(0);
+    document.getElementById("notif-wrap").style.display="none";
 
     // Перезагружаем ленту — лайки/выполнено теперь должны показываться
     // как у гостя (без личных отметок).
     loadChallenges();
+    loadMyChallenges();
 
 }
 
-function onAuthSuccess(username,isOwner){
+function onAuthSuccess(username,isOwner,avatar){
 
     document.getElementById("auth-guest").style.display="none";
     document.getElementById("auth-user").style.display="block";
@@ -2147,6 +2635,7 @@ function onAuthSuccess(username,isOwner){
 
     // Имя в профиле теперь берётся из аккаунта, а не из ручного "FL"
     profile.name=username;
+    if(avatar) profile.avatar=avatar;
     currentUser=username;
     isOwnerAccount=!!isOwner;
     saveProfile();
@@ -2154,9 +2643,13 @@ function onAuthSuccess(username,isOwner){
 
     renderOwnerBadges();
 
+    document.getElementById("notif-wrap").style.display="inline-block";
+    loadNotifications();
+
     // Перезагружаем ленту — подтягиваем личные лайки/статусы выполнения
     // и пересчитываем статистику под этот аккаунт.
     loadChallenges();
+    loadMyChallenges();
 
 }
 
@@ -2180,7 +2673,7 @@ async function checkAuth(){
 
         if(res.ok){
             const data=await res.json();
-            onAuthSuccess(data.username,data.isOwner);
+            onAuthSuccess(data.username,data.isOwner,data.avatar);
         }
 
     }catch(e){
@@ -2190,6 +2683,121 @@ async function checkAuth(){
 }
 
 checkAuth();
+
+// ==========================
+// УВЕДОМЛЕНИЯ
+// ==========================
+
+let notifOpen=false;
+
+function updateNotifBadge(count){
+
+    const badge=document.getElementById("notif-badge");
+    if(!badge) return;
+
+    if(count>0){
+        badge.textContent=count>99?"99+":count;
+        badge.style.display="block";
+    }else{
+        badge.style.display="none";
+    }
+
+}
+
+function renderNotifDropdown(notifications){
+
+    const box=document.getElementById("notif-dropdown");
+    box.innerHTML="";
+
+    if(notifications.length===0){
+        const empty=document.createElement("div");
+        empty.className="notif-empty";
+        empty.textContent=t("notifEmpty");
+        box.appendChild(empty);
+        return;
+    }
+
+    const markBtn=document.createElement("button");
+    markBtn.className="check-btn";
+    markBtn.style.cssText="width:calc(100% - 20px);margin:10px;";
+    markBtn.textContent=t("notifMarkRead");
+    markBtn.onclick=markNotificationsRead;
+    box.appendChild(markBtn);
+
+    notifications.forEach(n=>{
+        const item=document.createElement("div");
+        item.className="notif-item"+(n.read?"":" unread");
+        item.textContent=n.message;
+        box.appendChild(item);
+    });
+
+}
+
+async function loadNotifications(){
+
+    if(!currentUser) return;
+
+    try{
+
+        const res=await fetch("/api/notifications");
+        if(!res.ok) return;
+        const notifications=await res.json();
+
+        renderNotifDropdown(notifications);
+        updateNotifBadge(notifications.filter(n=>!n.read).length);
+
+    }catch(e){
+        // тихо игнорируем — уведомления не критичны для работы сайта
+    }
+
+}
+
+async function markNotificationsRead(){
+
+    try{
+
+        await fetch("/api/notifications/read",{method:"POST"});
+        await loadNotifications();
+
+    }catch(e){
+
+        alert(t("serverErrorAlert"));
+
+    }
+
+}
+
+function toggleNotifDropdown(){
+
+    notifOpen=!notifOpen;
+    document.getElementById("notif-dropdown").classList.toggle("open",notifOpen);
+
+    if(notifOpen) loadNotifications();
+
+}
+
+function hideNotifDropdown(){
+
+    notifOpen=false;
+    const dropdown=document.getElementById("notif-dropdown");
+    if(dropdown) dropdown.classList.remove("open");
+
+}
+
+// Клик вне колокольчика — закрываем список уведомлений.
+document.addEventListener("click",function(e){
+
+    const wrap=document.getElementById("notif-wrap");
+    if(wrap && notifOpen && !wrap.contains(e.target)){
+        hideNotifDropdown();
+    }
+
+});
+
+// Периодически подтягиваем новые уведомления, пока вкладка открыта.
+setInterval(()=>{
+    if(currentUser) loadNotifications();
+},30000);
 
 // ==========================
 // АДМИН-ПАНЕЛЬ (только владелец — но проверка реальной власти всегда на сервере)
@@ -2347,18 +2955,24 @@ async function loadAdminModeration(){
         list.innerHTML="";
 
         if(pending.length===0){
-            list.textContent="Нет квестов, ожидающих проверки.";
+            list.textContent="Нет челленджей, ожидающих проверки.";
             return;
         }
 
         pending.forEach(item=>{
 
             const card=document.createElement("div");
-            card.className="card rarity-common";
+            applyCardColor(card, item.color||null);
 
             const iconBox=document.createElement("div");
             iconBox.className="icon-box";
-            iconBox.textContent=item.icon||"❓";
+            if(item.iconImage){
+                const img=document.createElement("img");
+                img.src=item.iconImage;
+                iconBox.appendChild(img);
+            }else{
+                iconBox.textContent=item.icon||"❓";
+            }
 
             const info=document.createElement("div");
             info.style.flex="1";
@@ -2388,7 +3002,11 @@ async function loadAdminModeration(){
             const rejectBtn=document.createElement("button");
             rejectBtn.className="like-btn";
             rejectBtn.textContent="✕ Отклонить";
-            rejectBtn.onclick=()=>moderateChallenge(item.id,"reject");
+            rejectBtn.onclick=()=>{
+                const reason=prompt("Причина отклонения (покажем автору, необязательно):","");
+                if(reason===null) return; // отменили — ничего не делаем
+                moderateChallenge(item.id,"reject",reason);
+            };
 
             actions.append(approveBtn,rejectBtn);
             card.append(iconBox,info,actions);
@@ -2398,17 +3016,21 @@ async function loadAdminModeration(){
 
     }catch(e){
 
-        list.textContent="Не удалось загрузить квесты на модерации.";
+        list.textContent="Не удалось загрузить челленджи на модерации.";
 
     }
 
 }
 
-async function moderateChallenge(id,action){
+async function moderateChallenge(id,action,reason){
 
     try{
 
-        const res=await fetch(`/api/admin/challenges/${id}/${action}`,{method:"POST"});
+        const res=await fetch(`/api/admin/challenges/${id}/${action}`,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:action==="reject"?JSON.stringify({reason:reason||""}):undefined
+        });
 
         if(!res.ok){
             alert("Не удалось выполнить действие");
@@ -2515,8 +3137,8 @@ async function loadAdminStats(){
 
         const lines=[
             ["Пользователей зарегистрировано",stats.users],
-            ["Квестов опубликовано",stats.challenges],
-            ["Квестов ждут модерации",stats.pendingChallenges],
+            ["Челленджей опубликовано",stats.challenges],
+            ["Челленджей ждут модерации",stats.pendingChallenges],
             ["Всего лайков",stats.totalLikes]
         ];
 

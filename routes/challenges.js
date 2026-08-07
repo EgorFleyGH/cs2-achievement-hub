@@ -2,9 +2,13 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 const {
   getApprovedChallenges,
+  getApprovedChallengesByUsername,
+  getChallengesByAuthorId,
   createChallenge,
   likeChallenge,
-  toggleChallengeDone
+  toggleChallengeDone,
+  getUserPublicByUsername,
+  createNotification
 } = require("../db");
 const { OWNER_USERNAME } = require("../config");
 
@@ -26,15 +30,16 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// Приводим квест к виду, который ждёт фронтенд, добавляя
+// Приводим челлендж к виду, который ждёт фронтенд, добавляя
 // личные флаги (лайкнул/выполнил ли ЭТОТ пользователь).
 function serializeChallenge(challenge, userId) {
   return {
     id: challenge.id,
     icon: challenge.icon,
+    iconImage: challenge.iconImage,
     title: challenge.title,
     desc: challenge.desc,
-    rarity: challenge.rarity,
+    color: challenge.color,
     authorUsername: challenge.authorUsername,
     authorIsOwner: challenge.authorUsername === OWNER_USERNAME,
     likes: challenge.likedBy.length,
@@ -43,8 +48,19 @@ function serializeChallenge(challenge, userId) {
   };
 }
 
+// То же самое, но с добавлением статуса модерации и причины отказа —
+// используется в "Мои челленджи" в профиле, где автор должен видеть
+// весь свой список, а не только одобренные.
+function serializeOwnChallenge(challenge, userId) {
+  return {
+    ...serializeChallenge(challenge, userId),
+    status: challenge.status,
+    rejectReason: challenge.rejectReason || null
+  };
+}
+
 // =========================
-// Список одобренных квестов (публично, логин не нужен)
+// Список одобренных челленджей (публично, логин не нужен)
 // =========================
 router.get("/challenges", async (req, res) => {
   try {
@@ -52,16 +68,61 @@ router.get("/challenges", async (req, res) => {
     const challenges = await getApprovedChallenges();
     res.json(challenges.map((c) => serializeChallenge(c, userId)));
   } catch (e) {
-    console.error("Ошибка загрузки квестов:", e);
-    res.status(500).json({ error: "Не удалось загрузить испытания" });
+    console.error("Ошибка загрузки челленджей:", e);
+    res.status(500).json({ error: "Не удалось загрузить челленджи" });
   }
 });
 
 // =========================
-// Публикация нового квеста (уходит на модерацию)
+// Мои челленджи (в любом статусе модерации) — для профиля
+// =========================
+router.get("/challenges/mine", requireAuth, async (req, res) => {
+  try {
+    const mine = await getChallengesByAuthorId(req.session.userId);
+    res.json(mine.map((c) => serializeOwnChallenge(c, req.session.userId)));
+  } catch (e) {
+    console.error("Ошибка загрузки своих челленджей:", e);
+    res.status(500).json({ error: "Не удалось загрузить ваши челленджи" });
+  }
+});
+
+// =========================
+// Публичный профиль другого игрока
+// =========================
+router.get("/users/:username", async (req, res) => {
+  try {
+    const user = await getUserPublicByUsername(req.params.username);
+    if (!user) {
+      return res.status(404).json({ error: "Пользователь не найден" });
+    }
+
+    const userId = req.session.userId || null;
+    const challenges = await getApprovedChallengesByUsername(user.username);
+    const serialized = challenges.map((c) => serializeChallenge(c, userId));
+    const totalLikes = serialized.reduce((sum, c) => sum + c.likes, 0);
+
+    res.json({
+      username: user.username,
+      avatar: user.avatar || "",
+      isOwner: user.username === OWNER_USERNAME,
+      createdAt: user.created_at,
+      stats: {
+        created: serialized.length,
+        likes: totalLikes
+      },
+      challenges: serialized
+    });
+  } catch (e) {
+    console.error("Ошибка загрузки профиля пользователя:", e);
+    res.status(500).json({ error: "Не удалось загрузить профиль" });
+  }
+});
+
+// =========================
+// Публикация нового челленджа (уходит на модерацию)
 // =========================
 router.post("/challenges", requireAuth, publishLimiter, async (req, res) => {
-  const { icon, title, desc, rarity } = req.body || {};
+  const { icon, iconImage, title, desc, color } = req.body || {};
 
   if (typeof title !== "string" || title.trim().length === 0) {
     return res.status(400).json({ error: "Название обязательно" });
@@ -72,23 +133,35 @@ router.post("/challenges", requireAuth, publishLimiter, async (req, res) => {
   if (typeof desc === "string" && desc.length > 140) {
     return res.status(400).json({ error: "Описание слишком длинное" });
   }
+  if (typeof color === "string" && color && !/^#[0-9a-fA-F]{6}$/.test(color)) {
+    return res.status(400).json({ error: "Некорректный цвет" });
+  }
+  // Картинка-аватарка челленджа передаётся как data URL (base64).
+  // Ограничиваем размер, чтобы не раздувать базу данных.
+  if (typeof iconImage === "string" && iconImage.length > 1_500_000) {
+    return res.status(400).json({ error: "Картинка слишком большая" });
+  }
+  if (typeof iconImage === "string" && iconImage && !iconImage.startsWith("data:image/")) {
+    return res.status(400).json({ error: "Некорректный формат картинки" });
+  }
 
   try {
     const challenge = await createChallenge(req.session.userId, req.session.username, {
       icon,
+      iconImage: typeof iconImage === "string" && iconImage ? iconImage : null,
       title: title.trim(),
       desc: typeof desc === "string" ? desc.trim() : "",
-      rarity
+      color: typeof color === "string" && color ? color : null
     });
 
-    // Квест ещё не виден в общей ленте — только после одобрения владельцем.
+    // Челлендж ещё не виден в общей ленте — только после одобрения владельцем.
     res.status(201).json({
       ...serializeChallenge(challenge, req.session.userId),
       pending: true
     });
   } catch (e) {
-    console.error("Ошибка публикации квеста:", e);
-    res.status(500).json({ error: "Не удалось опубликовать испытание" });
+    console.error("Ошибка публикации челленджа:", e);
+    res.status(500).json({ error: "Не удалось опубликовать челлендж" });
   }
 });
 
@@ -99,10 +172,28 @@ router.post("/challenges/:id/like", requireAuth, async (req, res) => {
   const id = Number(req.params.id);
 
   try {
-    const challenge = await likeChallenge(id, req.session.userId);
+    const result = await likeChallenge(id, req.session.userId);
 
-    if (!challenge) {
-      return res.status(404).json({ error: "Квест не найден" });
+    if (!result) {
+      return res.status(404).json({ error: "Челлендж не найден" });
+    }
+
+    const { challenge, isNewLike } = result;
+
+    // Уведомляем автора о новом лайке — и отдельным, особым сообщением,
+    // если лайк поставил сам владелец сайта.
+    if (isNewLike && challenge.authorId !== req.session.userId) {
+      const likerIsOwner = req.session.username === OWNER_USERNAME;
+      const message = likerIsOwner
+        ? `👑 Сам владелец сайта оценил ваш челлендж «${challenge.title}»!`
+        : `❤️ Пользователь ${req.session.username} оценил ваш челлендж «${challenge.title}»`;
+
+      await createNotification(
+        challenge.authorId,
+        likerIsOwner ? "owner_like" : "like",
+        message,
+        challenge.id
+      );
     }
 
     res.json(serializeChallenge(challenge, req.session.userId));
@@ -122,7 +213,7 @@ router.post("/challenges/:id/done", requireAuth, async (req, res) => {
     const challenge = await toggleChallengeDone(id, req.session.userId);
 
     if (!challenge) {
-      return res.status(404).json({ error: "Квест не найден" });
+      return res.status(404).json({ error: "Челлендж не найден" });
     }
 
     res.json(serializeChallenge(challenge, req.session.userId));
