@@ -656,10 +656,10 @@ h1{
 
 <body>
 
-<!-- Переключатель языка — всегда виден, фиксирован в углу экрана -->
+<!-- Переключатель языка — всегда виден, фиксирован в нижнем углу экрана -->
 <div id="lang-switcher" style="
     position:fixed;
-    top:14px;
+    bottom:14px;
     right:14px;
     z-index:2000;
     display:flex;
@@ -668,6 +668,7 @@ h1{
     border:1px solid #253344;
     border-radius:6px;
     padding:4px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.4);
 ">
     <button id="lang-btn-ru" onclick="setLang('ru')" style="
         border:none;
@@ -678,7 +679,7 @@ h1{
         cursor:pointer;
         font-size:13px;
         font-weight:bold;
-    ">RU</button>
+    ">🇷🇺 RU</button>
     <button id="lang-btn-en" onclick="setLang('en')" style="
         border:none;
         background:transparent;
@@ -688,7 +689,7 @@ h1{
         cursor:pointer;
         font-size:13px;
         font-weight:bold;
-    ">EN</button>
+    ">🇬🇧 EN</button>
 </div>
 
 <!-- Модалка выбора языка при первом заходе -->
@@ -713,8 +714,8 @@ h1{
             Выберите язык / Choose language
         </p>
         <div style="display:flex;gap:12px;justify-content:center;">
-            <button onclick="setLang('ru');closeLangModal();" class="save-btn" style="width:120px;margin:0;">Русский</button>
-            <button onclick="setLang('en');closeLangModal();" class="save-btn" style="width:120px;margin:0;background:#3a4b5f;">English</button>
+            <button onclick="setLang('ru');closeLangModal();" class="save-btn" style="width:120px;margin:0;">🇷🇺 Русский</button>
+            <button onclick="setLang('en');closeLangModal();" class="save-btn" style="width:120px;margin:0;background:#3a4b5f;">🇬🇧 English</button>
         </div>
     </div>
 </div>
@@ -1436,6 +1437,7 @@ const I18N={
 };
 
 let currentLang=localStorage.getItem("lang");
+let authMode="login"; // объявлено здесь заранее, чтобы applyLanguage() могло безопасно его читать
 
 function t(key){
 
@@ -1468,7 +1470,7 @@ function applyLanguage(){
     // Кнопка "Войти"/"Зарегистрироваться" на вкладке Аккаунт зависит от режима —
     // applyLanguage только меняет статичный текст, а setAuthMode переустановит
     // правильный текст с учётом текущего режима после смены языка.
-    if(typeof authMode!=="undefined") setAuthMode(authMode);
+    setAuthMode(authMode);
 
 }
 
@@ -2054,8 +2056,6 @@ reader.readAsDataURL(file);
 // ==========================
 // АККАУНТ (вход / регистрация через сервер)
 // ==========================
-
-let authMode="login";
 
 function setAuthMode(mode){
 
