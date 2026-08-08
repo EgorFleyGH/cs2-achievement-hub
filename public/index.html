@@ -852,6 +852,11 @@ h1{
                     onclick="switchTab('scr-gallery',this)" data-i18n="navGallery">
                 Все челленджи
             </button>
+
+            <button class="nav-tab"
+                    onclick="switchTab('scr-leaderboard',this);loadLeaderboard();" data-i18n="navLeaderboard">
+                🏆 Лидеры
+            </button>
             
             <button class="nav-tab" onclick="switchTab('scr-profile', this);loadMyChallenges();" data-i18n="navProfile">
                 Профиль
@@ -933,7 +938,7 @@ h1{
 
         <div class="panel">
 
-            <label data-i18n="editorTitleLabel">Название челленджа</label>
+            <label data-i18n="editorTitleLabel">Название челленджа (RU)</label>
 
             <input
                 id="in-title"
@@ -941,12 +946,35 @@ h1{
                 maxlength="35"
                 value="Эйс на пистолетке">
 
-            <label data-i18n="editorDescLabel">Описание</label>
+            <label data-i18n="editorDescLabel">Описание (RU)</label>
 
             <textarea
                 id="in-desc"
                 rows="4"
                 maxlength="140">Убейте всех пятерых противников из пистолета в первом раунде.</textarea>
+
+            <label data-i18n="editorTitleEnLabel">Название (EN) — необязательно</label>
+
+            <input
+                id="in-title-en"
+                type="text"
+                maxlength="35"
+                placeholder="Ace with pistol">
+
+            <label data-i18n="editorDescEnLabel">Описание (EN) — необязательно</label>
+
+            <textarea
+                id="in-desc-en"
+                rows="4"
+                maxlength="140"
+                placeholder="Kill all five enemies with a pistol in the first round."></textarea>
+
+            <p style="color:#8fa0b5;font-size:12px;line-height:1.6;margin-bottom:15px;" data-i18n="editorTranslateHint">
+                Если не знаете английский — воспользуйтесь переводчиком
+                (например, Google Translate), либо оставьте поле пустым:
+                англоязычным пользователям будет показан русский текст,
+                пока владелец сайта не добавит перевод при модерации.
+            </p>
 
             <label data-i18n="editorColorLabel">Цвет карточки</label>
 
@@ -1155,6 +1183,15 @@ h1{
 
             </div>
 
+            <div style="margin-top:30px;text-align:left;">
+                <label data-i18n="profileSteamLabel">Ссылка на профиль (Steam или любой другой)</label>
+                <div style="display:flex;gap:8px;">
+                    <input id="in-steam-url" type="url" data-i18n-placeholder="profileSteamPlaceholder" placeholder="https://steamcommunity.com/id/..." style="flex:1;">
+                    <button id="btn-save-steam" class="save-btn" style="width:auto;white-space:nowrap;padding:0 20px;margin:0;" data-i18n="profileSteamSave">Сохранить ссылку</button>
+                </div>
+                <p id="steam-save-status" style="color:#5b7390;font-size:12px;margin-top:6px;"></p>
+            </div>
+
             <div style="margin-top:30px;">
                 <h3 style="color:#de9b35;margin-bottom:15px;" data-i18n="profileMyChallengesTitle">
                     Мои челленджи
@@ -1209,6 +1246,16 @@ h1{
                 border-radius:4px;
                 vertical-align:middle;
             ">👑 <span data-i18n="ownerBadge">Владелец</span></span>
+
+            <br>
+
+            <a id="public-profile-steam-link" href="#" target="_blank" rel="noopener" style="
+                display:none;
+                color:#de9b35;
+                font-size:13px;
+                text-decoration:underline;
+                margin-top:8px;
+            "></a>
 
             <br>
 
@@ -1415,6 +1462,47 @@ h1{
 <!-- ПОДДЕРЖКА -->
 <!-- ===================================== -->
 
+<!-- ===================================== -->
+<!-- ТАБЛИЦА ЛИДЕРОВ -->
+<!-- ===================================== -->
+
+<div id="scr-leaderboard" class="screen">
+
+    <div class="gallery-layout">
+
+        <div class="gallery-header">
+
+            <h2 data-i18n="leaderboardTitle">Таблица лидеров</h2>
+
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:1000px;margin:0 auto;">
+
+            <div class="panel" style="width:100%;">
+                <h3 style="color:#de9b35;margin-bottom:15px;" data-i18n="leaderboardCreators">🏆 Больше всего создал челленджей</h3>
+                <div id="leaderboard-creators"></div>
+            </div>
+
+            <div class="panel" style="width:100%;">
+                <h3 style="color:#de9b35;margin-bottom:15px;" data-i18n="leaderboardLikes">❤️ Больше всего получил лайков</h3>
+                <div id="leaderboard-likes"></div>
+            </div>
+
+            <div class="panel" style="width:100%;">
+                <h3 style="color:#de9b35;margin-bottom:15px;" data-i18n="leaderboardCompleted">✅ Больше всего выполнил челленджей</h3>
+                <div id="leaderboard-completed"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================== -->
+<!-- ПОДДЕРЖКА -->
+<!-- ===================================== -->
+
 <div id="scr-support" class="screen">
 
     <div
@@ -1508,6 +1596,18 @@ const I18N={
         navHome:"Главная",
         navAdd:"Добавить челлендж",
         navGallery:"Все челленджи",
+        navLeaderboard:"🏆 Лидеры",
+        leaderboardTitle:"Таблица лидеров",
+        leaderboardCreators:"🏆 Больше всего создал челленджей",
+        leaderboardLikes:"❤️ Больше всего получил лайков",
+        leaderboardCompleted:"✅ Больше всего выполнил челленджей",
+        leaderboardEmpty:"Пока данных нет.",
+        leaderboardError:"Не удалось загрузить таблицу лидеров.",
+        profileSteamLabel:"Ссылка на профиль (Steam или любой другой)",
+        profileSteamSave:"Сохранить ссылку",
+        profileSteamSaved:"Ссылка сохранена",
+        profileSteamPlaceholder:"https://steamcommunity.com/id/...",
+        publicProfileSteamLink:"🔗 Профиль игрока",
         navProfile:"Профиль",
         navAccount:"Аккаунт",
         navSupport:"Поддержка",
@@ -1516,6 +1616,9 @@ const I18N={
         heroBtn:"Придумать челлендж",
         editorTitleLabel:"Название челленджа",
         editorDescLabel:"Описание",
+        editorTitleEnLabel:"Название (EN) — необязательно",
+        editorDescEnLabel:"Описание (EN) — необязательно",
+        editorTranslateHint:"Если не знаете английский — воспользуйтесь переводчиком (например, Google Translate), либо оставьте поле пустым: англоязычным пользователям будет показан русский текст, пока владелец сайта не добавит перевод при модерации.",
         editorColorLabel:"Цвет карточки",
         editorColorDefault:"Не менять цвет (по умолчанию)",
         editorIconLabel:"Иконка (эмодзи)",
@@ -1587,6 +1690,18 @@ const I18N={
         navHome:"Home",
         navAdd:"Add Challenge",
         navGallery:"All Challenges",
+        navLeaderboard:"🏆 Leaderboard",
+        leaderboardTitle:"Leaderboard",
+        leaderboardCreators:"🏆 Most challenges created",
+        leaderboardLikes:"❤️ Most likes received",
+        leaderboardCompleted:"✅ Most challenges completed",
+        leaderboardEmpty:"No data yet.",
+        leaderboardError:"Failed to load the leaderboard.",
+        profileSteamLabel:"Profile link (Steam or any other)",
+        profileSteamSave:"Save link",
+        profileSteamSaved:"Link saved",
+        profileSteamPlaceholder:"https://steamcommunity.com/id/...",
+        publicProfileSteamLink:"🔗 Player profile",
         navProfile:"Profile",
         navAccount:"Account",
         navSupport:"Support",
@@ -1595,6 +1710,9 @@ const I18N={
         heroBtn:"Create a challenge",
         editorTitleLabel:"Challenge title",
         editorDescLabel:"Description",
+        editorTitleEnLabel:"Title (EN) — optional",
+        editorDescEnLabel:"Description (EN) — optional",
+        editorTranslateHint:"If you don't know English, use a translator (e.g. Google Translate), or leave it blank: English-speaking users will see the Russian text until the site owner adds a translation during moderation.",
         editorColorLabel:"Card color",
         editorColorDefault:"Don't change the color (default)",
         editorIconLabel:"Icon (emoji)",
@@ -1758,6 +1876,8 @@ function switchTab(screenId, btn){
 
 const titleInput=document.getElementById("in-title");
 const descInput=document.getElementById("in-desc");
+const titleEnInput=document.getElementById("in-title-en");
+const descEnInput=document.getElementById("in-desc-en");
 const iconInput=document.getElementById("in-icon");
 const colorInput=document.getElementById("in-color");
 const colorDefaultCheckbox=document.getElementById("in-color-default");
@@ -1896,7 +2016,18 @@ function renderCard(item){
         author.append(" 👑");
     }
 
-    info.append(title,desc,author);
+    info.append(title,desc);
+
+    if(currentLang==="en"&&item.translated===false){
+
+        const note=document.createElement("p");
+        note.style.cssText="color:#5b7390;font-size:11px;margin-top:4px;font-style:italic;";
+        note.textContent="(Not yet translated — showing original)";
+        info.appendChild(note);
+
+    }
+
+    info.appendChild(author);
 
     const actions=document.createElement("div");
     actions.className="card-actions";
@@ -1959,7 +2090,7 @@ async function loadChallenges(){
 
     try{
 
-        const res=await fetch("/api/challenges");
+        const res=await fetch("/api/challenges?lang="+currentLang);
         challenges=await res.json();
 
     }catch(e){
@@ -2151,6 +2282,8 @@ document.getElementById("btn-publish").onclick=async function(){
                 iconImage:pendingIconImage||null,
                 title:titleInput.value||"Без названия",
                 desc:descInput.value||"Нет описания",
+                titleEn:document.getElementById("in-title-en").value.trim(),
+                descEn:document.getElementById("in-desc-en").value.trim(),
                 color:colorDefaultCheckbox.checked?null:colorInput.value
             })
         });
@@ -2169,6 +2302,8 @@ document.getElementById("btn-publish").onclick=async function(){
 
         titleInput.value="";
         descInput.value="";
+        document.getElementById("in-title-en").value="";
+        document.getElementById("in-desc-en").value="";
         iconInput.value="💣";
         colorDefaultCheckbox.checked=true;
         colorInput.disabled=true;
@@ -2380,6 +2515,48 @@ reader.readAsDataURL(file);
 });
 
 // ==========================
+// ССЫЛКА НА STEAM / ПРОФИЛЬ
+// ==========================
+
+document.getElementById("btn-save-steam").onclick=async function(){
+
+    if(!currentUser){
+        goToAuthTab(t("authGoToLoginNeeded"));
+        return;
+    }
+
+    const url=document.getElementById("in-steam-url").value.trim();
+    const status=document.getElementById("steam-save-status");
+
+    try{
+
+        const res=await fetch("/api/profile/steam",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({steamUrl:url})
+        });
+
+        const data=await res.json();
+
+        if(!res.ok){
+            status.textContent=data.error||t("serverErrorAlert");
+            status.style.color="#ff8080";
+            return;
+        }
+
+        status.textContent=t("profileSteamSaved");
+        status.style.color="#5b7390";
+
+    }catch(e){
+
+        status.textContent=t("serverErrorAlert");
+        status.style.color="#ff8080";
+
+    }
+
+}
+
+// ==========================
 // МОИ ЧЕЛЛЕНДЖИ (в профиле)
 // ==========================
 
@@ -2515,6 +2692,15 @@ async function viewProfile(username){
             document.getElementById("public-profile-avatar").src="https://placehold.co/180x180/png?text=%F0%9F%91%A4";
         }
 
+        const steamLink=document.getElementById("public-profile-steam-link");
+        if(data.steamUrl){
+            steamLink.href=data.steamUrl;
+            steamLink.textContent=t("publicProfileSteamLink");
+            steamLink.style.display="inline-block";
+        }else{
+            steamLink.style.display="none";
+        }
+
         const list=document.getElementById("public-profile-challenges");
         list.innerHTML="";
 
@@ -2537,8 +2723,79 @@ async function viewProfile(username){
 
 
 // ==========================
-// АККАУНТ (вход / регистрация через сервер)
+// ТАБЛИЦА ЛИДЕРОВ
 // ==========================
+
+function renderLeaderboardList(containerId, entries, unitLabel){
+
+    const container=document.getElementById(containerId);
+    container.innerHTML="";
+
+    if(!entries||entries.length===0){
+
+        const empty=document.createElement("p");
+        empty.style.cssText="color:#5b7390;padding:10px 0;";
+        empty.textContent=t("leaderboardEmpty");
+        container.appendChild(empty);
+        return;
+
+    }
+
+    entries.forEach((entry,index)=>{
+
+        const row=document.createElement("div");
+        row.style.cssText="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #253344;";
+
+        const left=document.createElement("div");
+        left.style.cssText="display:flex;align-items:center;gap:10px;";
+
+        const rank=document.createElement("span");
+        rank.style.cssText="color:#5b7390;font-weight:bold;width:22px;";
+        rank.textContent="#"+(index+1);
+
+        const name=document.createElement("span");
+        name.style.cssText="color:#de9b35;cursor:pointer;text-decoration:underline;";
+        name.textContent=entry.username;
+        name.onclick=()=>viewProfile(entry.username);
+
+        left.append(rank,name);
+
+        const count=document.createElement("span");
+        count.style.cssText="color:#8fa0b5;";
+        count.textContent=entry.count;
+
+        row.append(left,count);
+        container.appendChild(row);
+
+    });
+
+}
+
+async function loadLeaderboard(){
+
+    ["leaderboard-creators","leaderboard-likes","leaderboard-completed"].forEach(id=>{
+        document.getElementById(id).textContent="...";
+    });
+
+    try{
+
+        const res=await fetch("/api/leaderboard");
+        const data=await res.json();
+
+        renderLeaderboardList("leaderboard-creators",data.topCreators);
+        renderLeaderboardList("leaderboard-likes",data.topLiked);
+        renderLeaderboardList("leaderboard-completed",data.topCompleted);
+
+    }catch(e){
+
+        ["leaderboard-creators","leaderboard-likes","leaderboard-completed"].forEach(id=>{
+            document.getElementById(id).textContent=t("leaderboardError");
+        });
+
+    }
+
+}
+
 
 function setAuthMode(mode){
 
@@ -2589,7 +2846,7 @@ async function submitAuth(){
             return;
         }
 
-        onAuthSuccess(data.username,data.isOwner,data.avatar);
+        onAuthSuccess(data.username,data.isOwner,data.avatar,data.steamUrl);
 
     }catch(e){
 
@@ -2627,7 +2884,7 @@ async function logout(){
 
 }
 
-function onAuthSuccess(username,isOwner,avatar){
+function onAuthSuccess(username,isOwner,avatar,steamUrl){
 
     document.getElementById("auth-guest").style.display="none";
     document.getElementById("auth-user").style.display="block";
@@ -2640,6 +2897,9 @@ function onAuthSuccess(username,isOwner,avatar){
     isOwnerAccount=!!isOwner;
     saveProfile();
     updateProfile();
+
+    const steamInput=document.getElementById("in-steam-url");
+    if(steamInput) steamInput.value=steamUrl||"";
 
     renderOwnerBadges();
 
@@ -2673,7 +2933,7 @@ async function checkAuth(){
 
         if(res.ok){
             const data=await res.json();
-            onAuthSuccess(data.username,data.isOwner,data.avatar);
+            onAuthSuccess(data.username,data.isOwner,data.avatar,data.steamUrl);
         }
 
     }catch(e){

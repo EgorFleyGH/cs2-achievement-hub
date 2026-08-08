@@ -10,6 +10,7 @@ const challengeRoutes = require("./routes/challenges");
 const newsRoutes = require("./routes/news");
 const adminRoutes = require("./routes/admin");
 const notificationRoutes = require("./routes/notifications");
+const leaderboardRoutes = require("./routes/leaderboard");
 const { initDb } = require("./db");
 
 const app = express();
@@ -44,6 +45,7 @@ app.use("/api", authRoutes);
 app.use("/api", challengeRoutes);
 app.use("/api", newsRoutes);
 app.use("/api", notificationRoutes);
+app.use("/api", leaderboardRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Отдаём фронтенд как статику

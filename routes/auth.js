@@ -1,7 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
-const { findUserByUsername, createUser, setUserAvatar } = require("../db");
+const { findUserByUsername, createUser, setUserAvatar, setUserSteamUrl } = require("../db");
 const { OWNER_USERNAME } = require("../config");
 
 const router = express.Router();
@@ -54,7 +54,7 @@ router.post("/register", authLimiter, async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
 
-    res.status(201).json({ id: user.id, username: user.username, avatar: user.avatar || "", isOwner: user.username === OWNER_USERNAME });
+    res.status(201).json({ id: user.id, username: user.username, avatar: user.avatar || "", steamUrl: user.steam_url || "", isOwner: user.username === OWNER_USERNAME });
   } catch (e) {
     console.error("Ошибка регистрации:", e);
     res.status(500).json({ error: "Не удалось зарегистрироваться, попробуйте позже" });
@@ -87,7 +87,7 @@ router.post("/login", authLimiter, async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
 
-    res.json({ id: user.id, username: user.username, avatar: user.avatar || "", isOwner: user.username === OWNER_USERNAME });
+    res.json({ id: user.id, username: user.username, avatar: user.avatar || "", steamUrl: user.steam_url || "", isOwner: user.username === OWNER_USERNAME });
   } catch (e) {
     console.error("Ошибка входа:", e);
     res.status(500).json({ error: "Не удалось войти, попробуйте позже" });
@@ -124,6 +124,7 @@ router.get("/me", async (req, res) => {
       id: req.session.userId,
       username: req.session.username,
       avatar: user.avatar || "",
+      steamUrl: user.steam_url || "",
       isOwner: req.session.username === OWNER_USERNAME
     });
   } catch (e) {
@@ -156,6 +157,36 @@ router.post("/profile/avatar", async (req, res) => {
   } catch (e) {
     console.error("Ошибка загрузки аватара:", e);
     res.status(500).json({ error: "Не удалось сохранить аватар" });
+  }
+});
+
+// =========================
+// Ссылка на Steam-профиль (или любую другую ссылку профиля)
+// =========================
+router.post("/profile/steam", async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Нужно войти в аккаунт" });
+  }
+
+  const { steamUrl } = req.body || {};
+
+  if (steamUrl !== "" && typeof steamUrl === "string") {
+    if (steamUrl.length > 200) {
+      return res.status(400).json({ error: "Ссылка слишком длинная" });
+    }
+    if (!/^https?:\/\//i.test(steamUrl)) {
+      return res.status(400).json({ error: "Ссылка должна начинаться с http:// или https://" });
+    }
+  } else if (steamUrl !== "") {
+    return res.status(400).json({ error: "Некорректная ссылка" });
+  }
+
+  try {
+    const user = await setUserSteamUrl(req.session.userId, steamUrl || null);
+    res.json({ steamUrl: user.steam_url || "" });
+  } catch (e) {
+    console.error("Ошибка сохранения Steam-ссылки:", e);
+    res.status(500).json({ error: "Не удалось сохранить ссылку" });
   }
 });
 

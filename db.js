@@ -29,6 +29,7 @@ async function initDb() {
       password_hash TEXT NOT NULL,
       banned BOOLEAN NOT NULL DEFAULT false,
       avatar TEXT,
+      steam_url TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `);
@@ -42,6 +43,8 @@ async function initDb() {
       icon_image TEXT,
       title TEXT NOT NULL,
       description TEXT,
+      title_en TEXT,
+      description_en TEXT,
       rarity TEXT,
       color TEXT,
       liked_by JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -87,6 +90,9 @@ async function initDb() {
   await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS icon_image TEXT`);
   await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS color TEXT`);
   await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS reject_reason TEXT`);
+  await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS title_en TEXT`);
+  await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS description_en TEXT`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS steam_url TEXT`);
 
   // Наполняем новости стартовым содержимым один раз, если пусто —
   // дальше владелец сайта полностью управляет ими через админ-панель.
@@ -162,11 +168,19 @@ async function setUserAvatar(userId, avatar) {
   return rows[0] || null;
 }
 
+async function setUserSteamUrl(userId, steamUrl) {
+  const { rows } = await pool.query(
+    "UPDATE users SET steam_url = $1 WHERE id = $2 RETURNING id, username, steam_url",
+    [steamUrl, userId]
+  );
+  return rows[0] || null;
+}
+
 // Публичный профиль — по нику. Отдаём только то, что не приватно:
 // без пароля, без статуса бана (это внутренняя информация).
 async function getUserPublicByUsername(username) {
   const { rows } = await pool.query(
-    "SELECT id, username, avatar, created_at FROM users WHERE username = $1",
+    "SELECT id, username, avatar, steam_url, created_at FROM users WHERE username = $1",
     [username]
   );
   return rows[0] || null;
@@ -185,6 +199,8 @@ function mapChallenge(r) {
     iconImage: r.icon_image,
     title: r.title,
     desc: r.description,
+    titleEn: r.title_en,
+    descEn: r.description_en,
     rarity: r.rarity,
     color: r.color,
     likedBy: r.liked_by || [],
@@ -227,11 +243,11 @@ async function getPendingChallenges() {
   return rows.map(mapChallenge);
 }
 
-async function createChallenge(authorId, authorUsername, { icon, iconImage, title, desc, color }) {
+async function createChallenge(authorId, authorUsername, { icon, iconImage, title, desc, titleEn, descEn, color }) {
   const { rows } = await pool.query(
     `INSERT INTO challenges
-      (author_id, author_username, icon, icon_image, title, description, color, liked_by, completed_by, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, '[]'::jsonb, '[]'::jsonb, 'pending')
+      (author_id, author_username, icon, icon_image, title, description, title_en, description_en, color, liked_by, completed_by, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '[]'::jsonb, '[]'::jsonb, 'pending')
      RETURNING *`,
     [
       authorId,
@@ -240,6 +256,8 @@ async function createChallenge(authorId, authorUsername, { icon, iconImage, titl
       iconImage || null,
       title || "Без названия",
       desc || "",
+      titleEn || null,
+      descEn || null,
       typeof color === "string" && color ? color : null
     ]
   );
@@ -405,6 +423,49 @@ async function markAllNotificationsRead(userId) {
   );
 }
 
+// =========================
+// Таблица лидеров
+// =========================
+
+async function getLeaderboard() {
+  const topCreators = await pool.query(`
+    SELECT author_username AS username, COUNT(*)::int AS count
+    FROM challenges
+    WHERE status = 'approved'
+    GROUP BY author_username
+    ORDER BY count DESC
+    LIMIT 10
+  `);
+
+  const topLiked = await pool.query(`
+    SELECT author_username AS username, COALESCE(SUM(jsonb_array_length(liked_by)), 0)::int AS count
+    FROM challenges
+    WHERE status = 'approved'
+    GROUP BY author_username
+    ORDER BY count DESC
+    LIMIT 10
+  `);
+
+  // "Выполнил больше всего" — это про пользователя, который отмечал
+  // чужие (и свои) челленджи выполненными, а не про автора.
+  const topCompleted = await pool.query(`
+    SELECT u.username AS username, COUNT(*)::int AS count
+    FROM challenges c,
+         LATERAL jsonb_array_elements_text(c.completed_by) AS uid
+    JOIN users u ON u.id = uid::int
+    WHERE c.status = 'approved'
+    GROUP BY u.username
+    ORDER BY count DESC
+    LIMIT 10
+  `);
+
+  return {
+    topCreators: topCreators.rows,
+    topLiked: topLiked.rows,
+    topCompleted: topCompleted.rows
+  };
+}
+
 module.exports = {
   initDb,
   findUserByUsername,
@@ -412,6 +473,7 @@ module.exports = {
   getAllUsers,
   setUserBanned,
   setUserAvatar,
+  setUserSteamUrl,
   getUserPublicByUsername,
   getApprovedChallenges,
   getApprovedChallengesByUsername,
@@ -430,5 +492,6 @@ module.exports = {
   createNotification,
   getNotifications,
   getUnreadNotificationCount,
-  markAllNotificationsRead
+  markAllNotificationsRead,
+  getLeaderboard
 };
