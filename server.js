@@ -12,6 +12,7 @@ const adminRoutes = require("./routes/admin");
 const notificationRoutes = require("./routes/notifications");
 const leaderboardRoutes = require("./routes/leaderboard");
 const supportRoutes = require("./routes/support");
+const demoRoutes = require("./routes/demos");
 const { initDb } = require("./db");
 
 const app = express();
@@ -48,6 +49,7 @@ app.use("/api", newsRoutes);
 app.use("/api", notificationRoutes);
 app.use("/api", leaderboardRoutes);
 app.use("/api", supportRoutes);
+app.use("/api", demoRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Отдаём фронтенд как статику

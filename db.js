@@ -68,6 +68,20 @@ async function initDb() {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS demo_submissions (
+      id SERIAL PRIMARY KEY,
+      challenge_id INTEGER NOT NULL REFERENCES challenges(id),
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      username TEXT NOT NULL,
+      filename TEXT NOT NULL,
+      file_size INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      reject_reason TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS news (
       id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
@@ -254,6 +268,11 @@ async function getPendingChallenges() {
   return rows.map(mapChallenge);
 }
 
+async function getChallengeById(id) {
+  const { rows } = await pool.query("SELECT * FROM challenges WHERE id = $1", [id]);
+  return rows[0] ? mapChallenge(rows[0]) : null;
+}
+
 async function createChallenge(authorId, authorUsername, { icon, iconImage, title, desc, titleEn, descEn, color }) {
   const { rows } = await pool.query(
     `INSERT INTO challenges
@@ -320,6 +339,89 @@ async function toggleChallengeDone(challengeId, userId) {
   );
 
   return mapChallenge(updated.rows[0]);
+}
+
+// В отличие от toggleChallengeDone (переключатель), эта функция
+// только ДОБАВЛЯЕТ пользователя в список выполнивших — используется
+// после того, как владелец сайта одобрил присланную демку.
+async function markChallengeCompletedForUser(challengeId, userId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM challenges WHERE id = $1",
+    [challengeId]
+  );
+  if (!rows[0]) return null;
+
+  const completedBy = rows[0].completed_by || [];
+  if (!completedBy.includes(userId)) {
+    completedBy.push(userId);
+  }
+
+  const updated = await pool.query(
+    "UPDATE challenges SET completed_by = $1 WHERE id = $2 RETURNING *",
+    [JSON.stringify(completedBy), challengeId]
+  );
+
+  return mapChallenge(updated.rows[0]);
+}
+
+// =========================
+// Проверка демок (.dem) для подтверждения выполнения челленджа
+// =========================
+
+async function createDemoSubmission(challengeId, userId, username, filename, fileSize) {
+  const { rows } = await pool.query(
+    `INSERT INTO demo_submissions (challenge_id, user_id, username, filename, file_size)
+     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [challengeId, userId, username, filename, fileSize]
+  );
+  return rows[0];
+}
+
+// Есть ли у пользователя уже отправленная (на проверке) демка по
+// этому челленджу — чтобы не давать засылать дубли, пока не разобрали.
+async function getPendingSubmissionForUserChallenge(challengeId, userId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM demo_submissions WHERE challenge_id = $1 AND user_id = $2 AND status = 'pending' LIMIT 1",
+    [challengeId, userId]
+  );
+  return rows[0] || null;
+}
+
+// Список ID челленджей, по которым у пользователя сейчас демка на проверке —
+// нужно фронтенду, чтобы показать "⏳ На проверке" вместо кнопки "Выполнить".
+async function getUserPendingDemoChallengeIds(userId) {
+  const { rows } = await pool.query(
+    "SELECT challenge_id FROM demo_submissions WHERE user_id = $1 AND status = 'pending'",
+    [userId]
+  );
+  return rows.map((r) => r.challenge_id);
+}
+
+async function getPendingDemoSubmissions() {
+  const { rows } = await pool.query(`
+    SELECT ds.*, c.title AS challenge_title, c.title_en AS challenge_title_en
+    FROM demo_submissions ds
+    JOIN challenges c ON c.id = ds.challenge_id
+    WHERE ds.status = 'pending'
+    ORDER BY ds.id ASC
+  `);
+  return rows;
+}
+
+async function getDemoSubmissionById(id) {
+  const { rows } = await pool.query(
+    "SELECT * FROM demo_submissions WHERE id = $1",
+    [id]
+  );
+  return rows[0] || null;
+}
+
+async function setDemoSubmissionStatus(id, status, rejectReason) {
+  const { rows } = await pool.query(
+    "UPDATE demo_submissions SET status = $1, reject_reason = $2 WHERE id = $3 RETURNING *",
+    [status, status === "rejected" ? (rejectReason || null) : null, id]
+  );
+  return rows[0] || null;
 }
 
 async function setChallengeStatus(challengeId, status, rejectReason) {
@@ -546,9 +648,11 @@ module.exports = {
   getApprovedChallengesByUsername,
   getChallengesByAuthorId,
   getPendingChallenges,
+  getChallengeById,
   createChallenge,
   likeChallenge,
   toggleChallengeDone,
+  markChallengeCompletedForUser,
   setChallengeStatus,
   deleteChallenge,
   getStats,
@@ -561,6 +665,12 @@ module.exports = {
   getUnreadNotificationCount,
   markAllNotificationsRead,
   getLeaderboard,
+  createDemoSubmission,
+  getPendingSubmissionForUserChallenge,
+  getUserPendingDemoChallengeIds,
+  getPendingDemoSubmissions,
+  getDemoSubmissionById,
+  setDemoSubmissionStatus,
   createSupportMessage,
   getSupportThread,
   getSupportThreadsList,

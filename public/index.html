@@ -8,7 +8,49 @@
 
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
 <style>
+/* =====================================================
+   CS2 CHALLENGE BOARD — DESIGN TOKENS
+   Tactical HUD language borrowed from CS2's own buy-menu
+   and scoreboard panels: chamfered (cut-corner) surfaces,
+   scope-bracket corner marks, and a two-faction accent
+   system — T-orange for primary actions, CT-blue for
+   secondary/informational elements.
+   ===================================================== */
+
+:root{
+
+    --bg:#090d13;
+    --panel:#10151d;
+    --panel-raised:#171e28;
+    --card:#141a23;
+    --line:#223040;
+    --line-soft:#1a232f;
+
+    --ink:#eef2f8;
+    --muted:#8996a8;
+    --dim:#62728a;
+
+    --orange:#ff6a1a;
+    --orange-dim:rgba(255,106,26,.16);
+    --orange-glow:rgba(255,106,26,.35);
+    --blue:#4ea8ff;
+    --blue-dim:rgba(78,168,255,.14);
+    --green:#3ddc84;
+    --red:#ff5555;
+
+    --chamfer:14px;
+    --chamfer-sm:8px;
+
+    --font-display:"Rajdhani","Segoe UI",sans-serif;
+    --font-body:"Inter","Segoe UI",sans-serif;
+    --font-mono:"JetBrains Mono",monospace;
+
+}
 
 *{
     margin:0;
@@ -17,18 +59,90 @@
 }
 
 body{
-    background:#0d131a;
-    color:white;
-    font-family:"Segoe UI",sans-serif;
+    background:
+        radial-gradient(ellipse 900px 500px at 15% -10%, rgba(255,106,26,.07), transparent 60%),
+        radial-gradient(ellipse 700px 500px at 100% 10%, rgba(78,168,255,.05), transparent 55%),
+        var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
     min-height:100vh;
+}
+
+::selection{
+    background:var(--orange);
+    color:#1a0e05;
+}
+
+a{ color:inherit; }
+
+/* Скошенные "тактические" углы — сигнатурная форма панелей и карточек,
+   вдохновлённая HUD-элементами самой CS2 (меню покупки, скорборд). */
+.chamfer{
+    clip-path:polygon(
+        var(--chamfer) 0, 100% 0,
+        100% calc(100% - var(--chamfer)), calc(100% - var(--chamfer)) 100%,
+        0 100%, 0 var(--chamfer)
+    );
+}
+
+.chamfer-sm{
+    clip-path:polygon(
+        var(--chamfer-sm) 0, 100% 0,
+        100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%,
+        0 100%, 0 var(--chamfer-sm)
+    );
+}
+
+/* Уголки прицела/видоискателя — фирменный элемент сайта.
+   Появляются на карточках и панелях при наведении. */
+.hud-corners{
+    position:relative;
+}
+
+.hud-corners::before,
+.hud-corners::after{
+    content:"";
+    position:absolute;
+    width:18px;
+    height:18px;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .2s;
+}
+
+.hud-corners::before{
+    top:-1px;
+    left:-1px;
+    border-top:2px solid var(--orange);
+    border-left:2px solid var(--orange);
+}
+
+.hud-corners::after{
+    bottom:-1px;
+    right:-1px;
+    border-bottom:2px solid var(--orange);
+    border-right:2px solid var(--orange);
+}
+
+.hud-corners:hover::before,
+.hud-corners:hover::after{
+    opacity:1;
+}
+
+h1,h2,h3,
+.nav-tab,.cs-btn,.save-btn,.check-btn,.donate-btn,
+.game,.logo-text,.site,.panel label,
+.gallery-header h2,.news-item h3{
+    font-family:var(--font-display);
 }
 
 /* ================= HEADER ================= */
 
 header{
-    height:60px;
-    background:#17202c;
-    border-bottom:2px solid #253344;
+    height:64px;
+    background:var(--panel-raised);
+    border-bottom:1px solid var(--line);
+    box-shadow:0 1px 0 rgba(255,106,26,.25);
 
     display:flex;
     justify-content:space-between;
@@ -49,21 +163,22 @@ header{
 }
 
 .game{
-    font-size:10px;
-    color:#de9b35;
+    font-size:11px;
+    color:var(--orange);
     letter-spacing:3px;
     text-transform:uppercase;
-    font-weight:bold;
+    font-weight:700;
 }
 
 .site{
-    font-size:17px;
-    font-weight:bold;
+    font-size:18px;
+    font-weight:700;
+    letter-spacing:.3px;
 }
 
 nav{
     display:flex;
-    height:60px;
+    height:64px;
 }
 
 .nav-tab{
@@ -71,36 +186,48 @@ nav{
     background:none;
     border:none;
 
-    color:#8fa0b5;
+    color:var(--muted);
 
     padding:0 20px;
 
     cursor:pointer;
 
-    font-size:14px;
-    font-weight:bold;
+    font-size:15px;
+    font-weight:600;
 
+    letter-spacing:.4px;
     text-transform:uppercase;
 
-    transition:.2s;
+    transition:color .15s;
 
-    border-bottom:3px solid transparent;
+    position:relative;
+    border-bottom:none;
+}
+
+.nav-tab::after{
+    content:"";
+    position:absolute;
+    left:20px;
+    right:20px;
+    bottom:0;
+    height:3px;
+    background:var(--orange);
+    clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);
+    transform:scaleX(0);
+    transform-origin:center;
+    transition:transform .18s;
 }
 
 .nav-tab:hover{
-
-    color:white;
-
-    background:rgba(255,255,255,.03);
-
+    color:var(--ink);
 }
 
 .nav-tab.active{
+    color:var(--orange);
+}
 
-    color:#de9b35;
-
-    border-bottom-color:#de9b35;
-
+.nav-tab.active::after{
+    transform:scaleX(1);
 }
 
 /* ================= NOTIFICATIONS ================= */
@@ -113,25 +240,27 @@ nav{
 .notif-bell{
     background:none;
     border:none;
-    color:#8fa0b5;
+    color:var(--muted);
     font-size:20px;
     cursor:pointer;
     position:relative;
     padding:6px;
+    transition:color .15s;
 }
 
 .notif-bell:hover{
-    color:white;
+    color:var(--ink);
 }
 
 .notif-badge{
     position:absolute;
     top:0;
     right:0;
-    background:#de3535;
+    background:var(--red);
     color:white;
+    font-family:var(--font-mono);
     font-size:10px;
-    font-weight:bold;
+    font-weight:600;
     border-radius:10px;
     padding:1px 5px;
     display:none;
@@ -141,14 +270,13 @@ nav{
     display:none;
     position:absolute;
     right:0;
-    top:44px;
+    top:48px;
     width:320px;
     max-height:400px;
     overflow-y:auto;
-    background:#17202c;
-    border:1px solid #253344;
-    border-radius:8px;
-    box-shadow:0 10px 25px rgba(0,0,0,.4);
+    background:var(--panel-raised);
+    border:1px solid var(--line);
+    box-shadow:0 12px 30px rgba(0,0,0,.5);
     z-index:50;
 }
 
@@ -158,9 +286,9 @@ nav{
 
 .notif-item{
     padding:12px 14px;
-    border-bottom:1px solid #253344;
+    border-bottom:1px solid var(--line-soft);
     font-size:13px;
-    color:#c9d4e0;
+    color:#cfd9e6;
     line-height:1.5;
 }
 
@@ -169,23 +297,27 @@ nav{
 }
 
 .notif-item.unread{
-    background:rgba(222,155,53,.08);
+    background:var(--orange-dim);
+    border-left:2px solid var(--orange);
 }
 
 .notif-empty{
     padding:20px;
     text-align:center;
-    color:#5b7390;
+    color:var(--dim);
     font-size:13px;
 }
 
 .author-link{
     cursor:pointer;
-    text-decoration:underline dotted;
+    color:var(--blue);
+    text-decoration:none;
+    border-bottom:1px dotted var(--blue);
 }
 
 .author-link:hover{
-    color:#de9b35;
+    color:var(--orange);
+    border-bottom-color:var(--orange);
 }
 
 /* ================= SUPPORT CHAT ================= */
@@ -197,15 +329,13 @@ nav{
     max-height:420px;
     overflow-y:auto;
     padding:16px;
-    background:#0d1520;
-    border:1px solid #253344;
-    border-radius:8px;
+    background:var(--bg);
+    border:1px solid var(--line);
 }
 
 .chat-bubble{
     max-width:75%;
     padding:10px 14px;
-    border-radius:12px;
     font-size:14px;
     line-height:1.5;
     word-wrap:break-word;
@@ -214,61 +344,63 @@ nav{
 
 .chat-bubble.from-me{
     align-self:flex-end;
-    background:#de9b35;
-    color:#111822;
-    border-bottom-right-radius:3px;
+    background:var(--orange);
+    color:#1a0e05;
+    clip-path:polygon(8px 0,100% 0,100% 100%,0 100%,0 8px);
 }
 
 .chat-bubble.from-them{
     align-self:flex-start;
-    background:#17202c;
-    border:1px solid #253344;
-    color:#c9d4e0;
-    border-bottom-left-radius:3px;
+    background:var(--panel-raised);
+    border:1px solid var(--line);
+    color:var(--ink);
+    clip-path:polygon(0 0,100% 0,100% 8px,100% 100%,8px 100%,0 100%);
 }
 
 .chat-bubble .chat-time{
     display:block;
+    font-family:var(--font-mono);
     font-size:10px;
-    opacity:.6;
+    opacity:.65;
     margin-top:4px;
 }
 
 .chat-empty{
     text-align:center;
-    color:#5b7390;
+    color:var(--dim);
     font-size:13px;
     padding:30px 10px;
 }
 
 .support-thread-item{
     padding:12px;
-    border:1px solid #253344;
-    border-radius:6px;
+    border:1px solid var(--line);
+    border-left:3px solid transparent;
     margin-bottom:8px;
     cursor:pointer;
-    background:#17202c;
+    background:var(--panel-raised);
+    transition:border-color .15s,background .15s;
 }
 
 .support-thread-item:hover{
-    border-color:#de9b35;
+    border-left-color:var(--blue);
 }
 
 .support-thread-item.active{
-    border-color:#de9b35;
-    background:rgba(222,155,53,.08);
+    border-left-color:var(--orange);
+    background:var(--orange-dim);
 }
 
 .support-thread-item .thread-name{
-    font-weight:bold;
-    color:#e6edf5;
+    font-weight:700;
+    color:var(--ink);
     display:flex;
     justify-content:space-between;
     align-items:center;
 }
 
 .support-thread-item .thread-last{
-    color:#8fa0b5;
+    color:var(--muted);
     font-size:12px;
     margin-top:4px;
     white-space:nowrap;
@@ -277,10 +409,11 @@ nav{
 }
 
 .thread-unread-dot{
-    background:#de3535;
+    background:var(--red);
     color:white;
+    font-family:var(--font-mono);
     font-size:10px;
-    font-weight:bold;
+    font-weight:600;
     border-radius:10px;
     padding:1px 6px;
 }
@@ -289,19 +422,23 @@ nav{
 
 .donate-btn{
 
-    background:linear-gradient(135deg,#a4e00a,#76a805);
+    background:linear-gradient(135deg,var(--green),#1f9e5c);
 
-    color:black;
+    color:#06170e;
 
     padding:10px 18px;
 
-    border-radius:5px;
-
     text-decoration:none;
 
-    font-weight:bold;
+    font-family:var(--font-display);
+    font-weight:700;
+    letter-spacing:.3px;
+    text-transform:uppercase;
+    font-size:13px;
 
-    transition:.2s;
+    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+
+    transition:filter .15s,transform .15s;
 
 }
 
@@ -309,7 +446,7 @@ nav{
 
     transform:translateY(-2px);
 
-    filter:brightness(1.08);
+    filter:brightness(1.1);
 
 }
 
@@ -349,6 +486,8 @@ nav{
 
     align-items:center;
 
+    padding:20px 0 10px;
+
 }
 
 .menu-left{
@@ -365,63 +504,88 @@ nav{
 
 .logo-text{
 
-    color:#de9b35;
+    color:var(--blue);
 
     text-transform:uppercase;
 
-    letter-spacing:3px;
+    letter-spacing:4px;
 
-    font-size:13px;
+    font-size:12px;
+    font-family:var(--font-mono);
+    font-weight:600;
 
+    display:flex;
+    align-items:center;
+    gap:8px;
+
+}
+
+.logo-text::before{
+    content:"";
+    display:inline-block;
+    width:22px;
+    height:2px;
+    background:var(--orange);
 }
 
 h1{
 
-    margin-top:8px;
+    margin-top:14px;
 
-    margin-bottom:25px;
+    margin-bottom:28px;
 
-    font-size:42px;
+    font-size:54px;
+    line-height:1.05;
+
+    font-weight:700;
 
     text-transform:uppercase;
+    letter-spacing:.5px;
+
+    background:linear-gradient(100deg,var(--ink) 35%,var(--orange) 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    -webkit-text-fill-color:transparent;
 
 }
 
 .cs-btn{
 
-    background:linear-gradient(135deg,#e08b1b,#b8680d);
+    background:var(--orange);
 
     border:none;
 
-    color:white;
+    color:#1a0e05;
 
-    padding:14px 34px;
+    padding:15px 34px;
 
-    border-radius:5px;
-
+    font-family:var(--font-display);
     font-size:16px;
-
-    font-weight:bold;
+    font-weight:700;
+    letter-spacing:.5px;
+    text-transform:uppercase;
 
     cursor:pointer;
 
-    transition:.2s;
+    clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+
+    transition:filter .15s,transform .15s;
 
 }
 
 .cs-btn:hover{
 
-    filter:brightness(1.08);
+    filter:brightness(1.1);
+    transform:translateY(-2px);
 
 }
 
 .news-item{
 
-    background:#111822;
+    background:var(--panel);
 
-    border:1px solid #253344;
-
-    border-radius:6px;
+    border:1px solid var(--line);
+    border-left:3px solid var(--blue);
 
     padding:18px;
 
@@ -431,7 +595,9 @@ h1{
 
 .news-item h3{
 
-    color:#de9b35;
+    color:var(--ink);
+    font-weight:700;
+    letter-spacing:.3px;
 
     margin-bottom:8px;
 
@@ -439,7 +605,8 @@ h1{
 
 .news-item p{
 
-    color:#8fa0b5;
+    color:var(--muted);
+    font-family:var(--font-body);
 
     line-height:1.5;
 
@@ -461,13 +628,11 @@ h1{
 
     width:330px;
 
-    background:#111822;
+    background:var(--panel);
 
-    border:1px solid #253344;
+    border:1px solid var(--line);
 
-    border-radius:8px;
-
-    padding:22px;
+    padding:24px;
 
 }
 
@@ -477,9 +642,12 @@ h1{
 
     margin-bottom:6px;
 
-    font-size:12px;
+    font-size:13px;
+    font-weight:600;
 
-    color:#8fa0b5;
+    color:var(--muted);
+
+    letter-spacing:.6px;
 
     text-transform:uppercase;
 
@@ -493,15 +661,17 @@ h1{
 
     margin-bottom:15px;
 
-    padding:10px;
+    padding:10px 12px;
 
-    background:#17202c;
+    background:var(--panel-raised);
 
-    border:1px solid #2b3d54;
+    border:1px solid var(--line);
+    border-left:2px solid var(--line);
 
-    color:white;
+    color:var(--ink);
 
-    border-radius:5px;
+    font-family:var(--font-body);
+    font-size:14px;
 
 }
 
@@ -511,7 +681,8 @@ h1{
 
     outline:none;
 
-    border-color:#de9b35;
+    border-color:var(--orange);
+    border-left-color:var(--orange);
 
 }
 
@@ -521,32 +692,46 @@ h1{
 
     border:none;
 
-    background:#de9b35;
+    background:var(--orange);
 
-    color:white;
+    color:#1a0e05;
 
-    padding:12px;
+    padding:13px;
 
-    border-radius:5px;
-
-    font-weight:bold;
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:.5px;
+    text-transform:uppercase;
 
     cursor:pointer;
 
+    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+
+    transition:filter .15s;
+
 }
+
+.save-btn:hover{
+    filter:brightness(1.1);
+}
+
 /* ================= КАРТОЧКИ ================= */
 
 .card{
     width:100%;
-    background:#141c26;
-    border-radius:8px;
-    padding:18px;
+    background:var(--card);
+    padding:18px 20px;
     display:flex;
     align-items:center;
     gap:18px;
     position:relative;
-    transition:.2s;
+    transition:transform .15s,box-shadow .15s;
     margin-bottom:15px;
+    clip-path:polygon(
+        var(--chamfer) 0, 100% 0,
+        100% calc(100% - var(--chamfer)), calc(100% - var(--chamfer)) 100%,
+        0 100%, 0 var(--chamfer)
+    );
 }
 
 .card:hover{
@@ -554,44 +739,46 @@ h1{
 }
 
 .rarity-common{
-    border:2px solid #3a4b5f;
+    border:1px solid var(--line);
+    border-left:3px solid var(--dim);
 }
 
 .rarity-common:hover{
-    border-color:#5b7390;
-    box-shadow:0 0 15px rgba(90,120,150,.35);
+    border-left-color:var(--blue);
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
 }
 
 .rarity-gold{
-    border:2px solid #de9b35;
-    background:linear-gradient(145deg,#141c26,#1d2836);
-    box-shadow:0 0 18px rgba(222,155,53,.25);
+    border:1px solid var(--orange);
+    border-left:3px solid var(--orange);
+    background:linear-gradient(145deg,var(--card),#1d2836);
+    box-shadow:0 0 18px var(--orange-dim);
 }
 
 .rarity-gold:hover{
-    box-shadow:0 0 25px rgba(222,155,53,.45);
+    box-shadow:0 0 25px var(--orange-glow);
 }
 
 /* Карточка с произвольным цветом рамки, выбранным автором в палитре.
    Цвет проставляется инлайново через JS (--card-color), эти правила
    просто используют переменную для рамки/подсветки/заголовка. */
 .card-colored{
-    border:2px solid var(--card-color,#3a4b5f);
+    border:1px solid var(--line);
+    border-left:3px solid var(--card-color,var(--dim));
 }
 
 .card-colored:hover{
-    box-shadow:0 0 20px var(--card-color-glow,rgba(90,120,150,.35));
+    box-shadow:0 8px 24px var(--card-color-glow,rgba(0,0,0,.35));
 }
 
 .card-colored .ach-title{
-    color:var(--card-color,#e6edf5);
+    color:var(--card-color,var(--ink));
 }
 
 .icon-box img{
     width:100%;
     height:100%;
     object-fit:cover;
-    border-radius:6px;
 }
 
 .icon-box{
@@ -599,11 +786,9 @@ h1{
     width:72px;
     height:72px;
 
-    border-radius:6px;
+    background:var(--bg);
 
-    background:#0d131a;
-
-    border:1px solid #2b3d54;
+    border:1px solid var(--line);
 
     display:flex;
 
@@ -615,13 +800,17 @@ h1{
 
     flex-shrink:0;
 
+    clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
+
 }
 
 .ach-title{
 
-    font-size:18px;
+    font-family:var(--font-display);
+    font-size:19px;
 
-    font-weight:bold;
+    font-weight:700;
+    letter-spacing:.2px;
 
     margin-bottom:6px;
 
@@ -629,13 +818,13 @@ h1{
 
 .rarity-gold .ach-title{
 
-    color:#ffd700;
+    color:var(--orange);
 
 }
 
 .ach-desc{
 
-    color:#9daec2;
+    color:var(--muted);
 
     line-height:1.5;
 
@@ -667,63 +856,79 @@ h1{
 
     border:none;
 
-    color:#9daec2;
+    color:var(--dim);
 
     cursor:pointer;
 
-    font-size:15px;
+    font-family:var(--font-mono);
+    font-size:14px;
+    font-weight:600;
 
-    transition:.2s;
+    transition:color .15s;
 
 }
 
 .like-btn:hover{
 
-    color:#ff6060;
+    color:var(--red);
 
 }
 
 .like-btn:active{
 
-    transform:scale(1.2);
+    transform:scale(1.15);
 
 }
 
 .check-btn{
 
-    background:#17202c;
+    background:var(--panel-raised);
 
-    color:white;
+    color:var(--ink);
 
-    border:1px solid #2b3d54;
+    border:1px solid var(--line);
 
-    padding:7px 12px;
-
-    border-radius:5px;
+    padding:7px 14px;
 
     cursor:pointer;
 
-    transition:.2s;
+    transition:border-color .15s,background .15s;
 
+    font-family:var(--font-display);
     font-size:12px;
+    font-weight:700;
+    letter-spacing:.3px;
+    text-transform:uppercase;
 
-    font-weight:bold;
+    clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
 
 }
 
 .check-btn:hover{
 
-    border-color:#de9b35;
+    border-color:var(--orange);
 
 }
 
 .check-btn.done{
 
-    background:#a4e00a;
+    background:var(--green);
 
-    color:black;
+    color:#06170e;
 
-    border-color:#a4e00a;
+    border-color:var(--green);
+
+}
+
+.check-btn.pending-review{
+
+    background:var(--orange-dim);
+
+    color:var(--orange);
+
+    border-color:rgba(255,106,26,.4);
+
+    cursor:default;
 
 }
 
@@ -743,15 +948,18 @@ h1{
 
     text-align:center;
 
-    margin-bottom:30px;
+    margin-bottom:34px;
 
 }
 
 .gallery-header h2{
 
-    font-size:34px;
+    font-size:36px;
+    font-weight:700;
 
     margin-bottom:8px;
+
+    letter-spacing:.4px;
 
     text-transform:uppercase;
 
@@ -759,7 +967,7 @@ h1{
 
 .gallery-header p{
 
-    color:#8fa0b5;
+    color:var(--muted);
 
 }
 
@@ -773,7 +981,7 @@ h1{
 
 }
 
-/* ================= ПОДДЕРЖКА ================= */
+/* ================= ПОДДЕРЖКА (легаси-классы) ================= */
 
 .support-box{
 
@@ -787,11 +995,9 @@ h1{
 
 .support-panel{
 
-    background:#111822;
+    background:var(--panel);
 
-    border:1px solid #253344;
-
-    border-radius:8px;
+    border:1px solid var(--line);
 
     padding:60px;
 
@@ -803,7 +1009,7 @@ h1{
 
     font-size:90px;
 
-    color:#de9b35;
+    color:var(--orange);
 
     margin-bottom:20px;
 
@@ -811,11 +1017,9 @@ h1{
 
 .support-email{
 
-    background:#17202c;
+    background:var(--panel-raised);
 
-    border:1px solid #253344;
-
-    border-radius:6px;
+    border:1px solid var(--line);
 
     padding:18px;
 
@@ -823,11 +1027,12 @@ h1{
 
     max-width:500px;
 
-    font-size:28px;
+    font-family:var(--font-mono);
+    font-size:24px;
 
-    font-weight:bold;
+    font-weight:600;
 
-    color:#de9b35;
+    color:var(--orange);
 
 }
 
@@ -841,18 +1046,15 @@ h1{
 
 ::-webkit-scrollbar-thumb{
 
-    background:#253344;
-
-    border-radius:4px;
+    background:var(--line);
 
 }
 
 ::-webkit-scrollbar-track{
 
-    background:#0d131a;
+    background:var(--bg);
 
 }
-/* ===== дальше продолжим ===== */
 
 </style>
 
@@ -868,8 +1070,8 @@ h1{
     z-index:2000;
     display:flex;
     gap:4px;
-    background:#111822;
-    border:1px solid #253344;
+    background:#10151d;
+    border:1px solid #223040;
     border-radius:6px;
     padding:4px;
     box-shadow:0 2px 10px rgba(0,0,0,0.4);
@@ -877,7 +1079,7 @@ h1{
     <button id="lang-btn-ru" onclick="setLang('ru')" style="
         border:none;
         background:transparent;
-        color:#8fa0b5;
+        color:#8996a8;
         padding:5px 10px;
         border-radius:4px;
         cursor:pointer;
@@ -887,7 +1089,7 @@ h1{
     <button id="lang-btn-en" onclick="setLang('en')" style="
         border:none;
         background:transparent;
-        color:#8fa0b5;
+        color:#8996a8;
         padding:5px 10px;
         border-radius:4px;
         cursor:pointer;
@@ -897,7 +1099,7 @@ h1{
     <button id="sound-toggle-btn" onclick="toggleSiteSound(this)" title="Звук кликов" style="
         border:none;
         background:transparent;
-        color:#8fa0b5;
+        color:#8996a8;
         padding:5px 10px;
         border-radius:4px;
         cursor:pointer;
@@ -917,14 +1119,14 @@ h1{
     justify-content:center;
 ">
     <div style="
-        background:#111822;
-        border:1px solid #253344;
+        background:#10151d;
+        border:1px solid #223040;
         border-radius:10px;
         padding:35px;
         text-align:center;
         max-width:340px;
     ">
-        <p style="color:#e6edf5;font-size:18px;margin-bottom:20px;">
+        <p style="color:#eef2f8;font-size:18px;margin-bottom:20px;">
             Выберите язык / Choose language
         </p>
         <div style="display:flex;gap:12px;justify-content:center;">
@@ -933,6 +1135,53 @@ h1{
         </div>
     </div>
 </div>
+
+<!-- Модалка загрузки демки для подтверждения выполнения челленджа -->
+<div id="demo-modal" style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(5,8,12,0.85);
+    z-index:3000;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+">
+    <div style="
+        background:#10151d;
+        border:1px solid #223040;
+        border-radius:10px;
+        padding:30px;
+        text-align:left;
+        max-width:420px;
+        width:100%;
+    ">
+        <h3 style="color:#ff6a1a;margin-bottom:6px;" data-i18n="demoModalTitle">
+            Подтвердите выполнение
+        </h3>
+
+        <p id="demo-modal-challenge-name" style="color:#eef2f8;font-weight:bold;margin-bottom:14px;"></p>
+
+        <p style="color:#a3b1c4;font-size:13px;line-height:1.6;margin-bottom:18px;" data-i18n="demoModalHint">
+            Загрузите файл демки CS2 (.dem), где видно выполнение этого челленджа.
+            Владелец сайта посмотрит демку вручную и подтвердит выполнение.
+        </p>
+
+        <input id="demo-file-input" type="file" accept=".dem" style="margin-bottom:14px;width:100%;">
+
+        <p id="demo-modal-status" style="font-size:13px;color:#8996a8;min-height:18px;margin-bottom:10px;"></p>
+
+        <div style="display:flex;gap:10px;">
+            <button class="save-btn" style="background:#3a4b5f;margin:0;flex:1;" onclick="closeDemoModal()" data-i18n="demoModalCancel">
+                Отмена
+            </button>
+            <button class="save-btn" id="demo-submit-btn" style="margin:0;flex:1;" onclick="submitDemoFile()" data-i18n="demoModalSubmit">
+                Отправить
+            </button>
+        </div>
+    </div>
+</div>
+
 <header>
 
     <div class="nav-left-box">
@@ -1077,7 +1326,7 @@ h1{
                 maxlength="140"
                 placeholder="Kill all five enemies with a pistol in the first round."></textarea>
 
-            <p style="color:#8fa0b5;font-size:12px;line-height:1.6;margin-bottom:15px;" data-i18n="editorTranslateHint">
+            <p style="color:#8996a8;font-size:12px;line-height:1.6;margin-bottom:15px;" data-i18n="editorTranslateHint">
                 Если не знаете английский — воспользуйтесь переводчиком
                 (например, Google Translate), либо оставьте поле пустым:
                 англоязычным пользователям будет показан русский текст,
@@ -1090,9 +1339,9 @@ h1{
                 <input
                     id="in-color"
                     type="color"
-                    value="#de9b35"
+                    value="#ff6a1a"
                     disabled
-                    style="width:50px;height:36px;padding:2px;border-radius:5px;border:1px solid #253344;background:#0d1520;cursor:pointer;">
+                    style="width:50px;height:36px;padding:2px;border-radius:5px;border:1px solid #223040;background:#0b0f16;cursor:pointer;">
 
                 <label style="display:flex;align-items:center;gap:6px;font-weight:normal;margin:0;">
                     <input id="in-color-default" type="checkbox" checked style="width:auto;">
@@ -1200,7 +1449,7 @@ h1{
         width:180px;
         height:180px;
         border-radius:50%;
-        border:4px solid #de9b35;
+        border:4px solid #ff6a1a;
         object-fit:cover;
         margin-bottom:25px;
         ">
@@ -1219,15 +1468,15 @@ h1{
 
         </button>
             
-            <h2 id="profile-name" style="color:#de9b35;margin-bottom:10px;display:inline-block;">
+            <h2 id="profile-name" style="color:#ff6a1a;margin-bottom:10px;display:inline-block;">
                 Гость
             </h2>
 
             <span id="profile-owner-badge" style="
                 display:none;
                 margin-left:8px;
-                background:#de9b35;
-                color:#111822;
+                background:#ff6a1a;
+                color:#10151d;
                 font-size:11px;
                 font-weight:bold;
                 letter-spacing:0.5px;
@@ -1241,7 +1490,7 @@ h1{
 
             <button id="change-name" class="save-btn" style="margin:20px auto 30px;width:220px;" data-i18n="profileChangeName">
                 ✏️ Изменить ник
-            </button>            <p style="color:#8fa0b5;margin-bottom:35px;" data-i18n="profileTagline">
+            </button>            <p style="color:#8996a8;margin-bottom:35px;" data-i18n="profileTagline">
                 Игрок сообщества CS2 Challenges
             </p>
 
@@ -1307,11 +1556,11 @@ h1{
                     <input id="in-steam-url" type="url" data-i18n-placeholder="profileSteamPlaceholder" placeholder="https://steamcommunity.com/id/..." style="flex:1;">
                     <button id="btn-save-steam" class="save-btn" style="width:auto;white-space:nowrap;padding:0 20px;margin:0;" data-i18n="profileSteamSave">Сохранить ссылку</button>
                 </div>
-                <p id="steam-save-status" style="color:#5b7390;font-size:12px;margin-top:6px;"></p>
+                <p id="steam-save-status" style="color:#62728a;font-size:12px;margin-top:6px;"></p>
             </div>
 
             <div style="margin-top:30px;">
-                <h3 style="color:#de9b35;margin-bottom:15px;" data-i18n="profileMyChallengesTitle">
+                <h3 style="color:#ff6a1a;margin-bottom:15px;" data-i18n="profileMyChallengesTitle">
                     Мои челленджи
                 </h3>
                 <div id="my-challenges-list"></div>
@@ -1344,18 +1593,18 @@ h1{
                 width:180px;
                 height:180px;
                 border-radius:50%;
-                border:4px solid #de9b35;
+                border:4px solid #ff6a1a;
                 object-fit:cover;
                 margin-bottom:25px;
                 ">
 
-            <h2 id="public-profile-name" style="color:#de9b35;margin-bottom:10px;display:inline-block;"></h2>
+            <h2 id="public-profile-name" style="color:#ff6a1a;margin-bottom:10px;display:inline-block;"></h2>
 
             <span id="public-profile-owner-badge" style="
                 display:none;
                 margin-left:8px;
-                background:#de9b35;
-                color:#111822;
+                background:#ff6a1a;
+                color:#10151d;
                 font-size:11px;
                 font-weight:bold;
                 letter-spacing:0.5px;
@@ -1369,7 +1618,7 @@ h1{
 
             <a id="public-profile-steam-link" href="#" target="_blank" rel="noopener" style="
                 display:none;
-                color:#de9b35;
+                color:#ff6a1a;
                 font-size:13px;
                 text-decoration:underline;
                 margin-top:8px;
@@ -1390,7 +1639,7 @@ h1{
             </div>
 
             <div style="text-align:left;">
-                <h3 style="color:#de9b35;margin-bottom:15px;" data-i18n="publicProfileChallenges">
+                <h3 style="color:#ff6a1a;margin-bottom:15px;" data-i18n="publicProfileChallenges">
                     Опубликованные челленджи
                 </h3>
                 <div id="public-profile-challenges"></div>
@@ -1417,7 +1666,7 @@ h1{
 
                 <div style="display:flex;gap:10px;margin-bottom:20px;">
                     <button id="auth-tab-login" class="nav-tab active"
-                        style="flex:1;border-bottom:2px solid #de9b35;"
+                        style="flex:1;border-bottom:2px solid #ff6a1a;"
                         onclick="setAuthMode('login')" data-i18n="authTabLogin">Вход</button>
                     <button id="auth-tab-register" class="nav-tab"
                         style="flex:1;"
@@ -1448,14 +1697,14 @@ h1{
             <!-- Состояние: авторизован -->
             <div id="auth-user" style="display:none;text-align:center;">
 
-                <p style="color:#8fa0b5;margin-bottom:8px;" data-i18n="authLoggedInAs">Вы вошли как</p>
-                <h2 style="color:#de9b35;margin-bottom:8px;" id="auth-username-display"></h2>
+                <p style="color:#8996a8;margin-bottom:8px;" data-i18n="authLoggedInAs">Вы вошли как</p>
+                <h2 style="color:#ff6a1a;margin-bottom:8px;" id="auth-username-display"></h2>
 
                 <span id="auth-owner-badge" style="
                     display:none;
                     margin-bottom:17px;
-                    background:#de9b35;
-                    color:#111822;
+                    background:#ff6a1a;
+                    color:#10151d;
                     font-size:11px;
                     font-weight:bold;
                     letter-spacing:0.5px;
@@ -1486,6 +1735,7 @@ h1{
         <div style="display:flex;gap:10px;margin-bottom:25px;flex-wrap:wrap;">
             <button id="admin-tab-news" class="nav-tab active" onclick="setAdminMode('news')">Новости</button>
             <button id="admin-tab-mod" class="nav-tab" onclick="setAdminMode('mod')">Модерация челленджей</button>
+            <button id="admin-tab-demos" class="nav-tab" onclick="setAdminMode('demos')">Проверка демок</button>
             <button id="admin-tab-users" class="nav-tab" onclick="setAdminMode('users')">Пользователи</button>
             <button id="admin-tab-support" class="nav-tab" onclick="setAdminMode('support')">Поддержка</button>
             <button id="admin-tab-stats" class="nav-tab" onclick="setAdminMode('stats')">Статистика</button>
@@ -1494,7 +1744,7 @@ h1{
         <!-- ==== НОВОСТИ ==== -->
         <div id="admin-panel-news" class="panel" style="width:100%;">
 
-            <h3 style="color:#de9b35;margin-bottom:15px;">Добавить новость</h3>
+            <h3 style="color:#ff6a1a;margin-bottom:15px;">Добавить новость</h3>
 
             <label>Заголовок (RU)</label>
             <input id="admin-news-title" type="text" maxlength="80" placeholder="Заголовок новости">
@@ -1503,10 +1753,10 @@ h1{
             <textarea id="admin-news-body" maxlength="500" placeholder="Текст новости" style="
                 width:100%;
                 min-height:80px;
-                background:#0d1520;
-                border:1px solid #253344;
+                background:#0b0f16;
+                border:1px solid #223040;
                 border-radius:5px;
-                color:#e6edf5;
+                color:#eef2f8;
                 padding:10px;
                 font-family:inherit;
                 resize:vertical;
@@ -1520,17 +1770,17 @@ h1{
             <textarea id="admin-news-body-en" maxlength="500" placeholder="News text in English" style="
                 width:100%;
                 min-height:80px;
-                background:#0d1520;
-                border:1px solid #253344;
+                background:#0b0f16;
+                border:1px solid #223040;
                 border-radius:5px;
-                color:#e6edf5;
+                color:#eef2f8;
                 padding:10px;
                 font-family:inherit;
                 resize:vertical;
                 margin-bottom:10px;
             "></textarea>
 
-            <p style="color:#8fa0b5;font-size:12px;line-height:1.6;margin-bottom:15px;">
+            <p style="color:#8996a8;font-size:12px;line-height:1.6;margin-bottom:15px;">
                 Если не знаете английский/русский — воспользуйтесь переводчиком
                 (например, Google Translate или DeepL), или оставьте английские
                 поля пустыми и попросите кого-то из модераторов сделать перевод
@@ -1540,7 +1790,7 @@ h1{
 
             <button class="save-btn" onclick="submitNews()">Опубликовать новость</button>
 
-            <h3 style="color:#de9b35;margin:30px 0 15px;">Существующие новости</h3>
+            <h3 style="color:#ff6a1a;margin:30px 0 15px;">Существующие новости</h3>
 
             <div id="admin-news-list"></div>
 
@@ -1549,16 +1799,28 @@ h1{
         <!-- ==== МОДЕРАЦИЯ ==== -->
         <div id="admin-panel-mod" class="panel" style="width:100%;display:none;">
 
-            <h3 style="color:#de9b35;margin-bottom:15px;">Челленджи на модерации</h3>
+            <h3 style="color:#ff6a1a;margin-bottom:15px;">Челленджи на модерации</h3>
 
             <div id="admin-mod-list"></div>
+
+        </div>
+
+        <!-- ==== ПРОВЕРКА ДЕМОК ==== -->
+        <div id="admin-panel-demos" class="panel" style="width:100%;display:none;">
+
+            <h3 style="color:#ff6a1a;margin-bottom:15px;">Демки на проверке</h3>
+            <p style="color:#8996a8;font-size:12px;margin-bottom:15px;">
+                Скачайте демку и посмотрите её в игре или деморекордере, затем подтвердите или отклоните.
+            </p>
+
+            <div id="admin-demos-list"></div>
 
         </div>
 
         <!-- ==== ПОЛЬЗОВАТЕЛИ ==== -->
         <div id="admin-panel-users" class="panel" style="width:100%;display:none;">
 
-            <h3 style="color:#de9b35;margin-bottom:15px;">Пользователи</h3>
+            <h3 style="color:#ff6a1a;margin-bottom:15px;">Пользователи</h3>
 
             <div id="admin-users-list"></div>
 
@@ -1567,7 +1829,7 @@ h1{
         <!-- ==== ПОДДЕРЖКА (чат с игроками) ==== -->
         <div id="admin-panel-support" class="panel" style="width:100%;display:none;">
 
-            <h3 style="color:#de9b35;margin-bottom:15px;">Обращения игроков</h3>
+            <h3 style="color:#ff6a1a;margin-bottom:15px;">Обращения игроков</h3>
 
             <div style="display:flex;gap:20px;flex-wrap:wrap;">
 
@@ -1575,7 +1837,7 @@ h1{
 
                 <div style="flex:2;min-width:280px;">
 
-                    <div id="admin-support-chat-header" style="color:#8fa0b5;margin-bottom:10px;font-weight:bold;">
+                    <div id="admin-support-chat-header" style="color:#8996a8;margin-bottom:10px;font-weight:bold;">
                         Выберите диалог слева
                     </div>
 
@@ -1595,9 +1857,9 @@ h1{
         <!-- ==== СТАТИСТИКА ==== -->
         <div id="admin-panel-stats" class="panel" style="width:100%;display:none;">
 
-            <h3 style="color:#de9b35;margin-bottom:15px;">Статистика сайта</h3>
+            <h3 style="color:#ff6a1a;margin-bottom:15px;">Статистика сайта</h3>
 
-            <div id="admin-stats-list" style="color:#8fa0b5;line-height:2;"></div>
+            <div id="admin-stats-list" style="color:#8996a8;line-height:2;"></div>
 
         </div>
 
@@ -1626,17 +1888,17 @@ h1{
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:1000px;margin:0 auto;">
 
             <div class="panel" style="width:100%;">
-                <h3 style="color:#de9b35;margin-bottom:15px;" data-i18n="leaderboardCreators">🏆 Больше всего создал челленджей</h3>
+                <h3 style="color:#ff6a1a;margin-bottom:15px;" data-i18n="leaderboardCreators">🏆 Больше всего создал челленджей</h3>
                 <div id="leaderboard-creators"></div>
             </div>
 
             <div class="panel" style="width:100%;">
-                <h3 style="color:#de9b35;margin-bottom:15px;" data-i18n="leaderboardLikes">❤️ Больше всего получил лайков</h3>
+                <h3 style="color:#ff6a1a;margin-bottom:15px;" data-i18n="leaderboardLikes">❤️ Больше всего получил лайков</h3>
                 <div id="leaderboard-likes"></div>
             </div>
 
             <div class="panel" style="width:100%;">
-                <h3 style="color:#de9b35;margin-bottom:15px;" data-i18n="leaderboardCompleted">✅ Больше всего выполнил челленджей</h3>
+                <h3 style="color:#ff6a1a;margin-bottom:15px;" data-i18n="leaderboardCompleted">✅ Больше всего выполнил челленджей</h3>
                 <div id="leaderboard-completed"></div>
             </div>
 
@@ -1667,7 +1929,7 @@ h1{
 
             <h2
                 style="
-                color:#de9b35;
+                color:#ff6a1a;
                 margin-bottom:8px;
                 text-align:center;
                 " data-i18n="supportTitle">
@@ -1678,7 +1940,7 @@ h1{
 
             <p
                 style="
-                color:#9daec2;
+                color:#a3b1c4;
                 line-height:1.6;
                 margin-bottom:20px;
                 text-align:center;
@@ -1690,7 +1952,7 @@ h1{
 
             </p>
 
-            <div id="support-guest-notice" style="display:none;color:#8fa0b5;text-align:center;padding:20px;" data-i18n="supportGuestNotice">
+            <div id="support-guest-notice" style="display:none;color:#8996a8;text-align:center;padding:20px;" data-i18n="supportGuestNotice">
                 Войдите в аккаунт, чтобы написать в поддержку.
             </div>
 
@@ -1707,7 +1969,7 @@ h1{
 
             <p
                 style="
-                color:#5b7390;
+                color:#62728a;
                 margin-top:20px;
                 font-size:12px;
                 text-align:center;
@@ -1839,6 +2101,16 @@ const I18N={
         cardLike:"❤️ ",
         cardDoBtn:"Выполнить",
         cardDoneBtn:"Выполнено ✓",
+        cardPendingBtn:"⏳ На проверке",
+        demoModalTitle:"Подтвердите выполнение",
+        demoModalHint:"Загрузите файл демки CS2 (.dem), где видно выполнение этого челленджа. Владелец сайта посмотрит демку вручную и подтвердит выполнение.",
+        demoModalCancel:"Отмена",
+        demoModalSubmit:"Отправить",
+        demoModalUploading:"Загружаем демку, не закрывайте окно...",
+        demoModalSuccess:"Демка отправлена на проверку! Как только владелец сайта её посмотрит, вы получите уведомление.",
+        demoModalNoFile:"Сначала выберите файл .dem",
+        demoModalWrongExt:"Нужен файл с расширением .dem",
+        demoModalTooBig:"Файл слишком большой (максимум 500 МБ)",
         cardDeleteTitle:"Удалить челлендж",
         profileChangeAvatar:"📷 Изменить аватар",
         ownerBadge:"Владелец",
@@ -1937,6 +2209,16 @@ const I18N={
         cardLike:"❤️ ",
         cardDoBtn:"Complete",
         cardDoneBtn:"Completed ✓",
+        cardPendingBtn:"⏳ Under review",
+        demoModalTitle:"Confirm completion",
+        demoModalHint:"Upload a CS2 demo file (.dem) that shows you completing this challenge. The site owner will review it manually and confirm.",
+        demoModalCancel:"Cancel",
+        demoModalSubmit:"Submit",
+        demoModalUploading:"Uploading the demo, please don't close this window...",
+        demoModalSuccess:"Demo sent for review! You'll get a notification once the site owner checks it.",
+        demoModalNoFile:"Please choose a .dem file first",
+        demoModalWrongExt:"File must have a .dem extension",
+        demoModalTooBig:"File is too large (max 500 MB)",
         cardDeleteTitle:"Delete challenge",
         profileChangeAvatar:"📷 Change avatar",
         ownerBadge:"Owner",
@@ -2021,10 +2303,10 @@ function applyLanguage(){
 
     });
 
-    document.getElementById("lang-btn-ru").style.background=(currentLang==="ru")?"#de9b35":"transparent";
-    document.getElementById("lang-btn-ru").style.color=(currentLang==="ru")?"#111822":"#8fa0b5";
-    document.getElementById("lang-btn-en").style.background=(currentLang==="en")?"#de9b35":"transparent";
-    document.getElementById("lang-btn-en").style.color=(currentLang==="en")?"#111822":"#8fa0b5";
+    document.getElementById("lang-btn-ru").style.background=(currentLang==="ru")?"#ff6a1a":"transparent";
+    document.getElementById("lang-btn-ru").style.color=(currentLang==="ru")?"#10151d":"#8996a8";
+    document.getElementById("lang-btn-en").style.background=(currentLang==="en")?"#ff6a1a":"transparent";
+    document.getElementById("lang-btn-en").style.color=(currentLang==="en")?"#10151d":"#8996a8";
 
     // Кнопка "Войти"/"Зарегистрироваться" на вкладке Аккаунт зависит от режима —
     // applyLanguage только меняет статичный текст, а setAuthMode переустановит
@@ -2232,7 +2514,7 @@ function renderCard(item){
     desc.textContent=item.desc||"Нет описания";
 
     const author=document.createElement("p");
-    author.style.cssText="color:#5b7390;font-size:11px;margin-top:6px;";
+    author.style.cssText="color:#62728a;font-size:11px;margin-top:6px;";
     author.textContent=t("cardAuthor");
     const authorName=document.createElement("span");
     authorName.className="author-link";
@@ -2250,7 +2532,7 @@ function renderCard(item){
     if(currentLang==="en"&&item.translated===false){
 
         const note=document.createElement("p");
-        note.style.cssText="color:#5b7390;font-size:11px;margin-top:4px;font-style:italic;";
+        note.style.cssText="color:#62728a;font-size:11px;margin-top:4px;font-style:italic;";
         note.textContent="(Not yet translated — showing original)";
         info.appendChild(note);
 
@@ -2270,9 +2552,20 @@ function renderCard(item){
     if(item.liked) likeBtn.style.color="#ff5555";
 
     const checkBtn=document.createElement("button");
-    checkBtn.className="check-btn"+(item.done?" done":"");
-    checkBtn.textContent=item.done?t("cardDoneBtn"):t("cardDoBtn");
-    checkBtn.onclick=()=>toggleDone(item.id);
+
+    if(item.done){
+        checkBtn.className="check-btn done";
+        checkBtn.textContent=t("cardDoneBtn");
+        checkBtn.onclick=()=>toggleDone(item.id);
+    }else if(item.pendingDemo){
+        checkBtn.className="check-btn pending-review";
+        checkBtn.textContent=t("cardPendingBtn");
+        checkBtn.disabled=true;
+    }else{
+        checkBtn.className="check-btn";
+        checkBtn.textContent=t("cardDoBtn");
+        checkBtn.onclick=()=>openDemoModal(item.id,item.title);
+    }
 
     actions.append(likeBtn,checkBtn);
 
@@ -2300,7 +2593,7 @@ function renderGallery(){
     if(challenges.length===0){
 
         const empty=document.createElement("p");
-        empty.style.cssText="color:#5b7390;text-align:center;padding:20px;";
+        empty.style.cssText="color:#62728a;text-align:center;padding:20px;";
         empty.textContent=t("galleryEmpty");
         feed.appendChild(empty);
         return;
@@ -2353,7 +2646,7 @@ async function loadNews(){
         if(news.length===0){
 
             const empty=document.createElement("p");
-            empty.style.cssText="color:#5b7390;";
+            empty.style.cssText="color:#62728a;";
             empty.textContent=t("newsEmpty");
             container.appendChild(empty);
             return;
@@ -2378,7 +2671,7 @@ async function loadNews(){
             if(currentLang==="en"&&item.translated===false){
 
                 const note=document.createElement("p");
-                note.style.cssText="color:#5b7390;font-size:11px;margin-top:6px;";
+                note.style.cssText="color:#62728a;font-size:11px;margin-top:6px;";
                 note.textContent="(Not yet translated — showing original)";
                 card.appendChild(note);
 
@@ -2392,7 +2685,7 @@ async function loadNews(){
 
         container.innerHTML="";
         const err=document.createElement("p");
-        err.style.cssText="color:#5b7390;";
+        err.style.cssText="color:#62728a;";
         err.textContent=t("newsError");
         container.appendChild(err);
 
@@ -2458,6 +2751,108 @@ async function toggleDone(id){
     }catch(e){
 
         alert(t("serverErrorAlert"));
+
+    }
+
+}
+
+// =========================
+// Подтверждение выполнения демкой (.dem)
+// =========================
+
+let demoModalChallengeId=null;
+
+function openDemoModal(challengeId,title){
+
+    if(!currentUser){
+        goToAuthTab(t("authGoToLoginNeededDone"));
+        return;
+    }
+
+    demoModalChallengeId=challengeId;
+    document.getElementById("demo-modal-challenge-name").textContent=title||"";
+    document.getElementById("demo-file-input").value="";
+
+    const statusEl=document.getElementById("demo-modal-status");
+    statusEl.textContent="";
+    statusEl.style.color="#8996a8";
+
+    document.getElementById("demo-submit-btn").disabled=false;
+    document.getElementById("demo-modal").style.display="flex";
+
+}
+
+function closeDemoModal(){
+
+    document.getElementById("demo-modal").style.display="none";
+    demoModalChallengeId=null;
+
+}
+
+async function submitDemoFile(){
+
+    if(!demoModalChallengeId) return;
+
+    const fileInput=document.getElementById("demo-file-input");
+    const file=fileInput.files[0];
+    const statusEl=document.getElementById("demo-modal-status");
+    const submitBtn=document.getElementById("demo-submit-btn");
+
+    if(!file){
+        statusEl.style.color="#ff5555";
+        statusEl.textContent=t("demoModalNoFile");
+        return;
+    }
+
+    if(!file.name.toLowerCase().endsWith(".dem")){
+        statusEl.style.color="#ff5555";
+        statusEl.textContent=t("demoModalWrongExt");
+        return;
+    }
+
+    if(file.size>500*1024*1024){
+        statusEl.style.color="#ff5555";
+        statusEl.textContent=t("demoModalTooBig");
+        return;
+    }
+
+    submitBtn.disabled=true;
+    statusEl.style.color="#8996a8";
+    statusEl.textContent=t("demoModalUploading");
+
+    try{
+
+        const res=await fetch(`/api/challenges/${demoModalChallengeId}/submit-demo`,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/octet-stream",
+                "X-File-Name":encodeURIComponent(file.name)
+            },
+            body:file
+        });
+
+        const data=await res.json().catch(()=>({}));
+
+        if(!res.ok){
+            statusEl.style.color="#ff5555";
+            statusEl.textContent=data.error||t("serverErrorAlert");
+            submitBtn.disabled=false;
+            return;
+        }
+
+        statusEl.style.color="#3ddc84";
+        statusEl.textContent=t("demoModalSuccess");
+
+        await loadChallenges();
+        await loadMyChallenges();
+
+        setTimeout(closeDemoModal,1800);
+
+    }catch(e){
+
+        statusEl.style.color="#ff5555";
+        statusEl.textContent=t("serverErrorAlert");
+        submitBtn.disabled=false;
 
     }
 
@@ -2536,7 +2931,7 @@ document.getElementById("btn-publish").onclick=async function(){
         iconInput.value="💣";
         colorDefaultCheckbox.checked=true;
         colorInput.disabled=true;
-        colorInput.value="#de9b35";
+        colorInput.value="#ff6a1a";
         pendingIconImage=null;
         iconImageInput.value="";
         removeIconImageBtn.style.display="none";
@@ -2775,7 +3170,7 @@ document.getElementById("btn-save-steam").onclick=async function(){
         }
 
         status.textContent=t("profileSteamSaved");
-        status.style.color="#5b7390";
+        status.style.color="#62728a";
 
     }catch(e){
 
@@ -2821,10 +3216,10 @@ function renderMyChallengeCard(item){
     status.style.cssText="font-size:12px;margin-top:8px;font-weight:bold;";
     if(item.status==="pending"){
         status.textContent=t("statusPending");
-        status.style.color="#de9b35";
+        status.style.color="#ff6a1a";
     }else if(item.status==="approved"){
         status.textContent=t("statusApproved")+" · "+t("cardLike")+item.likes;
-        status.style.color="#5bde8a";
+        status.style.color="#3ddc84";
     }else{
         status.textContent=t("statusRejected");
         status.style.color="#ff5555";
@@ -2834,7 +3229,7 @@ function renderMyChallengeCard(item){
 
     if(item.status==="rejected"&&item.rejectReason){
         const reason=document.createElement("p");
-        reason.style.cssText="font-size:12px;color:#8fa0b5;margin-top:4px;";
+        reason.style.cssText="font-size:12px;color:#8996a8;margin-top:4px;";
         reason.textContent=t("rejectReasonLabel")+item.rejectReason;
         info.appendChild(reason);
     }
@@ -2853,7 +3248,7 @@ async function loadMyChallenges(){
     if(!currentUser){
         list.innerHTML="";
         const p=document.createElement("p");
-        p.style.cssText="color:#5b7390;padding:10px 0;";
+        p.style.cssText="color:#62728a;padding:10px 0;";
         p.textContent=t("myChallengesGuest");
         list.appendChild(p);
         return;
@@ -2868,7 +3263,7 @@ async function loadMyChallenges(){
 
         if(mine.length===0){
             const p=document.createElement("p");
-            p.style.cssText="color:#5b7390;padding:10px 0;";
+            p.style.cssText="color:#62728a;padding:10px 0;";
             p.textContent=t("myChallengesEmpty");
             list.appendChild(p);
             return;
@@ -2936,7 +3331,7 @@ async function viewProfile(username){
 
         if(data.challenges.length===0){
             const p=document.createElement("p");
-            p.style.cssText="color:#5b7390;padding:10px 0;";
+            p.style.cssText="color:#62728a;padding:10px 0;";
             p.textContent=t("publicProfileEmpty");
             list.appendChild(p);
         }else{
@@ -2964,7 +3359,7 @@ function renderLeaderboardList(containerId, entries, unitLabel){
     if(!entries||entries.length===0){
 
         const empty=document.createElement("p");
-        empty.style.cssText="color:#5b7390;padding:10px 0;";
+        empty.style.cssText="color:#62728a;padding:10px 0;";
         empty.textContent=t("leaderboardEmpty");
         container.appendChild(empty);
         return;
@@ -2974,24 +3369,24 @@ function renderLeaderboardList(containerId, entries, unitLabel){
     entries.forEach((entry,index)=>{
 
         const row=document.createElement("div");
-        row.style.cssText="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #253344;";
+        row.style.cssText="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #223040;";
 
         const left=document.createElement("div");
         left.style.cssText="display:flex;align-items:center;gap:10px;";
 
         const rank=document.createElement("span");
-        rank.style.cssText="color:#5b7390;font-weight:bold;width:22px;";
+        rank.style.cssText="color:#62728a;font-weight:bold;width:22px;";
         rank.textContent="#"+(index+1);
 
         const name=document.createElement("span");
-        name.style.cssText="color:#de9b35;cursor:pointer;text-decoration:underline;";
+        name.style.cssText="color:#ff6a1a;cursor:pointer;text-decoration:underline;";
         name.textContent=entry.username;
         name.onclick=()=>viewProfile(entry.username);
 
         left.append(rank,name);
 
         const count=document.createElement("span");
-        count.style.cssText="color:#8fa0b5;";
+        count.style.cssText="color:#8996a8;";
         count.textContent=entry.count;
 
         row.append(left,count);
@@ -3460,7 +3855,7 @@ function setAdminMode(mode){
 
     adminMode=mode;
 
-    ["news","mod","users","support","stats"].forEach(m=>{
+    ["news","mod","demos","users","support","stats"].forEach(m=>{
 
         document.getElementById("admin-tab-"+m).classList.toggle("active",m===mode);
         document.getElementById("admin-panel-"+m).style.display=(m===mode)?"block":"none";
@@ -3469,6 +3864,7 @@ function setAdminMode(mode){
 
     if(mode==="news") loadAdminNews();
     if(mode==="mod") loadAdminModeration();
+    if(mode==="demos") loadAdminDemos();
     if(mode==="users") loadAdminUsers();
     if(mode==="support") loadAdminSupportThreads();
     if(mode==="stats") loadAdminStats();
@@ -3549,7 +3945,7 @@ async function loadAdminNews(){
             p.textContent=item.body;
 
             const enStatus=document.createElement("p");
-            enStatus.style.cssText="color:#5b7390;font-size:11px;margin-top:6px;";
+            enStatus.style.cssText="color:#62728a;font-size:11px;margin-top:6px;";
             enStatus.textContent=item.title_en?"🇬🇧 Английский перевод есть":"🇬🇧 Английского перевода пока нет";
 
             const actions=document.createElement("div");
@@ -3638,7 +4034,7 @@ async function loadAdminModeration(){
             desc.textContent=item.desc;
 
             const author=document.createElement("p");
-            author.style.cssText="color:#5b7390;font-size:11px;margin-top:6px;";
+            author.style.cssText="color:#62728a;font-size:11px;margin-top:6px;";
             author.textContent="Автор: "+item.authorUsername;
 
             info.append(title,desc,author);
@@ -3700,6 +4096,134 @@ async function moderateChallenge(id,action,reason){
 
 }
 
+// ---- Проверка демок (.dem) ----
+
+function formatDemoSize(bytes){
+
+    if(!bytes) return "0 МБ";
+    const mb=bytes/(1024*1024);
+    return mb>=1024?(mb/1024).toFixed(2)+" ГБ":mb.toFixed(1)+" МБ";
+
+}
+
+async function loadAdminDemos(){
+
+    const box=document.getElementById("admin-demos-list");
+    box.textContent="Загрузка...";
+
+    try{
+
+        const res=await fetch("/api/admin/demos");
+        const submissions=await res.json();
+
+        box.innerHTML="";
+
+        if(submissions.length===0){
+            box.innerHTML="<p style='color:#62728a;'>Нет демок, ожидающих проверки.</p>";
+            return;
+        }
+
+        submissions.forEach(sub=>{
+
+            const item=document.createElement("div");
+            item.style.cssText="background:#171e28;border:1px solid #223040;border-radius:8px;padding:16px;margin-bottom:12px;";
+
+            const title=document.createElement("p");
+            title.style.cssText="font-weight:bold;color:#eef2f8;margin-bottom:6px;";
+            title.textContent=sub.challengeTitle||("Челлендж #"+sub.challengeId);
+
+            const meta=document.createElement("p");
+            meta.style.cssText="color:#8996a8;font-size:13px;margin-bottom:12px;";
+            const d=new Date(sub.createdAt);
+            meta.textContent=`Игрок: ${sub.username} · Файл: ${sub.filename} · ${formatDemoSize(sub.fileSize)} · ${d.toLocaleString("ru-RU")}`;
+
+            const actions=document.createElement("div");
+            actions.style.cssText="display:flex;gap:10px;flex-wrap:wrap;";
+
+            const downloadBtn=document.createElement("a");
+            downloadBtn.href="/api/admin/demos/"+sub.id+"/download";
+            downloadBtn.className="save-btn";
+            downloadBtn.style.cssText="background:#3a4b5f;width:auto;padding:0 16px;text-decoration:none;display:inline-flex;align-items:center;";
+            downloadBtn.textContent="⬇️ Скачать демку";
+            downloadBtn.target="_blank";
+
+            const approveBtn=document.createElement("button");
+            approveBtn.className="save-btn";
+            approveBtn.style.cssText="width:auto;padding:0 16px;";
+            approveBtn.textContent="✔ Подтвердить";
+            approveBtn.onclick=()=>approveDemoSubmission(sub.id);
+
+            const rejectBtn=document.createElement("button");
+            rejectBtn.className="like-btn";
+            rejectBtn.textContent="✕ Отклонить";
+            rejectBtn.onclick=()=>{
+                const reason=prompt("Причина отклонения (покажем игроку, необязательно):","");
+                if(reason===null) return;
+                rejectDemoSubmission(sub.id,reason);
+            };
+
+            actions.append(downloadBtn,approveBtn,rejectBtn);
+            item.append(title,meta,actions);
+            box.appendChild(item);
+
+        });
+
+    }catch(e){
+
+        box.textContent="Не удалось загрузить список демок.";
+
+    }
+
+}
+
+async function approveDemoSubmission(id){
+
+    try{
+
+        const res=await fetch(`/api/admin/demos/${id}/approve`,{method:"POST"});
+
+        if(!res.ok){
+            const data=await res.json().catch(()=>({}));
+            alert(data.error||"Не удалось подтвердить демку");
+            return;
+        }
+
+        loadAdminDemos();
+
+    }catch(e){
+
+        alert("Не удалось связаться с сервером");
+
+    }
+
+}
+
+async function rejectDemoSubmission(id,reason){
+
+    try{
+
+        const res=await fetch(`/api/admin/demos/${id}/reject`,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({reason:reason||""})
+        });
+
+        if(!res.ok){
+            const data=await res.json().catch(()=>({}));
+            alert(data.error||"Не удалось отклонить демку");
+            return;
+        }
+
+        loadAdminDemos();
+
+    }catch(e){
+
+        alert("Не удалось связаться с сервером");
+
+    }
+
+}
+
 // ---- Пользователи ----
 
 async function loadAdminUsers(){
@@ -3717,11 +4241,11 @@ async function loadAdminUsers(){
         users.forEach(u=>{
 
             const row=document.createElement("div");
-            row.style.cssText="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #253344;";
+            row.style.cssText="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #223040;";
 
             const name=document.createElement("span");
             name.textContent=u.username+(u.banned?" (заблокирован)":"");
-            name.style.color=u.banned?"#ff5555":"#e6edf5";
+            name.style.color=u.banned?"#ff5555":"#eef2f8";
 
             row.appendChild(name);
 
@@ -3828,7 +4352,7 @@ async function loadAdminSupportThreads(){
         box.innerHTML="";
 
         if(threads.length===0){
-            box.innerHTML="<p style='color:#5b7390;padding:10px;'>Пока нет обращений.</p>";
+            box.innerHTML="<p style='color:#62728a;padding:10px;'>Пока нет обращений.</p>";
             return;
         }
 

@@ -1,4 +1,6 @@
 const express = require("express");
+const fs = require("fs");
+const path = require("path");
 const {
   getAllUsers,
   setUserBanned,
@@ -14,9 +16,16 @@ const {
   getSupportThreadsList,
   getSupportThread,
   createSupportMessage,
-  markSupportRead
+  markSupportRead,
+  getPendingDemoSubmissions,
+  getDemoSubmissionById,
+  setDemoSubmissionStatus,
+  markChallengeCompletedForUser,
+  getChallengeById
 } = require("../db");
 const { OWNER_USERNAME } = require("../config");
+
+const DEMOS_DIR = path.join(__dirname, "..", "uploads", "demos");
 
 const router = express.Router();
 
@@ -306,6 +315,117 @@ router.post("/support/:userId", async (req, res) => {
   } catch (e) {
     console.error("Ошибка отправки ответа в поддержку:", e);
     res.status(500).json({ error: "Не удалось отправить ответ" });
+  }
+});
+
+// =========================
+// Проверка демок (.dem), присланных игроками как подтверждение выполнения
+// =========================
+
+router.get("/demos", async (req, res) => {
+  try {
+    const pending = await getPendingDemoSubmissions();
+    res.json(
+      pending.map((d) => ({
+        id: d.id,
+        challengeId: d.challenge_id,
+        challengeTitle: d.challenge_title,
+        username: d.username,
+        filename: d.filename,
+        fileSize: d.file_size,
+        createdAt: d.created_at
+      }))
+    );
+  } catch (e) {
+    console.error("Ошибка загрузки демок на проверке:", e);
+    res.status(500).json({ error: "Не удалось загрузить список демок" });
+  }
+});
+
+// Скачивание файла демки — только владельцу, чтобы вручную посмотреть
+// её в игре/аналитическом инструменте перед решением.
+router.get("/demos/:id/download", async (req, res) => {
+  const id = Number(req.params.id);
+
+  try {
+    const submission = await getDemoSubmissionById(id);
+    if (!submission) return res.status(404).json({ error: "Демка не найдена" });
+
+    const filePath = path.join(DEMOS_DIR, submission.filename);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: "Файл демки не найден на сервере" });
+    }
+
+    res.download(filePath, `${submission.username}_${submission.challenge_id}.dem`);
+  } catch (e) {
+    console.error("Ошибка скачивания демки:", e);
+    res.status(500).json({ error: "Не удалось скачать демку" });
+  }
+});
+
+router.post("/demos/:id/approve", async (req, res) => {
+  const id = Number(req.params.id);
+
+  try {
+    const submission = await getDemoSubmissionById(id);
+    if (!submission || submission.status !== "pending") {
+      return res.status(404).json({ error: "Демка не найдена или уже проверена" });
+    }
+
+    const challenge = await getChallengeById(submission.challenge_id);
+    await markChallengeCompletedForUser(submission.challenge_id, submission.user_id);
+    await setDemoSubmissionStatus(id, "approved");
+
+    await createNotification(
+      submission.user_id,
+      "demo_approved",
+      `✅ Демка подтверждена! Челлендж «${challenge ? challenge.title : ""}» засчитан как выполненный.`,
+      submission.challenge_id
+    );
+
+    // Файл больше не нужен после проверки — освобождаем место на диске.
+    const filePath = path.join(DEMOS_DIR, submission.filename);
+    fs.promises.unlink(filePath).catch(() => {});
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("Ошибка одобрения демки:", e);
+    res.status(500).json({ error: "Не удалось одобрить демку" });
+  }
+});
+
+router.post("/demos/:id/reject", async (req, res) => {
+  const id = Number(req.params.id);
+  const { reason } = req.body || {};
+
+  if (typeof reason === "string" && reason.length > 300) {
+    return res.status(400).json({ error: "Причина отклонения слишком длинная" });
+  }
+
+  try {
+    const submission = await getDemoSubmissionById(id);
+    if (!submission || submission.status !== "pending") {
+      return res.status(404).json({ error: "Демка не найдена или уже проверена" });
+    }
+
+    const challenge = await getChallengeById(submission.challenge_id);
+    await setDemoSubmissionStatus(id, "rejected", typeof reason === "string" ? reason.trim() : "");
+
+    const reasonText = reason ? ` Причина: ${reason.trim()}` : "";
+    await createNotification(
+      submission.user_id,
+      "demo_rejected",
+      `❌ Демка по челленджу «${challenge ? challenge.title : ""}» отклонена.${reasonText} Можете отправить демку заново.`,
+      submission.challenge_id
+    );
+
+    const filePath = path.join(DEMOS_DIR, submission.filename);
+    fs.promises.unlink(filePath).catch(() => {});
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("Ошибка отклонения демки:", e);
+    res.status(500).json({ error: "Не удалось отклонить демку" });
   }
 });
 

@@ -8,7 +8,8 @@ const {
   likeChallenge,
   toggleChallengeDone,
   getUserPublicByUsername,
-  createNotification
+  createNotification,
+  getUserPendingDemoChallengeIds
 } = require("../db");
 const { OWNER_USERNAME } = require("../config");
 
@@ -31,9 +32,10 @@ function requireAuth(req, res, next) {
 }
 
 // Приводим челлендж к виду, который ждёт фронтенд, добавляя
-// личные флаги (лайкнул/выполнил ли ЭТОТ пользователь) и выбирая
-// нужный язык текста — с откатом на русский, если перевода нет.
-function serializeChallenge(challenge, userId, lang) {
+// личные флаги (лайкнул/выполнил ли ЭТОТ пользователь, ждёт ли
+// проверки его демка) и выбирая нужный язык текста — с откатом
+// на русский, если перевода нет.
+function serializeChallenge(challenge, userId, lang, pendingDemoIds) {
   const useEn = lang === "en" && challenge.titleEn;
   return {
     id: challenge.id,
@@ -47,16 +49,17 @@ function serializeChallenge(challenge, userId, lang) {
     authorIsOwner: challenge.authorUsername === OWNER_USERNAME,
     likes: challenge.likedBy.length,
     liked: userId ? challenge.likedBy.includes(userId) : false,
-    done: userId ? challenge.completedBy.includes(userId) : false
+    done: userId ? challenge.completedBy.includes(userId) : false,
+    pendingDemo: pendingDemoIds ? pendingDemoIds.has(challenge.id) : false
   };
 }
 
 // То же самое, но с добавлением статуса модерации и причины отказа —
 // используется в "Мои челленджи" в профиле, где автор должен видеть
 // весь свой список, а не только одобренные.
-function serializeOwnChallenge(challenge, userId, lang) {
+function serializeOwnChallenge(challenge, userId, lang, pendingDemoIds) {
   return {
-    ...serializeChallenge(challenge, userId, lang),
+    ...serializeChallenge(challenge, userId, lang, pendingDemoIds),
     status: challenge.status,
     rejectReason: challenge.rejectReason || null
   };
@@ -70,7 +73,8 @@ router.get("/challenges", async (req, res) => {
     const userId = req.session.userId || null;
     const lang = req.query.lang === "en" ? "en" : "ru";
     const challenges = await getApprovedChallenges();
-    res.json(challenges.map((c) => serializeChallenge(c, userId, lang)));
+    const pendingDemoIds = new Set(userId ? await getUserPendingDemoChallengeIds(userId) : []);
+    res.json(challenges.map((c) => serializeChallenge(c, userId, lang, pendingDemoIds)));
   } catch (e) {
     console.error("Ошибка загрузки челленджей:", e);
     res.status(500).json({ error: "Не удалось загрузить челленджи" });
@@ -84,7 +88,8 @@ router.get("/challenges/mine", requireAuth, async (req, res) => {
   try {
     const lang = req.query.lang === "en" ? "en" : "ru";
     const mine = await getChallengesByAuthorId(req.session.userId);
-    res.json(mine.map((c) => serializeOwnChallenge(c, req.session.userId, lang)));
+    const pendingDemoIds = new Set(await getUserPendingDemoChallengeIds(req.session.userId));
+    res.json(mine.map((c) => serializeOwnChallenge(c, req.session.userId, lang, pendingDemoIds)));
   } catch (e) {
     console.error("Ошибка загрузки своих челленджей:", e);
     res.status(500).json({ error: "Не удалось загрузить ваши челленджи" });
