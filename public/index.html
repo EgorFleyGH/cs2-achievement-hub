@@ -188,6 +188,103 @@ nav{
     color:#de9b35;
 }
 
+/* ================= SUPPORT CHAT ================= */
+
+.chat-messages{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    max-height:420px;
+    overflow-y:auto;
+    padding:16px;
+    background:#0d1520;
+    border:1px solid #253344;
+    border-radius:8px;
+}
+
+.chat-bubble{
+    max-width:75%;
+    padding:10px 14px;
+    border-radius:12px;
+    font-size:14px;
+    line-height:1.5;
+    word-wrap:break-word;
+    white-space:pre-wrap;
+}
+
+.chat-bubble.from-me{
+    align-self:flex-end;
+    background:#de9b35;
+    color:#111822;
+    border-bottom-right-radius:3px;
+}
+
+.chat-bubble.from-them{
+    align-self:flex-start;
+    background:#17202c;
+    border:1px solid #253344;
+    color:#c9d4e0;
+    border-bottom-left-radius:3px;
+}
+
+.chat-bubble .chat-time{
+    display:block;
+    font-size:10px;
+    opacity:.6;
+    margin-top:4px;
+}
+
+.chat-empty{
+    text-align:center;
+    color:#5b7390;
+    font-size:13px;
+    padding:30px 10px;
+}
+
+.support-thread-item{
+    padding:12px;
+    border:1px solid #253344;
+    border-radius:6px;
+    margin-bottom:8px;
+    cursor:pointer;
+    background:#17202c;
+}
+
+.support-thread-item:hover{
+    border-color:#de9b35;
+}
+
+.support-thread-item.active{
+    border-color:#de9b35;
+    background:rgba(222,155,53,.08);
+}
+
+.support-thread-item .thread-name{
+    font-weight:bold;
+    color:#e6edf5;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.support-thread-item .thread-last{
+    color:#8fa0b5;
+    font-size:12px;
+    margin-top:4px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.thread-unread-dot{
+    background:#de3535;
+    color:white;
+    font-size:10px;
+    font-weight:bold;
+    border-radius:10px;
+    padding:1px 6px;
+}
+
 /* ================= DONATE ================= */
 
 .donate-btn{
@@ -797,6 +894,16 @@ h1{
         font-size:13px;
         font-weight:bold;
     ">🇬🇧 EN</button>
+    <button id="sound-toggle-btn" onclick="toggleSiteSound(this)" title="Звук кликов" style="
+        border:none;
+        background:transparent;
+        color:#8fa0b5;
+        padding:5px 10px;
+        border-radius:4px;
+        cursor:pointer;
+        font-size:13px;
+        font-weight:bold;
+    ">🔊</button>
 </div>
 
 <!-- Модалка выбора языка при первом заходе -->
@@ -871,8 +978,9 @@ h1{
             </button>
 
             <button class="nav-tab"
-                    onclick="switchTab('scr-support',this)" data-i18n="navSupport">
+                    onclick="switchTab('scr-support',this);loadSupportChat();" data-i18n="navSupport">
                 Поддержка
+                <span id="support-nav-badge" class="notif-badge" style="display:none;position:static;margin-left:5px;"></span>
             </button>
 
         </nav>
@@ -1001,11 +1109,21 @@ h1{
 
             <label data-i18n="editorAvatarLabel">Или загрузите картинку для челленджа</label>
 
-            <input
-                id="in-icon-image"
-                type="file"
-                accept="image/*"
-                style="margin-bottom:15px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:15px;">
+                <input
+                    id="in-icon-image"
+                    type="file"
+                    accept="image/*"
+                    style="flex:1;">
+
+                <button
+                    type="button"
+                    id="btn-remove-icon-image"
+                    style="display:none;background:#3a2530;color:#ff8a8a;border:1px solid #5b2f3a;border-radius:5px;padding:8px 12px;cursor:pointer;white-space:nowrap;"
+                    data-i18n="editorAvatarRemove">
+                    🗑️ Удалить
+                </button>
+            </div>
 
             <button
                 id="btn-publish"
@@ -1369,6 +1487,7 @@ h1{
             <button id="admin-tab-news" class="nav-tab active" onclick="setAdminMode('news')">Новости</button>
             <button id="admin-tab-mod" class="nav-tab" onclick="setAdminMode('mod')">Модерация челленджей</button>
             <button id="admin-tab-users" class="nav-tab" onclick="setAdminMode('users')">Пользователи</button>
+            <button id="admin-tab-support" class="nav-tab" onclick="setAdminMode('support')">Поддержка</button>
             <button id="admin-tab-stats" class="nav-tab" onclick="setAdminMode('stats')">Статистика</button>
         </div>
 
@@ -1445,6 +1564,34 @@ h1{
 
         </div>
 
+        <!-- ==== ПОДДЕРЖКА (чат с игроками) ==== -->
+        <div id="admin-panel-support" class="panel" style="width:100%;display:none;">
+
+            <h3 style="color:#de9b35;margin-bottom:15px;">Обращения игроков</h3>
+
+            <div style="display:flex;gap:20px;flex-wrap:wrap;">
+
+                <div id="admin-support-threads" style="flex:1;min-width:220px;max-height:520px;overflow-y:auto;"></div>
+
+                <div style="flex:2;min-width:280px;">
+
+                    <div id="admin-support-chat-header" style="color:#8fa0b5;margin-bottom:10px;font-weight:bold;">
+                        Выберите диалог слева
+                    </div>
+
+                    <div id="admin-support-messages" class="chat-messages"></div>
+
+                    <div style="display:flex;gap:10px;margin-top:12px;">
+                        <input id="admin-support-input" type="text" maxlength="1000" placeholder="Ответить игроку..." style="flex:1;" disabled>
+                        <button class="save-btn" style="width:auto;padding:0 20px;" onclick="sendAdminSupportReply()" id="admin-support-send-btn" disabled>➤</button>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
         <!-- ==== СТАТИСТИКА ==== -->
         <div id="admin-panel-stats" class="panel" style="width:100%;display:none;">
 
@@ -1508,31 +1655,21 @@ h1{
     <div
         style="
         width:100%;
-        max-width:900px;
-        margin:50px auto;
+        max-width:700px;
+        margin:40px auto;
         ">
 
         <div
             class="panel"
             style="
             width:100%;
-            text-align:center;
-            padding:60px;
             ">
-
-            <div
-                style="
-                font-size:90px;
-                color:#de9b35;
-                margin-bottom:20px;
-                ">
-                ✉
-            </div>
 
             <h2
                 style="
                 color:#de9b35;
-                margin-bottom:20px;
+                margin-bottom:8px;
+                text-align:center;
                 " data-i18n="supportTitle">
 
                 Техническая поддержка
@@ -1542,8 +1679,9 @@ h1{
             <p
                 style="
                 color:#9daec2;
-                line-height:1.8;
-                margin-bottom:25px;
+                line-height:1.6;
+                margin-bottom:20px;
+                text-align:center;
                 " data-i18n="supportBody">
 
                 Нашли ошибку?<br>
@@ -1552,25 +1690,27 @@ h1{
 
             </p>
 
-            <div
-                style="
-                background:#17202c;
-                border:1px solid #253344;
-                border-radius:6px;
-                padding:20px;
-                font-size:26px;
-                font-weight:bold;
-                color:#de9b35;
-                ">
+            <div id="support-guest-notice" style="display:none;color:#8fa0b5;text-align:center;padding:20px;" data-i18n="supportGuestNotice">
+                Войдите в аккаунт, чтобы написать в поддержку.
+            </div>
 
-                egorfleyer@gmail.com
+            <div id="support-chat-wrap">
+
+                <div id="support-messages" class="chat-messages"></div>
+
+                <div style="display:flex;gap:10px;margin-top:14px;">
+                    <input id="support-input" type="text" maxlength="1000" data-i18n-placeholder="supportInputPlaceholder" placeholder="Напишите сообщение...">
+                    <button class="save-btn" style="width:auto;padding:0 22px;" onclick="sendSupportMessage()">➤</button>
+                </div>
 
             </div>
 
             <p
                 style="
-                color:#8fa0b5;
-                margin-top:25px;
+                color:#5b7390;
+                margin-top:20px;
+                font-size:12px;
+                text-align:center;
                 " data-i18n="supportReplyTime">
 
                 Обычно отвечаем
@@ -1586,10 +1726,76 @@ h1{
 <script>
 
 // =========================
+// Звук клика
+// =========================
+// Синтезируем короткий "клик" через Web Audio API — не нужен
+// внешний mp3-файл, звук работает мгновенно и весит 0 байт.
+
+let clickAudioCtx=null;
+let soundEnabled=localStorage.getItem("soundEnabled")!=="off";
+
+function playClickSound(){
+
+    if(!soundEnabled) return;
+
+    try{
+
+        if(!clickAudioCtx){
+            clickAudioCtx=new (window.AudioContext||window.webkitAudioContext)();
+        }
+        if(clickAudioCtx.state==="suspended") clickAudioCtx.resume();
+
+        const osc=clickAudioCtx.createOscillator();
+        const gain=clickAudioCtx.createGain();
+
+        osc.type="square";
+        osc.frequency.setValueAtTime(720,clickAudioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(320,clickAudioCtx.currentTime+0.06);
+
+        gain.gain.setValueAtTime(0.09,clickAudioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001,clickAudioCtx.currentTime+0.07);
+
+        osc.connect(gain);
+        gain.connect(clickAudioCtx.destination);
+
+        osc.start();
+        osc.stop(clickAudioCtx.currentTime+0.08);
+
+    }catch(e){
+        // Web Audio недоступен (старый браузер) — просто без звука
+    }
+
+}
+
+// Один делегированный обработчик на весь документ — ловит клики
+// по любым кнопкам и кликабельным элементам, даже добавленным позже.
+document.addEventListener("click",function(e){
+
+    const target=e.target.closest("button, .nav-tab, .cs-btn, .author-link, .lang-btn");
+    if(target) playClickSound();
+
+},true);
+
+function toggleSiteSound(btn){
+
+    soundEnabled=!soundEnabled;
+    localStorage.setItem("soundEnabled",soundEnabled?"on":"off");
+    if(btn) btn.textContent=soundEnabled?"🔊":"🔇";
+
+}
+
+// Отражаем сохранённое состояние на кнопке сразу при загрузке страницы.
+document.addEventListener("DOMContentLoaded",function(){
+    const soundBtn=document.getElementById("sound-toggle-btn");
+    if(soundBtn) soundBtn.textContent=soundEnabled?"🔊":"🔇";
+});
+
+// =========================
 // Локализация (RU / EN)
 // =========================
 
 const I18N={
+
 
     ru:{
         siteName:"Доска челленджей",
@@ -1623,6 +1829,7 @@ const I18N={
         editorColorDefault:"Не менять цвет (по умолчанию)",
         editorIconLabel:"Иконка (эмодзи)",
         editorAvatarLabel:"Или загрузите картинку для челленджа",
+        editorAvatarRemove:"🗑️ Удалить картинку",
         editorPublishBtn:"Опубликовать",
         galleryTitle:"Список челленджей",
         gallerySubtitle:"Выполняйте задания и отмечайте прогресс",
@@ -1676,6 +1883,9 @@ const I18N={
         supportTitle:"Техническая поддержка",
         supportBody:"Нашли ошибку?<br>Есть предложение?<br>Или хотите сообщить о проблеме?",
         supportReplyTime:"Обычно отвечаем в течение 24–48 часов.",
+        supportGuestNotice:"Войдите в аккаунт, чтобы написать в поддержку.",
+        supportInputPlaceholder:"Напишите сообщение...",
+        supportEmpty:"Сообщений пока нет — напишите, и мы ответим здесь же.",
         publishedAlert:"Челлендж отправлен на модерацию! Он появится в ленте после проверки владельцем сайта.",
         serverErrorAlert:"Не удалось связаться с сервером",
         newsEmpty:"Пока нет новостей.",
@@ -1717,6 +1927,7 @@ const I18N={
         editorColorDefault:"Don't change the color (default)",
         editorIconLabel:"Icon (emoji)",
         editorAvatarLabel:"Or upload an image for the challenge",
+        editorAvatarRemove:"🗑️ Remove image",
         editorPublishBtn:"Publish",
         galleryTitle:"Challenge list",
         gallerySubtitle:"Complete tasks and track your progress",
@@ -1770,6 +1981,9 @@ const I18N={
         supportTitle:"Technical support",
         supportBody:"Found a bug?<br>Have a suggestion?<br>Or want to report an issue?",
         supportReplyTime:"We usually reply within 24–48 hours.",
+        supportGuestNotice:"Log in to message support.",
+        supportInputPlaceholder:"Write a message...",
+        supportEmpty:"No messages yet — write one and we'll reply right here.",
         publishedAlert:"Your challenge was sent for moderation! It will appear in the feed once approved by the site owner.",
         serverErrorAlert:"Could not reach the server",
         newsEmpty:"No news yet.",
@@ -1939,6 +2153,8 @@ colorDefaultCheckbox.onchange=()=>{
 }
 
 // Загрузка картинки для иконки челленджа — заменяет эмодзи в превью.
+const removeIconImageBtn=document.getElementById("btn-remove-icon-image");
+
 iconImageInput.addEventListener("change",function(){
 
     const file=this.files[0];
@@ -1958,11 +2174,24 @@ iconImageInput.addEventListener("change",function(){
         const img=document.createElement("img");
         img.src=pendingIconImage;
         previewIcon.appendChild(img);
+        removeIconImageBtn.style.display="block";
 
     }
     reader.readAsDataURL(file);
 
 });
+
+// Удаление загруженной картинки — возвращаемся к обычной эмодзи-иконке.
+removeIconImageBtn.onclick=function(){
+
+    pendingIconImage=null;
+    iconImageInput.value="";
+    removeIconImageBtn.style.display="none";
+
+    previewIcon.innerHTML="";
+    previewIcon.textContent=iconInput.value||"❓";
+
+}
 
 // =========================
 // Челленджи (общие для всех, хранятся на сервере)
@@ -2310,6 +2539,7 @@ document.getElementById("btn-publish").onclick=async function(){
         colorInput.value="#de9b35";
         pendingIconImage=null;
         iconImageInput.value="";
+        removeIconImageBtn.style.display="none";
 
         updateColorPreview();
         previewTitle.textContent="Название";
@@ -2876,6 +3106,7 @@ async function logout(){
     hideNotifDropdown();
     updateNotifBadge(0);
     document.getElementById("notif-wrap").style.display="none";
+    updateSupportNavBadge(0);
 
     // Перезагружаем ленту — лайки/выполнено теперь должны показываться
     // как у гостя (без личных отметок).
@@ -2905,6 +3136,7 @@ function onAuthSuccess(username,isOwner,avatar,steamUrl){
 
     document.getElementById("notif-wrap").style.display="inline-block";
     loadNotifications();
+    loadSupportUnreadCount();
 
     // Перезагружаем ленту — подтягиваем личные лайки/статусы выполнения
     // и пересчитываем статистику под этот аккаунт.
@@ -3060,6 +3292,165 @@ setInterval(()=>{
 },30000);
 
 // ==========================
+// ПОДДЕРЖКА (чат с владельцем сайта) — сторона игрока
+// ==========================
+
+let supportPollTimer=null;
+let supportScreenOpen=false;
+
+function updateSupportNavBadge(count){
+
+    const badge=document.getElementById("support-nav-badge");
+    if(!badge) return;
+
+    if(count>0){
+        badge.textContent=count>99?"99+":count;
+        badge.style.display="inline-block";
+    }else{
+        badge.style.display="none";
+    }
+
+}
+
+async function loadSupportUnreadCount(){
+
+    if(!currentUser) return;
+
+    try{
+
+        const res=await fetch("/api/support/unread-count");
+        if(!res.ok) return;
+        const data=await res.json();
+        updateSupportNavBadge(data.count);
+
+    }catch(e){
+        // тихо игнорируем
+    }
+
+}
+
+function renderSupportBubble(msg,isMine){
+
+    const bubble=document.createElement("div");
+    bubble.className="chat-bubble "+(isMine?"from-me":"from-them");
+
+    const text=document.createElement("span");
+    text.textContent=msg.message;
+
+    const time=document.createElement("span");
+    time.className="chat-time";
+    const d=new Date(msg.created_at);
+    time.textContent=d.toLocaleString(currentLang==="en"?"en-US":"ru-RU",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+
+    bubble.append(text,time);
+
+    return bubble;
+
+}
+
+async function loadSupportChat(){
+
+    supportScreenOpen=true;
+
+    const guestNotice=document.getElementById("support-guest-notice");
+    const chatWrap=document.getElementById("support-chat-wrap");
+
+    if(!currentUser){
+        guestNotice.style.display="block";
+        chatWrap.style.display="none";
+        return;
+    }
+
+    guestNotice.style.display="none";
+    chatWrap.style.display="block";
+
+    const box=document.getElementById("support-messages");
+
+    try{
+
+        const res=await fetch("/api/support/messages");
+        if(!res.ok) return;
+        const messages=await res.json();
+
+        box.innerHTML="";
+
+        if(messages.length===0){
+            const empty=document.createElement("div");
+            empty.className="chat-empty";
+            empty.textContent=t("supportEmpty");
+            box.appendChild(empty);
+        }else{
+            messages.forEach(msg=>{
+                // Игрок видит свои сообщения справа, ответы владельца — слева.
+                box.appendChild(renderSupportBubble(msg, !msg.from_owner));
+            });
+            box.scrollTop=box.scrollHeight;
+        }
+
+        updateSupportNavBadge(0);
+
+    }catch(e){
+        // тихо игнорируем — попробуем при следующем опросе
+    }
+
+}
+
+async function sendSupportMessage(){
+
+    const input=document.getElementById("support-input");
+    const message=input.value.trim();
+
+    if(!message) return;
+    if(!currentUser){
+        goToAuthTab(t("authGoToLoginNeeded"));
+        return;
+    }
+
+    input.value="";
+
+    try{
+
+        const res=await fetch("/api/support/messages",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({message})
+        });
+
+        const data=await res.json();
+
+        if(!res.ok){
+            alert(data.error||t("serverErrorAlert"));
+            return;
+        }
+
+        await loadSupportChat();
+
+    }catch(e){
+
+        alert(t("serverErrorAlert"));
+
+    }
+
+}
+
+document.getElementById("support-input").addEventListener("keydown",function(e){
+    if(e.key==="Enter") sendSupportMessage();
+});
+
+// Пока пользователь смотрит вкладку поддержки — подтягиваем новые
+// сообщения почаще, чтобы чат ощущался живым.
+setInterval(()=>{
+    if(currentUser && document.getElementById("scr-support").classList.contains("active")){
+        loadSupportChat();
+    }
+},8000);
+
+// Общий фоновый опрос счётчика непрочитанных — даже если вкладка закрыта.
+setInterval(()=>{
+    if(currentUser) loadSupportUnreadCount();
+},30000);
+
+// ==========================
 // АДМИН-ПАНЕЛЬ (только владелец — но проверка реальной власти всегда на сервере)
 // ==========================
 
@@ -3069,7 +3460,7 @@ function setAdminMode(mode){
 
     adminMode=mode;
 
-    ["news","mod","users","stats"].forEach(m=>{
+    ["news","mod","users","support","stats"].forEach(m=>{
 
         document.getElementById("admin-tab-"+m).classList.toggle("active",m===mode);
         document.getElementById("admin-panel-"+m).style.display=(m===mode)?"block":"none";
@@ -3079,6 +3470,7 @@ function setAdminMode(mode){
     if(mode==="news") loadAdminNews();
     if(mode==="mod") loadAdminModeration();
     if(mode==="users") loadAdminUsers();
+    if(mode==="support") loadAdminSupportThreads();
     if(mode==="stats") loadAdminStats();
 
 }
@@ -3418,6 +3810,161 @@ async function loadAdminStats(){
 
 }
 
+// ---- Поддержка (чат с игроками) ----
+
+let activeSupportThreadUserId=null;
+let activeSupportThreadUsername=null;
+
+async function loadAdminSupportThreads(){
+
+    const box=document.getElementById("admin-support-threads");
+    box.textContent="Загрузка...";
+
+    try{
+
+        const res=await fetch("/api/admin/support/threads");
+        const threads=await res.json();
+
+        box.innerHTML="";
+
+        if(threads.length===0){
+            box.innerHTML="<p style='color:#5b7390;padding:10px;'>Пока нет обращений.</p>";
+            return;
+        }
+
+        threads.forEach(th=>{
+
+            const item=document.createElement("div");
+            item.className="support-thread-item"+(th.user_id===activeSupportThreadUserId?" active":"");
+            item.onclick=()=>openAdminSupportThread(th.user_id,th.username);
+
+            const name=document.createElement("div");
+            name.className="thread-name";
+            const nameText=document.createElement("span");
+            nameText.textContent=th.username;
+            name.appendChild(nameText);
+
+            if(th.unread_count>0){
+                const dot=document.createElement("span");
+                dot.className="thread-unread-dot";
+                dot.textContent=th.unread_count;
+                name.appendChild(dot);
+            }
+
+            const last=document.createElement("div");
+            last.className="thread-last";
+            last.textContent=th.last_message||"";
+
+            item.append(name,last);
+            box.appendChild(item);
+
+        });
+
+    }catch(e){
+
+        box.textContent="Не удалось загрузить диалоги.";
+
+    }
+
+}
+
+async function openAdminSupportThread(userId,username){
+
+    activeSupportThreadUserId=userId;
+    activeSupportThreadUsername=username;
+
+    document.getElementById("admin-support-chat-header").textContent="Диалог с "+username;
+    document.getElementById("admin-support-input").disabled=false;
+    document.getElementById("admin-support-send-btn").disabled=false;
+
+    // Подсвечиваем выбранный диалог в списке слева.
+    document.querySelectorAll("#admin-support-threads .support-thread-item").forEach(el=>{
+        el.classList.remove("active");
+    });
+
+    await refreshAdminSupportMessages();
+    loadAdminSupportThreads(); // обновляем счётчики непрочитанных в списке
+
+}
+
+async function refreshAdminSupportMessages(){
+
+    if(!activeSupportThreadUserId) return;
+
+    const box=document.getElementById("admin-support-messages");
+
+    try{
+
+        const res=await fetch("/api/admin/support/"+activeSupportThreadUserId);
+        if(!res.ok) return;
+        const messages=await res.json();
+
+        box.innerHTML="";
+
+        if(messages.length===0){
+            box.innerHTML="<div class='chat-empty'>Сообщений пока нет.</div>";
+        }else{
+            messages.forEach(msg=>{
+                // Владелец видит свои ответы справа, сообщения игрока — слева.
+                box.appendChild(renderSupportBubble(msg, msg.from_owner));
+            });
+            box.scrollTop=box.scrollHeight;
+        }
+
+    }catch(e){
+
+        box.textContent="Не удалось загрузить сообщения.";
+
+    }
+
+}
+
+async function sendAdminSupportReply(){
+
+    if(!activeSupportThreadUserId) return;
+
+    const input=document.getElementById("admin-support-input");
+    const message=input.value.trim();
+    if(!message) return;
+
+    input.value="";
+
+    try{
+
+        const res=await fetch("/api/admin/support/"+activeSupportThreadUserId,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({message})
+        });
+
+        if(!res.ok){
+            const data=await res.json();
+            alert(data.error||"Не удалось отправить ответ");
+            return;
+        }
+
+        await refreshAdminSupportMessages();
+
+    }catch(e){
+
+        alert("Не удалось связаться с сервером");
+
+    }
+
+}
+
+document.getElementById("admin-support-input").addEventListener("keydown",function(e){
+    if(e.key==="Enter") sendAdminSupportReply();
+});
+
+// Пока владелец смотрит вкладку поддержки в админке — подтягиваем
+// новые сообщения активного диалога и обновляем список диалогов.
+setInterval(()=>{
+    if(isOwnerAccount && adminMode==="support" && document.getElementById("scr-admin").classList.contains("active")){
+        if(activeSupportThreadUserId) refreshAdminSupportMessages();
+        loadAdminSupportThreads();
+    }
+},10000);
 
 </script>
 

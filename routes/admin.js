@@ -10,7 +10,11 @@ const {
   createNews,
   updateNews,
   deleteNews,
-  createNotification
+  createNotification,
+  getSupportThreadsList,
+  getSupportThread,
+  createSupportMessage,
+  markSupportRead
 } = require("../db");
 const { OWNER_USERNAME } = require("../config");
 
@@ -254,6 +258,54 @@ router.delete("/news/:id", async (req, res) => {
   } catch (e) {
     console.error("Ошибка удаления новости:", e);
     res.status(500).json({ error: "Не удалось удалить новость" });
+  }
+});
+
+// =========================
+// Чат поддержки — все диалоги игроков с владельцем сайта
+// =========================
+
+router.get("/support/threads", async (req, res) => {
+  try {
+    const threads = await getSupportThreadsList();
+    res.json(threads);
+  } catch (e) {
+    console.error("Ошибка загрузки диалогов поддержки:", e);
+    res.status(500).json({ error: "Не удалось загрузить диалоги" });
+  }
+});
+
+router.get("/support/:userId", async (req, res) => {
+  const userId = Number(req.params.userId);
+
+  try {
+    const thread = await getSupportThread(userId);
+    // Сообщения игрока, которые сейчас читает владелец, отмечаем прочитанными.
+    await markSupportRead(userId, true);
+    res.json(thread);
+  } catch (e) {
+    console.error("Ошибка загрузки диалога поддержки:", e);
+    res.status(500).json({ error: "Не удалось загрузить диалог" });
+  }
+});
+
+router.post("/support/:userId", async (req, res) => {
+  const userId = Number(req.params.userId);
+  const { message } = req.body || {};
+
+  if (typeof message !== "string" || message.trim().length === 0) {
+    return res.status(400).json({ error: "Сообщение не может быть пустым" });
+  }
+  if (message.length > 1000) {
+    return res.status(400).json({ error: "Сообщение слишком длинное" });
+  }
+
+  try {
+    const saved = await createSupportMessage(userId, true, message.trim());
+    res.status(201).json(saved);
+  } catch (e) {
+    console.error("Ошибка отправки ответа в поддержку:", e);
+    res.status(500).json({ error: "Не удалось отправить ответ" });
   }
 });
 

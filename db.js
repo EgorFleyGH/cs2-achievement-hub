@@ -78,6 +78,17 @@ async function initDb() {
     )
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS support_messages (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      from_owner BOOLEAN NOT NULL DEFAULT false,
+      message TEXT NOT NULL,
+      read BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+
   // На случай, если таблица news уже существовала без английских полей.
   await pool.query(`ALTER TABLE news ADD COLUMN IF NOT EXISTS title_en TEXT`);
   await pool.query(`ALTER TABLE news ADD COLUMN IF NOT EXISTS body_en TEXT`);
@@ -466,6 +477,62 @@ async function getLeaderboard() {
   };
 }
 
+// =========================
+// Поддержка (чат с владельцем сайта)
+// =========================
+
+async function createSupportMessage(userId, fromOwner, message) {
+  const { rows } = await pool.query(
+    `INSERT INTO support_messages (user_id, from_owner, message)
+     VALUES ($1, $2, $3) RETURNING *`,
+    [userId, fromOwner, message]
+  );
+  return rows[0];
+}
+
+async function getSupportThread(userId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM support_messages WHERE user_id = $1 ORDER BY id ASC",
+    [userId]
+  );
+  return rows;
+}
+
+// Список диалогов для админ-панели: по одному на пользователя,
+// с последним сообщением и числом непрочитанных (владельцем) сообщений.
+async function getSupportThreadsList() {
+  const { rows } = await pool.query(`
+    SELECT
+      u.id AS user_id,
+      u.username,
+      u.avatar,
+      (SELECT message FROM support_messages sm WHERE sm.user_id = u.id ORDER BY sm.id DESC LIMIT 1) AS last_message,
+      (SELECT created_at FROM support_messages sm WHERE sm.user_id = u.id ORDER BY sm.id DESC LIMIT 1) AS last_at,
+      (SELECT COUNT(*)::int FROM support_messages sm WHERE sm.user_id = u.id AND sm.from_owner = false AND sm.read = false) AS unread_count
+    FROM users u
+    WHERE EXISTS (SELECT 1 FROM support_messages sm WHERE sm.user_id = u.id)
+    ORDER BY last_at DESC
+  `);
+  return rows;
+}
+
+// Отмечает прочитанными сообщения от игрока (когда их читает владелец)
+// или от владельца (когда их читает сам игрок).
+async function markSupportRead(userId, readerIsOwner) {
+  await pool.query(
+    "UPDATE support_messages SET read = true WHERE user_id = $1 AND from_owner = $2 AND read = false",
+    [userId, !readerIsOwner]
+  );
+}
+
+async function getSupportUnreadCountForUser(userId) {
+  const { rows } = await pool.query(
+    "SELECT COUNT(*)::int AS count FROM support_messages WHERE user_id = $1 AND from_owner = true AND read = false",
+    [userId]
+  );
+  return rows[0].count;
+}
+
 module.exports = {
   initDb,
   findUserByUsername,
@@ -493,5 +560,11 @@ module.exports = {
   getNotifications,
   getUnreadNotificationCount,
   markAllNotificationsRead,
-  getLeaderboard
+  getLeaderboard,
+  createSupportMessage,
+  getSupportThread,
+  getSupportThreadsList,
+  markSupportRead,
+  getSupportUnreadCountForUser
+
 };
