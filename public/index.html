@@ -1301,6 +1301,44 @@ h1{
 </div>
 
 <!-- Модалка загрузки демки для подтверждения выполнения челленджа -->
+<div id="new-password-modal" style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(5,8,12,0.85);
+    z-index:3000;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+">
+    <div style="
+        background:#10151d;
+        border:1px solid #223040;
+        border-radius:10px;
+        padding:30px;
+        text-align:left;
+        max-width:420px;
+        width:100%;
+    ">
+        <h3 style="color:#ff6a1a;margin-bottom:6px;">Новый пароль</h3>
+
+        <p id="new-password-username" style="color:#eef2f8;margin-bottom:14px;"></p>
+
+        <p style="color:#8996a8;font-size:13px;margin-bottom:14px;">
+            Скопируйте кнопкой ниже и пришлите игроку лично. Это окно больше не покажет этот пароль повторно.
+        </p>
+
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+            <input id="new-password-value" type="text" readonly style="flex:1;font-family:var(--font-mono);letter-spacing:1px;">
+            <button class="save-btn" style="width:auto;padding:0 16px;margin:0;" onclick="copyNewPassword()">📋</button>
+        </div>
+
+        <p id="new-password-copy-status" style="font-size:12px;color:#3ddc84;min-height:16px;margin-bottom:10px;"></p>
+
+        <button class="save-btn" style="background:#3a4b5f;" onclick="document.getElementById('new-password-modal').style.display='none';">Закрыть</button>
+    </div>
+</div>
+
 <div id="demo-modal" style="
     display:none;
     position:fixed;
@@ -4703,15 +4741,45 @@ async function resetUserPassword(id,username){
         }
 
         // Показываем новый пароль ОДИН раз — дальше он нигде не хранится
-        // в открытом виде, только его хеш в базе.
-        prompt(
-            `Новый пароль для ${data.username} (скопируйте и пришлите игроку лично, окно больше не покажет этот пароль):`,
-            data.newPassword
-        );
+        // в открытом виде, только его хеш в базе. Кнопка "Скопировать"
+        // вместо ручного выделения текста — чтобы исключить ошибку
+        // при копировании (случайно задетый лишний символ и т.п.).
+        showNewPasswordModal(data.username,data.newPassword);
 
     }catch(e){
 
         alert("Не удалось связаться с сервером");
+
+    }
+
+}
+
+function showNewPasswordModal(username,newPassword){
+
+    document.getElementById("new-password-username").textContent=`Игрок: ${username}`;
+    document.getElementById("new-password-value").value=newPassword;
+    document.getElementById("new-password-copy-status").textContent="";
+    document.getElementById("new-password-modal").style.display="flex";
+
+}
+
+async function copyNewPassword(){
+
+    const input=document.getElementById("new-password-value");
+    const status=document.getElementById("new-password-copy-status");
+
+    try{
+
+        await navigator.clipboard.writeText(input.value);
+        status.textContent="✓ Скопировано";
+
+    }catch(e){
+
+        // Если Clipboard API недоступен (например, не https) — выделяем
+        // текст вручную, чтобы можно было скопировать через Ctrl+C.
+        input.select();
+        input.setSelectionRange(0,input.value.length);
+        status.textContent="Выделено — нажмите Ctrl+C";
 
     }
 
