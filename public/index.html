@@ -75,22 +75,14 @@ body{
 
 a{ color:inherit; }
 
-/* Скошенные "тактические" углы — сигнатурная форма панелей и карточек,
-   вдохновлённая HUD-элементами самой CS2 (меню покупки, скорборд). */
+/* Скруглённые панели/карточки — мягкая, привычная форма
+   без резких срезов. */
 .chamfer{
-    clip-path:polygon(
-        var(--chamfer) 0, 100% 0,
-        100% calc(100% - var(--chamfer)), calc(100% - var(--chamfer)) 100%,
-        0 100%, 0 var(--chamfer)
-    );
+    border-radius:var(--chamfer);
 }
 
 .chamfer-sm{
-    clip-path:polygon(
-        var(--chamfer-sm) 0, 100% 0,
-        100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%,
-        0 100%, 0 var(--chamfer-sm)
-    );
+    border-radius:var(--chamfer-sm);
 }
 
 /* Уголки прицела/видоискателя — фирменный элемент сайта.
@@ -212,7 +204,7 @@ nav{
     bottom:0;
     height:3px;
     background:var(--orange);
-    clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);
+    border-radius:3px;
     transform:scaleX(0);
     transform-origin:center;
     transition:transform .18s;
@@ -346,7 +338,7 @@ nav{
     align-self:flex-end;
     background:var(--orange);
     color:#1a0e05;
-    clip-path:polygon(8px 0,100% 0,100% 100%,0 100%,0 8px);
+    border-radius:12px 12px 3px 12px;
 }
 
 .chat-bubble.from-them{
@@ -354,7 +346,7 @@ nav{
     background:var(--panel-raised);
     border:1px solid var(--line);
     color:var(--ink);
-    clip-path:polygon(0 0,100% 0,100% 8px,100% 100%,8px 100%,0 100%);
+    border-radius:12px 12px 12px 3px;
 }
 
 .chat-bubble .chat-time{
@@ -436,7 +428,7 @@ nav{
     text-transform:uppercase;
     font-size:13px;
 
-    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+    border-radius:8px;
 
     transition:filter .15s,transform .15s;
 
@@ -567,7 +559,7 @@ h1{
 
     cursor:pointer;
 
-    clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+    border-radius:10px;
 
     transition:filter .15s,transform .15s;
 
@@ -705,7 +697,7 @@ h1{
 
     cursor:pointer;
 
-    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+    border-radius:8px;
 
     transition:filter .15s;
 
@@ -727,11 +719,7 @@ h1{
     position:relative;
     transition:transform .15s,box-shadow .15s;
     margin-bottom:15px;
-    clip-path:polygon(
-        var(--chamfer) 0, 100% 0,
-        100% calc(100% - var(--chamfer)), calc(100% - var(--chamfer)) 100%,
-        0 100%, 0 var(--chamfer)
-    );
+    border-radius:var(--chamfer);
 }
 
 .card:hover{
@@ -800,7 +788,7 @@ h1{
 
     flex-shrink:0;
 
-    clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
+    border-radius:6px;
 
 }
 
@@ -900,7 +888,7 @@ h1{
     letter-spacing:.3px;
     text-transform:uppercase;
 
-    clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
+    border-radius:6px;
 
 }
 
@@ -1162,9 +1150,22 @@ h1{
 
         <p id="demo-modal-challenge-name" style="color:#eef2f8;font-weight:bold;margin-bottom:14px;"></p>
 
-        <p style="color:#a3b1c4;font-size:13px;line-height:1.6;margin-bottom:18px;" data-i18n="demoModalHint">
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+            <button type="button" id="demo-mode-dem" class="save-btn" style="margin:0;flex:1;font-size:12px;padding:10px;" onclick="setDemoMode('dem')" data-i18n="demoModeDem">
+                🎮 Демка (.dem)
+            </button>
+            <button type="button" id="demo-mode-video" class="save-btn" style="margin:0;flex:1;font-size:12px;padding:10px;background:#3a4b5f;" onclick="setDemoMode('video')" data-i18n="demoModeVideo">
+                🎥 Видео (.mp4)
+            </button>
+        </div>
+
+        <p id="demo-modal-hint" style="color:#a3b1c4;font-size:13px;line-height:1.6;margin-bottom:12px;" data-i18n="demoModalHintDem">
             Загрузите файл демки CS2 (.dem), где видно выполнение этого челленджа.
             Владелец сайта посмотрит демку вручную и подтвердит выполнение.
+        </p>
+
+        <p id="demo-modal-video-warning" style="display:none;color:#ff6a1a;background:rgba(255,106,26,.1);border:1px solid rgba(255,106,26,.35);border-radius:6px;padding:10px 12px;font-size:12px;line-height:1.6;margin-bottom:12px;" data-i18n="demoModalVideoWarning">
+            ⚠️ Записывать нужно ПОЛНОСТЬЮ — с момента старта попытки и до самого её завершения, без склеек и монтажа. Обрезанные или смонтированные ролики к рассмотрению не принимаются.
         </p>
 
         <input id="demo-file-input" type="file" accept=".dem" style="margin-bottom:14px;width:100%;">
@@ -1808,9 +1809,9 @@ h1{
         <!-- ==== ПРОВЕРКА ДЕМОК ==== -->
         <div id="admin-panel-demos" class="panel" style="width:100%;display:none;">
 
-            <h3 style="color:#ff6a1a;margin-bottom:15px;">Демки на проверке</h3>
+            <h3 style="color:#ff6a1a;margin-bottom:15px;">Демки и видео на проверке</h3>
             <p style="color:#8996a8;font-size:12px;margin-bottom:15px;">
-                Скачайте демку и посмотрите её в игре или деморекордере, затем подтвердите или отклоните.
+                Демку скачайте и посмотрите в игре или деморекордере. Видео можно посмотреть прямо здесь. Затем подтвердите или отклоните.
             </p>
 
             <div id="admin-demos-list"></div>
@@ -2103,13 +2104,18 @@ const I18N={
         cardDoneBtn:"Выполнено ✓",
         cardPendingBtn:"⏳ На проверке",
         demoModalTitle:"Подтвердите выполнение",
-        demoModalHint:"Загрузите файл демки CS2 (.dem), где видно выполнение этого челленджа. Владелец сайта посмотрит демку вручную и подтвердит выполнение.",
+        demoModeDem:"🎮 Демка (.dem)",
+        demoModeVideo:"🎥 Видео (.mp4)",
+        demoModalHintDem:"Загрузите файл демки CS2 (.dem), где видно выполнение этого челленджа. Владелец сайта посмотрит демку вручную и подтвердит выполнение.",
+        demoModalHintVideo:"Загрузите видеозапись (.mp4), где видно выполнение этого челленджа. Владелец сайта посмотрит запись вручную и подтвердит выполнение.",
+        demoModalVideoWarning:"⚠️ Записывать нужно ПОЛНОСТЬЮ — с момента старта попытки и до самого её завершения, без склеек и монтажа. Обрезанные или смонтированные ролики к рассмотрению не принимаются.",
         demoModalCancel:"Отмена",
         demoModalSubmit:"Отправить",
-        demoModalUploading:"Загружаем демку, не закрывайте окно...",
-        demoModalSuccess:"Демка отправлена на проверку! Как только владелец сайта её посмотрит, вы получите уведомление.",
-        demoModalNoFile:"Сначала выберите файл .dem",
+        demoModalUploading:"Загружаем файл, не закрывайте окно...",
+        demoModalSuccess:"Файл отправлен на проверку! Как только владелец сайта его посмотрит, вы получите уведомление.",
+        demoModalNoFile:"Сначала выберите файл",
         demoModalWrongExt:"Нужен файл с расширением .dem",
+        demoModalWrongExtVideo:"Нужен файл с расширением .mp4",
         demoModalTooBig:"Файл слишком большой (максимум 500 МБ)",
         cardDeleteTitle:"Удалить челлендж",
         profileChangeAvatar:"📷 Изменить аватар",
@@ -2211,13 +2217,18 @@ const I18N={
         cardDoneBtn:"Completed ✓",
         cardPendingBtn:"⏳ Under review",
         demoModalTitle:"Confirm completion",
-        demoModalHint:"Upload a CS2 demo file (.dem) that shows you completing this challenge. The site owner will review it manually and confirm.",
+        demoModeDem:"🎮 Demo (.dem)",
+        demoModeVideo:"🎥 Video (.mp4)",
+        demoModalHintDem:"Upload a CS2 demo file (.dem) that shows you completing this challenge. The site owner will review it manually and confirm.",
+        demoModalHintVideo:"Upload a video recording (.mp4) that shows you completing this challenge. The site owner will review it manually and confirm.",
+        demoModalVideoWarning:"⚠️ You must record the ENTIRE attempt — from the very start to the finish, no cuts or editing. Trimmed or edited clips will not be reviewed.",
         demoModalCancel:"Cancel",
         demoModalSubmit:"Submit",
-        demoModalUploading:"Uploading the demo, please don't close this window...",
-        demoModalSuccess:"Demo sent for review! You'll get a notification once the site owner checks it.",
-        demoModalNoFile:"Please choose a .dem file first",
+        demoModalUploading:"Uploading the file, please don't close this window...",
+        demoModalSuccess:"File sent for review! You'll get a notification once the site owner checks it.",
+        demoModalNoFile:"Please choose a file first",
         demoModalWrongExt:"File must have a .dem extension",
+        demoModalWrongExtVideo:"File must have a .mp4 extension",
         demoModalTooBig:"File is too large (max 500 MB)",
         cardDeleteTitle:"Delete challenge",
         profileChangeAvatar:"📷 Change avatar",
@@ -2757,10 +2768,41 @@ async function toggleDone(id){
 }
 
 // =========================
-// Подтверждение выполнения демкой (.dem)
+// Подтверждение выполнения демкой (.dem) или видео (.mp4)
 // =========================
 
 let demoModalChallengeId=null;
+let demoMode="dem"; // "dem" | "video"
+
+function setDemoMode(mode){
+
+    demoMode=mode;
+
+    const demBtn=document.getElementById("demo-mode-dem");
+    const videoBtn=document.getElementById("demo-mode-video");
+    const fileInput=document.getElementById("demo-file-input");
+    const hint=document.getElementById("demo-modal-hint");
+    const warning=document.getElementById("demo-modal-video-warning");
+
+    if(mode==="video"){
+        videoBtn.style.background="#ff6a1a";
+        demBtn.style.background="#3a4b5f";
+        fileInput.accept=".mp4";
+        hint.setAttribute("data-i18n","demoModalHintVideo");
+        hint.textContent=t("demoModalHintVideo");
+        warning.style.display="block";
+    }else{
+        demBtn.style.background="#ff6a1a";
+        videoBtn.style.background="#3a4b5f";
+        fileInput.accept=".dem";
+        hint.setAttribute("data-i18n","demoModalHintDem");
+        hint.textContent=t("demoModalHintDem");
+        warning.style.display="none";
+    }
+
+    fileInput.value="";
+
+}
 
 function openDemoModal(challengeId,title){
 
@@ -2771,7 +2813,8 @@ function openDemoModal(challengeId,title){
 
     demoModalChallengeId=challengeId;
     document.getElementById("demo-modal-challenge-name").textContent=title||"";
-    document.getElementById("demo-file-input").value="";
+
+    setDemoMode("dem");
 
     const statusEl=document.getElementById("demo-modal-status");
     statusEl.textContent="";
@@ -2804,9 +2847,11 @@ async function submitDemoFile(){
         return;
     }
 
-    if(!file.name.toLowerCase().endsWith(".dem")){
+    const requiredExt=demoMode==="video"?".mp4":".dem";
+
+    if(!file.name.toLowerCase().endsWith(requiredExt)){
         statusEl.style.color="#ff5555";
-        statusEl.textContent=t("demoModalWrongExt");
+        statusEl.textContent=t(demoMode==="video"?"demoModalWrongExtVideo":"demoModalWrongExt");
         return;
     }
 
@@ -4130,7 +4175,8 @@ async function loadAdminDemos(){
 
             const title=document.createElement("p");
             title.style.cssText="font-weight:bold;color:#eef2f8;margin-bottom:6px;";
-            title.textContent=sub.challengeTitle||("Челлендж #"+sub.challengeId);
+            const kindBadge=sub.kind==="video"?"🎥 ВИДЕО":"🎮 ДЕМКА";
+            title.textContent=`[${kindBadge}] `+(sub.challengeTitle||("Челлендж #"+sub.challengeId));
 
             const meta=document.createElement("p");
             meta.style.cssText="color:#8996a8;font-size:13px;margin-bottom:12px;";
@@ -4144,7 +4190,7 @@ async function loadAdminDemos(){
             downloadBtn.href="/api/admin/demos/"+sub.id+"/download";
             downloadBtn.className="save-btn";
             downloadBtn.style.cssText="background:#3a4b5f;width:auto;padding:0 16px;text-decoration:none;display:inline-flex;align-items:center;";
-            downloadBtn.textContent="⬇️ Скачать демку";
+            downloadBtn.textContent=sub.kind==="video"?"⬇️ Скачать видео":"⬇️ Скачать демку";
             downloadBtn.target="_blank";
 
             const approveBtn=document.createElement("button");
@@ -4163,7 +4209,18 @@ async function loadAdminDemos(){
             };
 
             actions.append(downloadBtn,approveBtn,rejectBtn);
-            item.append(title,meta,actions);
+            item.append(title,meta);
+
+            if(sub.kind==="video"){
+                const video=document.createElement("video");
+                video.controls=true;
+                video.preload="metadata";
+                video.style.cssText="width:100%;max-height:360px;border-radius:6px;margin-bottom:12px;background:#000;";
+                video.src="/api/admin/demos/"+sub.id+"/stream";
+                item.appendChild(video);
+            }
+
+            item.appendChild(actions);
             box.appendChild(item);
 
         });

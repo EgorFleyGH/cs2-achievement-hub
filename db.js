@@ -75,6 +75,7 @@ async function initDb() {
       username TEXT NOT NULL,
       filename TEXT NOT NULL,
       file_size INTEGER NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'dem',
       status TEXT NOT NULL DEFAULT 'pending',
       reject_reason TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -118,6 +119,7 @@ async function initDb() {
   await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS title_en TEXT`);
   await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS description_en TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS steam_url TEXT`);
+  await pool.query(`ALTER TABLE demo_submissions ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'dem'`);
 
   // Наполняем новости стартовым содержимым один раз, если пусто —
   // дальше владелец сайта полностью управляет ими через админ-панель.
@@ -365,14 +367,14 @@ async function markChallengeCompletedForUser(challengeId, userId) {
 }
 
 // =========================
-// Проверка демок (.dem) для подтверждения выполнения челленджа
+// Проверка демок (.dem) и видео (.mp4) для подтверждения выполнения челленджа
 // =========================
 
-async function createDemoSubmission(challengeId, userId, username, filename, fileSize) {
+async function createDemoSubmission(challengeId, userId, username, filename, fileSize, kind) {
   const { rows } = await pool.query(
-    `INSERT INTO demo_submissions (challenge_id, user_id, username, filename, file_size)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [challengeId, userId, username, filename, fileSize]
+    `INSERT INTO demo_submissions (challenge_id, user_id, username, filename, file_size, kind)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [challengeId, userId, username, filename, fileSize, kind === "video" ? "video" : "dem"]
   );
   return rows[0];
 }

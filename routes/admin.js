@@ -333,6 +333,7 @@ router.get("/demos", async (req, res) => {
         username: d.username,
         filename: d.filename,
         fileSize: d.file_size,
+        kind: d.kind || "dem",
         createdAt: d.created_at
       }))
     );
@@ -342,24 +343,49 @@ router.get("/demos", async (req, res) => {
   }
 });
 
-// Скачивание файла демки — только владельцу, чтобы вручную посмотреть
-// её в игре/аналитическом инструменте перед решением.
+// Скачивание файла демки/видео — только владельцу, чтобы вручную
+// посмотреть её в игре/аналитическом инструменте перед решением.
 router.get("/demos/:id/download", async (req, res) => {
   const id = Number(req.params.id);
 
   try {
     const submission = await getDemoSubmissionById(id);
-    if (!submission) return res.status(404).json({ error: "Демка не найдена" });
+    if (!submission) return res.status(404).json({ error: "Файл не найден" });
 
     const filePath = path.join(DEMOS_DIR, submission.filename);
     if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: "Файл демки не найден на сервере" });
+      return res.status(404).json({ error: "Файл не найден на сервере" });
     }
 
-    res.download(filePath, `${submission.username}_${submission.challenge_id}.dem`);
+    const ext = submission.kind === "video" ? "mp4" : "dem";
+    res.download(filePath, `${submission.username}_${submission.challenge_id}.${ext}`);
   } catch (e) {
-    console.error("Ошибка скачивания демки:", e);
-    res.status(500).json({ error: "Не удалось скачать демку" });
+    console.error("Ошибка скачивания файла:", e);
+    res.status(500).json({ error: "Не удалось скачать файл" });
+  }
+});
+
+// Потоковая отдача видео для предпросмотра прямо в админке (без
+// принудительного скачивания) — работает только для .mp4-записей.
+router.get("/demos/:id/stream", async (req, res) => {
+  const id = Number(req.params.id);
+
+  try {
+    const submission = await getDemoSubmissionById(id);
+    if (!submission || submission.kind !== "video") {
+      return res.status(404).json({ error: "Видео не найдено" });
+    }
+
+    const filePath = path.join(DEMOS_DIR, submission.filename);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: "Файл не найден на сервере" });
+    }
+
+    res.setHeader("Content-Type", "video/mp4");
+    res.sendFile(filePath);
+  } catch (e) {
+    console.error("Ошибка стриминга видео:", e);
+    res.status(500).json({ error: "Не удалось загрузить видео" });
   }
 });
 

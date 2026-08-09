@@ -43,16 +43,44 @@ router.post("/challenges/:id/submit-demo", requireAuth, rawDemoBody, async (req,
   }
 
   if (buffer.length < 1024) {
-    return res.status(400).json({ error: "Файл демки подозрительно маленький" });
+    return res.status(400).json({ error: "Файл подозрительно маленький" });
   }
 
-  // Настоящие демки Source/CS2 начинаются с сигнатуры "HL2DEMO" —
-  // это не проверка содержимого игры, а базовая проверка, что файл
-  // действительно является демкой, а не случайной подделкой.
-  const signature = buffer.subarray(0, 7).toString("latin1");
-  if (signature !== "HL2DEMO") {
-    return res.status(400).json({ error: "Это не похоже на файл демки CS2 (.dem)" });
+  // Имя исходного файла присылает фронтенд отдельным заголовком —
+  // по расширению решаем, что за файл и как его проверять.
+  let originalName = "";
+  try {
+    originalName = decodeURIComponent(req.get("X-File-Name") || "").toLowerCase();
+  } catch (e) {
+    originalName = "";
   }
+
+  const isDem = originalName.endsWith(".dem");
+  const isVideo = originalName.endsWith(".mp4");
+
+  if (!isDem && !isVideo) {
+    return res.status(400).json({ error: "Разрешены только файлы .dem или .mp4" });
+  }
+
+  if (isDem) {
+    // Настоящие демки Source/CS2 начинаются с сигнатуры "HL2DEMO" —
+    // это не проверка содержимого игры, а базовая проверка, что файл
+    // действительно является демкой, а не случайной подделкой.
+    const signature = buffer.subarray(0, 7).toString("latin1");
+    if (signature !== "HL2DEMO") {
+      return res.status(400).json({ error: "Это не похоже на файл демки CS2 (.dem)" });
+    }
+  } else {
+    // MP4-контейнер почти всегда содержит блок "ftyp" в первых байтах —
+    // так же, как с демкой, это проверка подлинности формата, а не
+    // содержимого видео.
+    const box = buffer.subarray(4, 8).toString("latin1");
+    if (box !== "ftyp") {
+      return res.status(400).json({ error: "Это не похоже на видео формата .mp4" });
+    }
+  }
+
+  const kind = isVideo ? "video" : "dem";
 
   try {
     const challenge = await getChallengeById(challengeId);
@@ -66,10 +94,10 @@ router.post("/challenges/:id/submit-demo", requireAuth, rawDemoBody, async (req,
 
     const existing = await getPendingSubmissionForUserChallenge(challengeId, req.session.userId);
     if (existing) {
-      return res.status(400).json({ error: "У вас уже есть демка на проверке по этому челленджу" });
+      return res.status(400).json({ error: "У вас уже есть запись на проверке по этому челленджу" });
     }
 
-    const storedFilename = crypto.randomUUID() + ".dem";
+    const storedFilename = crypto.randomUUID() + (isVideo ? ".mp4" : ".dem");
     await fs.promises.writeFile(path.join(DEMOS_DIR, storedFilename), buffer);
 
     const submission = await createDemoSubmission(
@@ -77,25 +105,28 @@ router.post("/challenges/:id/submit-demo", requireAuth, rawDemoBody, async (req,
       req.session.userId,
       req.session.username,
       storedFilename,
-      buffer.length
+      buffer.length,
+      kind
     );
 
-    // Уведомляем владельца сайта — демку нужно скачать и проверить вручную,
-    // автоматический разбор игровых событий внутри .dem здесь не делается.
+    // Уведомляем владельца сайта — файл нужно скачать (или посмотреть,
+    // если это видео) и проверить вручную, автоматического разбора
+    // содержимого демки/видео здесь не делается.
     const owner = await findUserByUsername(OWNER_USERNAME);
     if (owner) {
+      const label = isVideo ? "видео" : "демку";
       await createNotification(
         owner.id,
         "demo_submitted",
-        `🎬 Игрок ${req.session.username} прислал демку на проверку по челленджу «${challenge.title}»`,
+        `🎬 Игрок ${req.session.username} прислал ${label} на проверку по челленджу «${challenge.title}»`,
         challengeId
       );
     }
 
     res.status(201).json({ ok: true, submissionId: submission.id });
   } catch (e) {
-    console.error("Ошибка загрузки демки:", e);
-    res.status(500).json({ error: "Не удалось загрузить демку" });
+    console.error("Ошибка загрузки файла подтверждения:", e);
+    res.status(500).json({ error: "Не удалось загрузить файл" });
   }
 });
 
