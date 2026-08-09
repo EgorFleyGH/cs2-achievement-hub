@@ -230,7 +230,6 @@ nav{
 
 .notif-bell-wrap{
     position:relative;
-    margin-right:10px;
 }
 
 .notif-bell{
@@ -273,6 +272,7 @@ nav{
     background:var(--panel-raised);
     border:1px solid var(--line);
     box-shadow:0 12px 30px rgba(0,0,0,.5);
+    border-radius:var(--chamfer-sm);
     z-index:50;
 }
 
@@ -327,6 +327,7 @@ nav{
     padding:16px;
     background:var(--bg);
     border:1px solid var(--line);
+    border-radius:var(--chamfer-sm);
 }
 
 .chat-bubble{
@@ -418,9 +419,10 @@ nav{
 
 .donate-btn{
 
-    background:linear-gradient(135deg,var(--green),#1f9e5c);
+    background:var(--panel-raised);
+    border:1px solid var(--line);
 
-    color:#06170e;
+    color:var(--ink);
 
     padding:10px 18px;
 
@@ -432,17 +434,16 @@ nav{
     text-transform:uppercase;
     font-size:13px;
 
-    border-radius:8px;
+    border-radius:10px;
 
-    transition:filter .15s,transform .15s;
+    transition:background .15s,border-color .15s;
 
 }
 
 .donate-btn:hover{
 
-    transform:translateY(-2px);
-
-    filter:brightness(1.1);
+    background:var(--card);
+    border-color:var(--orange);
 
 }
 
@@ -587,6 +588,8 @@ h1{
 
     margin-bottom:15px;
 
+    border-radius:var(--chamfer-sm);
+
 }
 
 .news-item h3{
@@ -630,6 +633,8 @@ h1{
 
     padding:24px;
 
+    border-radius:var(--chamfer);
+
 }
 
 .panel label{
@@ -668,6 +673,8 @@ h1{
 
     font-family:var(--font-body);
     font-size:14px;
+
+    border-radius:var(--chamfer-sm);
 
 }
 
@@ -1055,6 +1062,20 @@ h1{
 <body>
 
 <!-- Переключатель языка — всегда виден, фиксирован в нижнем углу экрана -->
+<div class="notif-bell-wrap" id="notif-wrap" style="
+    display:none;
+    position:fixed;
+    top:14px;
+    right:14px;
+    z-index:2000;
+">
+    <button class="notif-bell" id="notif-bell" onclick="toggleNotifDropdown()">
+        🔔
+        <span class="notif-badge" id="notif-badge">0</span>
+    </button>
+    <div class="notif-dropdown" id="notif-dropdown"></div>
+</div>
+
 <div id="lang-switcher" style="
     position:fixed;
     bottom:14px;
@@ -1156,10 +1177,10 @@ h1{
 
         <div style="display:flex;gap:8px;margin-bottom:14px;">
             <button type="button" id="demo-mode-dem" class="save-btn" style="margin:0;flex:1;font-size:12px;padding:10px;" onclick="setDemoMode('dem')" data-i18n="demoModeDem">
-                🎮 Демка (.dem)
+                Демка (.dem)
             </button>
             <button type="button" id="demo-mode-video" class="save-btn" style="margin:0;flex:1;font-size:12px;padding:10px;background:#3a4b5f;" onclick="setDemoMode('video')" data-i18n="demoModeVideo">
-                🎥 Видео (.mp4)
+                Видео (.mp4)
             </button>
         </div>
 
@@ -1169,7 +1190,7 @@ h1{
         </p>
 
         <p id="demo-modal-video-warning" style="display:none;color:#ff6a1a;background:rgba(255,106,26,.1);border:1px solid rgba(255,106,26,.35);border-radius:6px;padding:10px 12px;font-size:12px;line-height:1.6;margin-bottom:12px;" data-i18n="demoModalVideoWarning">
-            ⚠️ Записывать нужно ПОЛНОСТЬЮ — с момента старта попытки и до самого её завершения, без склеек и монтажа. Обрезанные или смонтированные ролики к рассмотрению не принимаются.
+            Записывать нужно ПОЛНОСТЬЮ — с момента старта попытки и до самого её завершения, без склеек и монтажа. Обрезанные или смонтированные ролики к рассмотрению не принимаются.
         </p>
 
         <input id="demo-file-input" type="file" accept=".dem" style="margin-bottom:14px;width:100%;">
@@ -1216,7 +1237,7 @@ h1{
 
             <button class="nav-tab"
                     onclick="switchTab('scr-leaderboard',this);loadLeaderboard();" data-i18n="navLeaderboard">
-                🏆 Лидеры
+                Лидеры
             </button>
             
             <button class="nav-tab" onclick="switchTab('scr-profile', this);loadMyChallenges();" data-i18n="navProfile">
@@ -1228,7 +1249,7 @@ h1{
             </button>
 
             <button id="tab-admin" class="nav-tab" style="display:none;" onclick="switchTab('scr-admin', this)">
-                👑 Админ
+                Админ
             </button>
 
             <button class="nav-tab"
@@ -1241,19 +1262,11 @@ h1{
 
     </div>
 
-    <div class="notif-bell-wrap" id="notif-wrap" style="display:none;">
-        <button class="notif-bell" id="notif-bell" onclick="toggleNotifDropdown()">
-            🔔
-            <span class="notif-badge" id="notif-badge">0</span>
-        </button>
-        <div class="notif-dropdown" id="notif-dropdown"></div>
-    </div>
-
     <a class="donate-btn"
        href="https://www.donationalerts.com/r/egorfley"
        target="_blank" data-i18n="donateBtn">
 
-        💰 Поддержать автора
+        Поддержать автора
 
     </a>
 
@@ -1328,13 +1341,6 @@ h1{
                 rows="4"
                 placeholder="Describe what needs to be done, in English"></textarea>
 
-            <p style="color:#8996a8;font-size:12px;line-height:1.6;margin-bottom:15px;" data-i18n="editorTranslateHint">
-                Если не знаете английский — воспользуйтесь переводчиком
-                (например, Google Translate), либо оставьте поле пустым:
-                англоязычным пользователям будет показан русский текст,
-                пока владелец сайта не добавит перевод при модерации.
-            </p>
-
             <label data-i18n="editorColorLabel">Цвет карточки</label>
 
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:15px;">
@@ -1371,7 +1377,7 @@ h1{
                     id="btn-remove-icon-image"
                     style="display:none;background:#3a2530;color:#ff8a8a;border:1px solid #5b2f3a;border-radius:5px;padding:8px 12px;cursor:pointer;white-space:nowrap;"
                     data-i18n="editorAvatarRemove">
-                    🗑️ Удалить
+                    Удалить
                 </button>
             </div>
 
@@ -1465,7 +1471,7 @@ h1{
         class="save-btn"
         style="width:220px;margin:15px auto;display:block;" data-i18n="profileChangeAvatar">
 
-        📷 Изменить аватар
+        Изменить аватар
 
         </button>
             
@@ -1490,7 +1496,7 @@ h1{
             <br>
 
             <button id="change-name" class="save-btn" style="margin:20px auto 30px;width:220px;" data-i18n="profileChangeName">
-                ✏️ Изменить ник
+                Изменить ник
             </button>            <p style="color:#8996a8;margin-bottom:35px;" data-i18n="profileTagline">
                 Игрок сообщества CS2 Challenges
             </p>
@@ -1499,19 +1505,19 @@ h1{
 
                 <div style="width:100%;text-align:left;">
 
-                    <p><b data-i18n="profileStatCreated">🏆 Создано челленджей:</b>
+                    <p><b data-i18n="profileStatCreated">Создано челленджей:</b>
                         <span id="profile-created">0</span>
                     </p>
 
                     <br>
 
-                    <p><b data-i18n="profileStatLikes">❤️ Получено лайков:</b>
+                    <p><b data-i18n="profileStatLikes">Получено лайков:</b>
                         <span id="profile-likes">0</span>
                     </p>
 
                     <br>
 
-                    <p><b data-i18n="profileStatCompleted">✅ Выполнено челленджей:</b>
+                    <p><b data-i18n="profileStatCompleted">Выполнено челленджей:</b>
                         <span id="profile-completed">0</span>
                     </p>
 
@@ -1523,7 +1529,7 @@ h1{
 
                     <br>
 
-                    <p><b data-i18n="profileStatDate">📅 Регистрация:</b>
+                    <p><b data-i18n="profileStatDate">Регистрация:</b>
                         <span id="profile-date"></span>
                     </p>
 
@@ -1629,11 +1635,11 @@ h1{
 
             <div class="card rarity-common" style="margin:25px 0;justify-content:center;">
                 <div style="width:100%;text-align:left;">
-                    <p><b data-i18n="profileStatCreated">🏆 Создано челленджей:</b>
+                    <p><b data-i18n="profileStatCreated">Создано челленджей:</b>
                         <span id="public-profile-created">0</span>
                     </p>
                     <br>
-                    <p><b data-i18n="profileStatLikes">❤️ Получено лайков:</b>
+                    <p><b data-i18n="profileStatLikes">Получено лайков:</b>
                         <span id="public-profile-likes">0</span>
                     </p>
                 </div>
@@ -1889,17 +1895,17 @@ h1{
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:1000px;margin:0 auto;">
 
             <div class="panel" style="width:100%;">
-                <h3 style="color:#ff6a1a;margin-bottom:15px;" data-i18n="leaderboardCreators">🏆 Больше всего создал челленджей</h3>
+                <h3 style="color:#ff6a1a;margin-bottom:15px;" data-i18n="leaderboardCreators">Больше всего создал челленджей</h3>
                 <div id="leaderboard-creators"></div>
             </div>
 
             <div class="panel" style="width:100%;">
-                <h3 style="color:#ff6a1a;margin-bottom:15px;" data-i18n="leaderboardLikes">❤️ Больше всего получил лайков</h3>
+                <h3 style="color:#ff6a1a;margin-bottom:15px;" data-i18n="leaderboardLikes">Больше всего получил лайков</h3>
                 <div id="leaderboard-likes"></div>
             </div>
 
             <div class="panel" style="width:100%;">
-                <h3 style="color:#ff6a1a;margin-bottom:15px;" data-i18n="leaderboardCompleted">✅ Больше всего выполнил челленджей</h3>
+                <h3 style="color:#ff6a1a;margin-bottom:15px;" data-i18n="leaderboardCompleted">Больше всего выполнил челленджей</h3>
                 <div id="leaderboard-completed"></div>
             </div>
 
@@ -2064,34 +2070,33 @@ const I18N={
         navHome:"Главная",
         navAdd:"Добавить челлендж",
         navGallery:"Все челленджи",
-        navLeaderboard:"🏆 Лидеры",
+        navLeaderboard:"Лидеры",
         leaderboardTitle:"Таблица лидеров",
-        leaderboardCreators:"🏆 Больше всего создал челленджей",
-        leaderboardLikes:"❤️ Больше всего получил лайков",
-        leaderboardCompleted:"✅ Больше всего выполнил челленджей",
+        leaderboardCreators:"Больше всего создал челленджей",
+        leaderboardLikes:"Больше всего получил лайков",
+        leaderboardCompleted:"Больше всего выполнил челленджей",
         leaderboardEmpty:"Пока данных нет.",
         leaderboardError:"Не удалось загрузить таблицу лидеров.",
         profileSteamLabel:"Ссылка на профиль (Steam или любой другой)",
         profileSteamSave:"Сохранить ссылку",
         profileSteamSaved:"Ссылка сохранена",
         profileSteamPlaceholder:"https://steamcommunity.com/id/...",
-        publicProfileSteamLink:"🔗 Профиль игрока",
+        publicProfileSteamLink:"Профиль игрока",
         navProfile:"Профиль",
         navAccount:"Аккаунт",
         navSupport:"Поддержка",
-        donateBtn:"💰 Поддержать автора",
+        donateBtn:"Поддержать автора",
         heroTitle:"Награды общины",
         heroBtn:"Придумать челлендж",
         editorTitleLabel:"Название челленджа",
         editorDescLabel:"Описание",
         editorTitleEnLabel:"Название (EN) — необязательно",
         editorDescEnLabel:"Описание (EN) — необязательно",
-        editorTranslateHint:"Если не знаете английский — воспользуйтесь переводчиком (например, Google Translate), либо оставьте поле пустым: англоязычным пользователям будет показан русский текст, пока владелец сайта не добавит перевод при модерации.",
         editorColorLabel:"Цвет карточки",
         editorColorDefault:"Не менять цвет (по умолчанию)",
         editorIconLabel:"Иконка (эмодзи)",
         editorAvatarLabel:"Или загрузите картинку для челленджа",
-        editorAvatarRemove:"🗑️ Удалить картинку",
+        editorAvatarRemove:"Удалить картинку",
         editorPublishBtn:"Опубликовать",
         galleryTitle:"Список челленджей",
         gallerySubtitle:"Выполняйте задания и отмечайте прогресс",
@@ -2103,11 +2108,11 @@ const I18N={
         cardDoneBtn:"Выполнено ✓",
         cardPendingBtn:"⏳ На проверке",
         demoModalTitle:"Подтвердите выполнение",
-        demoModeDem:"🎮 Демка (.dem)",
-        demoModeVideo:"🎥 Видео (.mp4)",
+        demoModeDem:"Демка (.dem)",
+        demoModeVideo:"Видео (.mp4)",
         demoModalHintDem:"Загрузите файл демки CS2 (.dem), где видно выполнение этого челленджа. Владелец сайта посмотрит демку вручную и подтвердит выполнение.",
         demoModalHintVideo:"Загрузите видеозапись (.mp4), где видно выполнение этого челленджа. Владелец сайта посмотрит запись вручную и подтвердит выполнение.",
-        demoModalVideoWarning:"⚠️ Записывать нужно ПОЛНОСТЬЮ — с момента старта попытки и до самого её завершения, без склеек и монтажа. Обрезанные или смонтированные ролики к рассмотрению не принимаются.",
+        demoModalVideoWarning:"Записывать нужно ПОЛНОСТЬЮ — с момента старта попытки и до самого её завершения, без склеек и монтажа. Обрезанные или смонтированные ролики к рассмотрению не принимаются.",
         demoModalCancel:"Отмена",
         demoModalSubmit:"Отправить",
         demoModalUploading:"Загружаем файл, не закрывайте окно...",
@@ -2117,15 +2122,15 @@ const I18N={
         demoModalWrongExtVideo:"Нужен файл с расширением .mp4",
         demoModalTooBig:"Файл слишком большой (максимум 500 МБ)",
         cardDeleteTitle:"Удалить челлендж",
-        profileChangeAvatar:"📷 Изменить аватар",
+        profileChangeAvatar:"Изменить аватар",
         ownerBadge:"Владелец",
-        profileChangeName:"✏️ Изменить ник",
+        profileChangeName:"Изменить ник",
         profileTagline:"Игрок сообщества CS2 Challenges",
-        profileStatCreated:"🏆 Создано челленджей:",
-        profileStatLikes:"❤️ Получено лайков:",
-        profileStatCompleted:"✅ Выполнено челленджей:",
+        profileStatCreated:"Создано челленджей:",
+        profileStatLikes:"Получено лайков:",
+        profileStatCompleted:"Выполнено челленджей:",
         profileStatRank:"⭐ Ранг:",
-        profileStatDate:"📅 Регистрация:",
+        profileStatDate:"Регистрация:",
         profileBestQuestLabel:"Лучший челлендж",
         profileBestQuestEmpty:"Пока нет созданных челленджей.",
         profileNoStatsGuest:"Войдите в аккаунт, чтобы видеть статистику.",
@@ -2133,8 +2138,8 @@ const I18N={
         myChallengesEmpty:"Вы ещё не создали ни одного челленджа.",
         myChallengesGuest:"Войдите в аккаунт, чтобы видеть свои челленджи.",
         statusPending:"⏳ На модерации",
-        statusApproved:"✅ Опубликован",
-        statusRejected:"❌ Отклонён",
+        statusApproved:"Опубликован",
+        statusRejected:"Отклонён",
         rejectReasonLabel:"Причина отклонения: ",
         publicProfileBack:"← Назад к списку",
         publicProfileChallenges:"Опубликованные челленджи",
@@ -2177,34 +2182,33 @@ const I18N={
         navHome:"Home",
         navAdd:"Add Challenge",
         navGallery:"All Challenges",
-        navLeaderboard:"🏆 Leaderboard",
+        navLeaderboard:"Leaderboard",
         leaderboardTitle:"Leaderboard",
-        leaderboardCreators:"🏆 Most challenges created",
-        leaderboardLikes:"❤️ Most likes received",
-        leaderboardCompleted:"✅ Most challenges completed",
+        leaderboardCreators:"Most challenges created",
+        leaderboardLikes:"Most likes received",
+        leaderboardCompleted:"Most challenges completed",
         leaderboardEmpty:"No data yet.",
         leaderboardError:"Failed to load the leaderboard.",
         profileSteamLabel:"Profile link (Steam or any other)",
         profileSteamSave:"Save link",
         profileSteamSaved:"Link saved",
         profileSteamPlaceholder:"https://steamcommunity.com/id/...",
-        publicProfileSteamLink:"🔗 Player profile",
+        publicProfileSteamLink:"Player profile",
         navProfile:"Profile",
         navAccount:"Account",
         navSupport:"Support",
-        donateBtn:"💰 Support the author",
+        donateBtn:"Support the author",
         heroTitle:"Community Rewards",
         heroBtn:"Create a challenge",
         editorTitleLabel:"Challenge title",
         editorDescLabel:"Description",
         editorTitleEnLabel:"Title (EN) — optional",
         editorDescEnLabel:"Description (EN) — optional",
-        editorTranslateHint:"If you don't know English, use a translator (e.g. Google Translate), or leave it blank: English-speaking users will see the Russian text until the site owner adds a translation during moderation.",
         editorColorLabel:"Card color",
         editorColorDefault:"Don't change the color (default)",
         editorIconLabel:"Icon (emoji)",
         editorAvatarLabel:"Or upload an image for the challenge",
-        editorAvatarRemove:"🗑️ Remove image",
+        editorAvatarRemove:"Remove image",
         editorPublishBtn:"Publish",
         galleryTitle:"Challenge list",
         gallerySubtitle:"Complete tasks and track your progress",
@@ -2216,11 +2220,11 @@ const I18N={
         cardDoneBtn:"Completed ✓",
         cardPendingBtn:"⏳ Under review",
         demoModalTitle:"Confirm completion",
-        demoModeDem:"🎮 Demo (.dem)",
-        demoModeVideo:"🎥 Video (.mp4)",
+        demoModeDem:"Demo (.dem)",
+        demoModeVideo:"Video (.mp4)",
         demoModalHintDem:"Upload a CS2 demo file (.dem) that shows you completing this challenge. The site owner will review it manually and confirm.",
         demoModalHintVideo:"Upload a video recording (.mp4) that shows you completing this challenge. The site owner will review it manually and confirm.",
-        demoModalVideoWarning:"⚠️ You must record the ENTIRE attempt — from the very start to the finish, no cuts or editing. Trimmed or edited clips will not be reviewed.",
+        demoModalVideoWarning:"You must record the ENTIRE attempt — from the very start to the finish, no cuts or editing. Trimmed or edited clips will not be reviewed.",
         demoModalCancel:"Cancel",
         demoModalSubmit:"Submit",
         demoModalUploading:"Uploading the file, please don't close this window...",
@@ -2230,15 +2234,15 @@ const I18N={
         demoModalWrongExtVideo:"File must have a .mp4 extension",
         demoModalTooBig:"File is too large (max 500 MB)",
         cardDeleteTitle:"Delete challenge",
-        profileChangeAvatar:"📷 Change avatar",
+        profileChangeAvatar:"Change avatar",
         ownerBadge:"Owner",
-        profileChangeName:"✏️ Change nickname",
+        profileChangeName:"Change nickname",
         profileTagline:"CS2 Challenges community player",
-        profileStatCreated:"🏆 Challenges created:",
-        profileStatLikes:"❤️ Likes received:",
-        profileStatCompleted:"✅ Challenges completed:",
+        profileStatCreated:"Challenges created:",
+        profileStatLikes:"Likes received:",
+        profileStatCompleted:"Challenges completed:",
         profileStatRank:"⭐ Rank:",
-        profileStatDate:"📅 Registered:",
+        profileStatDate:"Registered:",
         profileBestQuestLabel:"Best challenge",
         profileBestQuestEmpty:"No challenges created yet.",
         profileNoStatsGuest:"Log in to see your stats.",
@@ -2246,8 +2250,8 @@ const I18N={
         myChallengesEmpty:"You haven't created any challenges yet.",
         myChallengesGuest:"Log in to see your challenges.",
         statusPending:"⏳ Pending review",
-        statusApproved:"✅ Published",
-        statusRejected:"❌ Rejected",
+        statusApproved:"Published",
+        statusRejected:"Rejected",
         rejectReasonLabel:"Rejection reason: ",
         publicProfileBack:"← Back to list",
         publicProfileChallenges:"Published challenges",
