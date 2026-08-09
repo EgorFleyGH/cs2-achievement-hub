@@ -2,6 +2,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const rateLimit = require("express-rate-limit");
 const {
   getChallengeById,
   createDemoSubmission,
@@ -28,6 +29,21 @@ function requireAuth(req, res, next) {
   next();
 }
 
+// Файлы весят до 500 МБ каждый — без лимита по частоте один аккаунт
+// мог бы забить весь диск сервера, закинув демки/видео по многим
+// разным челленджам подряд (по одному челленджу от повтора и так
+// защищает getPendingSubmissionForUserChallenge, но не от заливки
+// сразу на десятки разных). Считаем попытки по userId, а не по IP —
+// так несколько игроков за одним роутером не мешают друг другу.
+const demoUploadLimiter = rateLimit({
+  windowMs: 30 * 60 * 1000, // 30 минут
+  max: 5,                   // 5 загрузок с одного аккаунта за окно
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => String(req.session.userId),
+  message: { error: "Слишком много загрузок подряд. Попробуйте позже." }
+});
+
 // Демки весят десятки, иногда сотни мегабайт — принимаем сырое бинарное
 // тело запроса, а не JSON/base64 (это было бы почти в 1.5 раза тяжелее).
 const rawDemoBody = express.raw({
@@ -35,7 +51,7 @@ const rawDemoBody = express.raw({
   limit: "500mb"
 });
 
-router.post("/challenges/:id/submit-demo", requireAuth, rawDemoBody, async (req, res) => {
+router.post("/challenges/:id/submit-demo", requireAuth, demoUploadLimiter, rawDemoBody, async (req, res) => {
   const challengeId = Number(req.params.id);
   const buffer = req.body;
 

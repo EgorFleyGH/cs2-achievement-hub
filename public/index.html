@@ -1769,6 +1769,27 @@ h1{
                 <p id="steam-save-status" style="color:#62728a;font-size:12px;margin-top:6px;"></p>
             </div>
 
+            <div style="margin-top:30px;text-align:left;">
+                <h3 style="color:#ff6a1a;margin-bottom:12px;" data-i18n="changePasswordTitle">
+                    Сменить пароль
+                </h3>
+
+                <label data-i18n="changePasswordCurrentLabel">Текущий пароль</label>
+                <input id="in-current-password" type="password" style="margin-bottom:15px;">
+
+                <label data-i18n="changePasswordNewLabel">Новый пароль</label>
+                <input id="in-new-password" type="password" data-i18n-placeholder="authPasswordPlaceholder" placeholder="Минимум 6 символов" style="margin-bottom:15px;">
+
+                <label data-i18n="changePasswordConfirmLabel">Повторите новый пароль</label>
+                <input id="in-new-password-confirm" type="password" style="margin-bottom:10px;">
+
+                <button id="btn-change-password" class="save-btn" style="width:auto;padding:0 20px;" data-i18n="changePasswordSubmit">
+                    Сменить пароль
+                </button>
+
+                <p id="change-password-status" style="color:#62728a;font-size:12px;margin-top:6px;"></p>
+            </div>
+
             <div style="margin-top:30px;">
                 <h3 style="color:#ff6a1a;margin-bottom:15px;" data-i18n="profileMyChallengesTitle">
                     Мои челленджи
@@ -2299,6 +2320,15 @@ const I18N={
         leaderboardEmpty:"Пока данных нет.",
         leaderboardError:"Не удалось загрузить таблицу лидеров.",
         profileSteamLabel:"Ссылка на профиль (Steam или любой другой)",
+        changePasswordTitle:"Сменить пароль",
+        changePasswordCurrentLabel:"Текущий пароль",
+        changePasswordNewLabel:"Новый пароль",
+        changePasswordConfirmLabel:"Повторите новый пароль",
+        changePasswordSubmit:"Сменить пароль",
+        changePasswordSaving:"Сохраняем...",
+        changePasswordSuccess:"Пароль изменён",
+        changePasswordMismatch:"Пароли не совпадают",
+        changePasswordEmpty:"Заполните все поля",
         profileSteamSave:"Сохранить ссылку",
         profileSteamSaved:"Ссылка сохранена",
         profileSteamPlaceholder:"https://steamcommunity.com/id/...",
@@ -2422,6 +2452,15 @@ const I18N={
         leaderboardEmpty:"No data yet.",
         leaderboardError:"Failed to load the leaderboard.",
         profileSteamLabel:"Profile link (Steam or any other)",
+        changePasswordTitle:"Change password",
+        changePasswordCurrentLabel:"Current password",
+        changePasswordNewLabel:"New password",
+        changePasswordConfirmLabel:"Repeat new password",
+        changePasswordSubmit:"Change password",
+        changePasswordSaving:"Saving...",
+        changePasswordSuccess:"Password changed",
+        changePasswordMismatch:"Passwords don't match",
+        changePasswordEmpty:"Fill in all fields",
         profileSteamSave:"Save link",
         profileSteamSaved:"Link saved",
         profileSteamPlaceholder:"https://steamcommunity.com/id/...",
@@ -3536,6 +3575,73 @@ document.getElementById("btn-save-steam").onclick=async function(){
 
         status.textContent=t("profileSteamSaved");
         status.style.color="#62728a";
+
+    }catch(e){
+
+        status.textContent=t("serverErrorAlert");
+        status.style.color="#ff8080";
+
+    }
+
+}
+
+// ==========================
+// СМЕНА ПАРОЛЯ
+// ==========================
+
+document.getElementById("btn-change-password").onclick=async function(){
+
+    if(!currentUser){
+        goToAuthTab(t("authGoToLoginNeeded"));
+        return;
+    }
+
+    const currentInput=document.getElementById("in-current-password");
+    const newInput=document.getElementById("in-new-password");
+    const confirmInput=document.getElementById("in-new-password-confirm");
+    const status=document.getElementById("change-password-status");
+
+    const currentPassword=currentInput.value;
+    const newPassword=newInput.value;
+    const confirmPassword=confirmInput.value;
+
+    if(!currentPassword||!newPassword||!confirmPassword){
+        status.textContent=t("changePasswordEmpty");
+        status.style.color="#ff8080";
+        return;
+    }
+
+    if(newPassword!==confirmPassword){
+        status.textContent=t("changePasswordMismatch");
+        status.style.color="#ff8080";
+        return;
+    }
+
+    status.textContent=t("changePasswordSaving");
+    status.style.color="#62728a";
+
+    try{
+
+        const res=await fetch("/api/profile/password",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({currentPassword,newPassword})
+        });
+
+        const data=await res.json();
+
+        if(!res.ok){
+            status.textContent=data.error||t("serverErrorAlert");
+            status.style.color="#ff8080";
+            return;
+        }
+
+        status.textContent=t("changePasswordSuccess");
+        status.style.color="#3ddc84";
+
+        currentInput.value="";
+        newInput.value="";
+        confirmInput.value="";
 
     }catch(e){
 

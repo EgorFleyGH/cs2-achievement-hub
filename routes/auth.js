@@ -1,7 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
-const { findUserByUsername, createUser, setUserAvatar, setUserSteamUrl, createNotification } = require("../db");
+const { findUserByUsername, createUser, setUserAvatar, setUserSteamUrl, resetUserPassword, createNotification } = require("../db");
 const { OWNER_USERNAME } = require("../config");
 const { notifyDiscord } = require("../discord");
 
@@ -235,6 +235,46 @@ router.post("/profile/steam", async (req, res) => {
   } catch (e) {
     console.error("Ошибка сохранения Steam-ссылки:", e);
     res.status(500).json({ error: "Не удалось сохранить ссылку" });
+  }
+});
+
+// =========================
+// Смена пароля самим игроком (пока он залогинен)
+// =========================
+// Требуем текущий пароль — иначе тот, кто получил доступ к чужой
+// открытой сессии (забытый вход на общем компьютере и т.п.), мог бы
+// перехватить аккаунт навсегда, просто сменив пароль без проверки.
+router.post("/profile/password", authLimiter, async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Нужно войти в аккаунт" });
+  }
+
+  const { currentPassword, newPassword } = req.body || {};
+
+  if (typeof currentPassword !== "string" || typeof newPassword !== "string") {
+    return res.status(400).json({ error: "Некорректные данные" });
+  }
+  if (newPassword.length < 6 || newPassword.length > 72) {
+    return res.status(400).json({ error: "Новый пароль должен быть от 6 до 72 символов" });
+  }
+
+  try {
+    const user = await findUserByUsername(req.session.username);
+    if (!user) {
+      return res.status(404).json({ error: "Аккаунт не найден" });
+    }
+
+    if (!bcrypt.compareSync(currentPassword, user.password_hash)) {
+      return res.status(401).json({ error: "Текущий пароль указан неверно" });
+    }
+
+    const hash = bcrypt.hashSync(newPassword, 10);
+    await resetUserPassword(req.session.userId, hash);
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("Ошибка смены пароля:", e);
+    res.status(500).json({ error: "Не удалось сменить пароль" });
   }
 });
 
