@@ -1,9 +1,12 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
 const {
   getAllUsers,
   setUserBanned,
+  resetUserPassword,
   getPendingChallenges,
   setChallengeStatus,
   deleteChallenge,
@@ -93,6 +96,37 @@ router.post("/users/:id/unban", async (req, res) => {
   } catch (e) {
     console.error("Ошибка разбана:", e);
     res.status(500).json({ error: "Не удалось разблокировать пользователя" });
+  }
+});
+
+// Сброс пароля игроку, потерявшему доступ (у сайта нет почты для
+// самостоятельного восстановления). Новый пароль возвращается только
+// один раз в этом ответе, в открытом виде — сохраняется у нас только
+// его хеш. Владелец сайта должен сам переслать пароль игроку в личку.
+function generateTempPassword() {
+  // 10 читаемых случайных символов (без похожих друг на друга 0/O/1/l).
+  const alphabet = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let result = "";
+  for (let i = 0; i < 10; i++) {
+    result += alphabet[crypto.randomInt(alphabet.length)];
+  }
+  return result;
+}
+
+router.post("/users/:id/reset-password", async (req, res) => {
+  const id = Number(req.params.id);
+
+  try {
+    const newPassword = generateTempPassword();
+    const hash = bcrypt.hashSync(newPassword, 10);
+
+    const user = await resetUserPassword(id, hash);
+    if (!user) return res.status(404).json({ error: "Пользователь не найден" });
+
+    res.json({ username: user.username, newPassword });
+  } catch (e) {
+    console.error("Ошибка сброса пароля:", e);
+    res.status(500).json({ error: "Не удалось сбросить пароль" });
   }
 });
 

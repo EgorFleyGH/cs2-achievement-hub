@@ -4,7 +4,9 @@ const {
   getApprovedChallenges,
   getApprovedChallengesByUsername,
   getChallengesByAuthorId,
+  getChallengeById,
   createChallenge,
+  updateChallenge,
   likeChallenge,
   toggleChallengeDone,
   getUserPublicByUsername,
@@ -12,6 +14,7 @@ const {
   getUserPendingDemoChallengeIds
 } = require("../db");
 const { OWNER_USERNAME } = require("../config");
+const { notifyDiscord } = require("../discord");
 
 const router = express.Router();
 
@@ -54,14 +57,20 @@ function serializeChallenge(challenge, userId, lang, pendingDemoIds) {
   };
 }
 
-// То же самое, но с добавлением статуса модерации и причины отказа —
-// используется в "Мои челленджи" в профиле, где автор должен видеть
-// весь свой список, а не только одобренные.
+// То же самое, но с добавлением статуса модерации, причины отказа и
+// СЫРЫХ RU/EN полей (а не только текста для текущего языка интерфейса) —
+// используется в "Мои челленджи" в профиле: и чтобы автор видел весь
+// свой список со статусами, и чтобы форма редактирования могла
+// предзаполнить оба языка сразу, независимо от текущего языка сайта.
 function serializeOwnChallenge(challenge, userId, lang, pendingDemoIds) {
   return {
     ...serializeChallenge(challenge, userId, lang, pendingDemoIds),
     status: challenge.status,
-    rejectReason: challenge.rejectReason || null
+    rejectReason: challenge.rejectReason || null,
+    titleRu: challenge.title,
+    descRu: challenge.desc,
+    titleEn: challenge.titleEn || "",
+    descEn: challenge.descEn || ""
   };
 }
 
@@ -130,25 +139,35 @@ router.get("/users/:username", async (req, res) => {
   }
 });
 
+// Общая валидация полей — используется и при публикации, и при
+// редактировании, чтобы не дублировать одни и те же проверки.
+function validateChallengeFields({ title, desc, titleEn, descEn, iconImage, color }) {
+  if (typeof title !== "string" || title.trim().length === 0) {
+    return "Название обязательно";
+  }
+  if (typeof color === "string" && color && !/^#[0-9a-fA-F]{6}$/.test(color)) {
+    return "Некорректный цвет";
+  }
+  // Картинка-аватарка челленджа передаётся как data URL (base64).
+  // Ограничиваем размер, чтобы не раздувать базу данных.
+  if (typeof iconImage === "string" && iconImage.length > 1_500_000) {
+    return "Картинка слишком большая";
+  }
+  if (typeof iconImage === "string" && iconImage && !iconImage.startsWith("data:image/")) {
+    return "Некорректный формат картинки";
+  }
+  return null;
+}
+
 // =========================
 // Публикация нового челленджа (уходит на модерацию)
 // =========================
 router.post("/challenges", requireAuth, publishLimiter, async (req, res) => {
   const { icon, iconImage, title, desc, titleEn, descEn, color } = req.body || {};
 
-  if (typeof title !== "string" || title.trim().length === 0) {
-    return res.status(400).json({ error: "Название обязательно" });
-  }
-  if (typeof color === "string" && color && !/^#[0-9a-fA-F]{6}$/.test(color)) {
-    return res.status(400).json({ error: "Некорректный цвет" });
-  }
-  // Картинка-аватарка челленджа передаётся как data URL (base64).
-  // Ограничиваем размер, чтобы не раздувать базу данных.
-  if (typeof iconImage === "string" && iconImage.length > 1_500_000) {
-    return res.status(400).json({ error: "Картинка слишком большая" });
-  }
-  if (typeof iconImage === "string" && iconImage && !iconImage.startsWith("data:image/")) {
-    return res.status(400).json({ error: "Некорректный формат картинки" });
+  const validationError = validateChallengeFields({ title, desc, titleEn, descEn, iconImage, color });
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
   }
 
   try {
@@ -162,6 +181,10 @@ router.post("/challenges", requireAuth, publishLimiter, async (req, res) => {
       color: typeof color === "string" && color ? color : null
     });
 
+    notifyDiscord(
+      `📝 Новый челлендж на модерации: «${challenge.title}» от ${req.session.username}`
+    );
+
     // Челлендж ещё не виден в общей ленте — только после одобрения владельцем.
     res.status(201).json({
       ...serializeChallenge(challenge, req.session.userId, "ru"),
@@ -170,6 +193,52 @@ router.post("/challenges", requireAuth, publishLimiter, async (req, res) => {
   } catch (e) {
     console.error("Ошибка публикации челленджа:", e);
     res.status(500).json({ error: "Не удалось опубликовать челлендж" });
+  }
+});
+
+// =========================
+// Редактирование своего челленджа (уходит обратно на модерацию)
+// =========================
+router.put("/challenges/:id", requireAuth, publishLimiter, async (req, res) => {
+  const id = Number(req.params.id);
+  const { icon, iconImage, title, desc, titleEn, descEn, color } = req.body || {};
+
+  const validationError = validateChallengeFields({ title, desc, titleEn, descEn, iconImage, color });
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
+  }
+
+  try {
+    const existing = await getChallengeById(id);
+    if (!existing || existing.authorId !== req.session.userId) {
+      return res.status(404).json({ error: "Челлендж не найден" });
+    }
+
+    const challenge = await updateChallenge(id, req.session.userId, {
+      icon,
+      iconImage: typeof iconImage === "string" && iconImage ? iconImage : null,
+      title: title.trim(),
+      desc: typeof desc === "string" ? desc.trim() : "",
+      titleEn: typeof titleEn === "string" && titleEn.trim() ? titleEn.trim() : null,
+      descEn: typeof descEn === "string" && descEn.trim() ? descEn.trim() : null,
+      color: typeof color === "string" && color ? color : null
+    });
+
+    if (!challenge) {
+      return res.status(404).json({ error: "Челлендж не найден" });
+    }
+
+    notifyDiscord(
+      `✏️ Челлендж отредактирован и снова ждёт проверки: «${challenge.title}» от ${req.session.username}`
+    );
+
+    res.json({
+      ...serializeOwnChallenge(challenge, req.session.userId, "ru"),
+      pending: true
+    });
+  } catch (e) {
+    console.error("Ошибка редактирования челленджа:", e);
+    res.status(500).json({ error: "Не удалось сохранить изменения" });
   }
 });
 
@@ -214,17 +283,31 @@ router.post("/challenges/:id/like", requireAuth, async (req, res) => {
 // =========================
 // Отметить выполненным / снять отметку
 // =========================
+// ВАЖНО: этот роут разрешает только СНЯТЬ уже одобренную отметку
+// (отменить своё выполнение). Поставить отметку впервые можно только
+// через markChallengeCompletedForUser — а её вызывает исключительно
+// владелец сайта после одобрения демки/видео (routes/admin.js).
+// Раньше здесь был простой toggle без этой проверки — это позволяло
+// засчитать себе любой челлендж выполненным одним запросом к API,
+// без всякой демки. Дыру закрыли.
 router.post("/challenges/:id/done", requireAuth, async (req, res) => {
   const id = Number(req.params.id);
 
   try {
-    const challenge = await toggleChallengeDone(id, req.session.userId);
+    const challenge = await getChallengeById(id);
 
     if (!challenge) {
       return res.status(404).json({ error: "Челлендж не найден" });
     }
 
-    res.json(serializeChallenge(challenge, req.session.userId, "ru"));
+    if (!challenge.completedBy.includes(req.session.userId)) {
+      return res.status(400).json({
+        error: "Выполнение подтверждается через демку или видео — используйте кнопку «Выполнить»"
+      });
+    }
+
+    const updated = await toggleChallengeDone(id, req.session.userId);
+    res.json(serializeChallenge(updated, req.session.userId, "ru"));
   } catch (e) {
     console.error("Ошибка отметки выполнения:", e);
     res.status(500).json({ error: "Не удалось обновить статус" });

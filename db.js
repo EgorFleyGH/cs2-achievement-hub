@@ -187,6 +187,17 @@ async function setUserBanned(userId, banned) {
   return rows[0] || null;
 }
 
+// Сброс пароля администратором (при потере доступа игроком — у сайта
+// нет почты для самостоятельного сброса). Возвращаем только id/username,
+// сам новый пароль наружу не передаём — его хеш уже сохранён здесь же.
+async function resetUserPassword(userId, passwordHash) {
+  const { rows } = await pool.query(
+    "UPDATE users SET password_hash = $1 WHERE id = $2 RETURNING id, username",
+    [passwordHash, userId]
+  );
+  return rows[0] || null;
+}
+
 async function setUserAvatar(userId, avatar) {
   const { rows } = await pool.query(
     "UPDATE users SET avatar = $1 WHERE id = $2 RETURNING id, username, avatar",
@@ -272,6 +283,41 @@ async function getPendingChallenges() {
 
 async function getChallengeById(id) {
   const { rows } = await pool.query("SELECT * FROM challenges WHERE id = $1", [id]);
+  return rows[0] ? mapChallenge(rows[0]) : null;
+}
+
+// Редактирование своего челленджа автором. Любое изменение отправляет
+// челлендж обратно на модерацию (status='pending', причина прошлого
+// отклонения очищается) — даже если он уже был одобрен. Иначе автор
+// мог бы незаметно подменить одобренный текст на что угодно.
+// WHERE author_id = $... прямо в запросе — так что чужой челлендж
+// отредактировать этой функцией невозможно даже при ошибке на уровне роута.
+async function updateChallenge(challengeId, authorId, { icon, iconImage, title, desc, titleEn, descEn, color }) {
+  const { rows } = await pool.query(
+    `UPDATE challenges SET
+       icon = $1,
+       icon_image = $2,
+       title = $3,
+       description = $4,
+       title_en = $5,
+       description_en = $6,
+       color = $7,
+       status = 'pending',
+       reject_reason = NULL
+     WHERE id = $8 AND author_id = $9
+     RETURNING *`,
+    [
+      icon || "❓",
+      iconImage || null,
+      title || "Без названия",
+      desc || "",
+      titleEn || null,
+      descEn || null,
+      typeof color === "string" && color ? color : null,
+      challengeId,
+      authorId
+    ]
+  );
   return rows[0] ? mapChallenge(rows[0]) : null;
 }
 
@@ -643,6 +689,7 @@ module.exports = {
   createUser,
   getAllUsers,
   setUserBanned,
+  resetUserPassword,
   setUserAvatar,
   setUserSteamUrl,
   getUserPublicByUsername,
@@ -652,6 +699,7 @@ module.exports = {
   getPendingChallenges,
   getChallengeById,
   createChallenge,
+  updateChallenge,
   likeChallenge,
   toggleChallengeDone,
   markChallengeCompletedForUser,

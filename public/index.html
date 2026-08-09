@@ -1532,12 +1532,26 @@ h1{
                 </button>
             </div>
 
+            <p id="editing-notice" style="display:none;color:#ff6a1a;font-size:12px;margin-bottom:10px;" data-i18n="editorEditingNotice">
+                Редактирование челленджа — после сохранения он снова уйдёт на модерацию
+            </p>
+
             <button
                 id="btn-publish"
                 class="save-btn" data-i18n="editorPublishBtn">
 
                 Опубликовать
 
+            </button>
+
+            <button
+                id="btn-cancel-edit"
+                type="button"
+                class="save-btn"
+                style="display:none;background:#3a4b5f;margin-top:10px;"
+                onclick="cancelEditChallenge()"
+                data-i18n="editorCancelEditBtn">
+                Отменить редактирование
             </button>
 
         </div>
@@ -1849,6 +1863,24 @@ h1{
                 <input id="auth-password" type="password" data-i18n-placeholder="authPasswordPlaceholder" placeholder="Минимум 6 символов">
 
                 <button id="auth-submit" class="save-btn" onclick="submitAuth()" data-i18n="authLoginBtn">Войти</button>
+
+                <p style="text-align:center;margin-top:14px;">
+                    <a href="#" onclick="toggleRecoveryForm();return false;" style="color:#8996a8;font-size:13px;text-decoration:underline dotted;" data-i18n="authForgotPassword">Забыли пароль?</a>
+                </p>
+
+                <div id="recovery-form" style="display:none;margin-top:10px;padding-top:15px;border-top:1px solid #223040;">
+
+                    <p style="color:#8996a8;font-size:13px;margin-bottom:12px;" data-i18n="recoveryHint">
+                        Укажите свой ник — владелец сайта получит запрос и лично пришлёт вам новый пароль.
+                    </p>
+
+                    <input id="recovery-username" type="text" data-i18n-placeholder="authUsernamePlaceholder" placeholder="3-20 символов, латиница/цифры/_" maxlength="20">
+
+                    <p id="recovery-status" style="font-size:13px;min-height:18px;margin-bottom:8px;"></p>
+
+                    <button class="save-btn" style="background:#3a4b5f;" onclick="submitRecoveryRequest()" data-i18n="recoverySubmit">Отправить запрос</button>
+
+                </div>
 
             </div>
 
@@ -2249,6 +2281,11 @@ const I18N={
         editorAvatarLabel:"Или загрузите картинку для челленджа",
         editorAvatarRemove:"Удалить картинку",
         editorPublishBtn:"Опубликовать",
+        editorSaveBtn:"Сохранить изменения",
+        editorCancelEditBtn:"Отменить редактирование",
+        editorEditingNotice:"Редактирование челленджа — после сохранения он снова уйдёт на модерацию",
+        myChallengeEditBtn:"✏️ Редактировать",
+        challengeUpdatedAlert:"Изменения сохранены! Челлендж снова отправлен на модерацию.",
         galleryTitle:"Список челленджей",
         gallerySubtitle:"Выполняйте задания и отмечайте прогресс",
         galleryEmpty:"Пока нет челленджей — стань первым, кто опубликует свой!",
@@ -2307,6 +2344,12 @@ const I18N={
         authPasswordLabel:"Пароль",
         authPasswordPlaceholder:"Минимум 6 символов",
         authLoginBtn:"Войти",
+        authForgotPassword:"Забыли пароль?",
+        recoveryHint:"Укажите свой ник — владелец сайта получит запрос и лично пришлёт вам новый пароль.",
+        recoverySubmit:"Отправить запрос",
+        recoverySending:"Отправляем...",
+        recoverySent:"Запрос отправлен! Владелец сайта свяжется с вами и пришлёт новый пароль.",
+        recoveryNoUsername:"Введите ник",
         authRegisterBtn:"Зарегистрироваться",
         authLoggedInAs:"Вы вошли как",
         authLogoutBtn:"Выйти",
@@ -2361,6 +2404,11 @@ const I18N={
         editorAvatarLabel:"Or upload an image for the challenge",
         editorAvatarRemove:"Remove image",
         editorPublishBtn:"Publish",
+        editorSaveBtn:"Save changes",
+        editorCancelEditBtn:"Cancel editing",
+        editorEditingNotice:"Editing a challenge — it will go back to moderation after saving",
+        myChallengeEditBtn:"✏️ Edit",
+        challengeUpdatedAlert:"Changes saved! The challenge was sent back for moderation.",
         galleryTitle:"Challenge list",
         gallerySubtitle:"Complete tasks and track your progress",
         galleryEmpty:"No challenges yet — be the first to publish one!",
@@ -2419,6 +2467,12 @@ const I18N={
         authPasswordLabel:"Password",
         authPasswordPlaceholder:"At least 6 characters",
         authLoginBtn:"Log in",
+        authForgotPassword:"Forgot your password?",
+        recoveryHint:"Enter your username — the site owner will get the request and personally send you a new password.",
+        recoverySubmit:"Send request",
+        recoverySending:"Sending...",
+        recoverySent:"Request sent! The site owner will reach out and send you a new password.",
+        recoveryNoUsername:"Enter your username",
         authRegisterBtn:"Sign up",
         authLoggedInAs:"Logged in as",
         authLogoutBtn:"Log out",
@@ -2550,6 +2604,7 @@ const previewDesc=document.getElementById("out-desc");
 const previewIcon=document.getElementById("ico-box");
 
 let pendingIconImage=null; // base64 data URL загруженной картинки-иконки
+let editingChallengeId=null; // id челленджа, который сейчас редактируется (не создаётся новый)
 
 titleInput.oninput=()=>{
 
@@ -3088,6 +3143,86 @@ async function deleteChallengeAsOwner(id){
 // Публикация
 // =========================
 
+function resetEditorForm(){
+
+    titleInput.value="";
+    descInput.value="";
+    document.getElementById("in-title-en").value="";
+    document.getElementById("in-desc-en").value="";
+    iconInput.value="";
+    colorDefaultCheckbox.checked=true;
+    colorInput.disabled=true;
+    colorInput.value="#ff6a1a";
+    pendingIconImage=null;
+    iconImageInput.value="";
+    removeIconImageBtn.style.display="none";
+
+    updateColorPreview();
+    previewTitle.textContent="Название";
+    previewDesc.textContent="Описание";
+    previewIcon.innerHTML="";
+    previewIcon.textContent="❓";
+
+}
+
+// Переключает конструктор в режим редактирования существующего
+// челленджа — заполняет поля его текущими данными (и RU, и EN сразу,
+// вне зависимости от текущего языка интерфейса).
+function startEditChallenge(item){
+
+    editingChallengeId=item.id;
+
+    titleInput.value=item.titleRu||"";
+    descInput.value=item.descRu||"";
+    document.getElementById("in-title-en").value=item.titleEn||"";
+    document.getElementById("in-desc-en").value=item.descEn||"";
+    iconInput.value=item.icon||"";
+
+    if(item.color){
+        colorDefaultCheckbox.checked=false;
+        colorInput.disabled=false;
+        colorInput.value=item.color;
+    }else{
+        colorDefaultCheckbox.checked=true;
+        colorInput.disabled=true;
+    }
+
+    pendingIconImage=item.iconImage||null;
+    iconImageInput.value="";
+    removeIconImageBtn.style.display=pendingIconImage?"block":"none";
+
+    updateColorPreview();
+    previewTitle.textContent=item.titleRu||"Название";
+    previewDesc.textContent=item.descRu||"Описание";
+    previewIcon.innerHTML="";
+    if(pendingIconImage){
+        const img=document.createElement("img");
+        img.src=pendingIconImage;
+        previewIcon.appendChild(img);
+    }else{
+        previewIcon.textContent=item.icon||"❓";
+    }
+
+    document.getElementById("btn-publish").textContent=t("editorSaveBtn");
+    document.getElementById("btn-cancel-edit").style.display="block";
+    document.getElementById("editing-notice").style.display="block";
+
+    document.getElementById("tab-editor").click();
+    window.scrollTo({top:0,behavior:"smooth"});
+
+}
+
+function cancelEditChallenge(){
+
+    editingChallengeId=null;
+    resetEditorForm();
+
+    document.getElementById("btn-publish").textContent=t("editorPublishBtn");
+    document.getElementById("btn-cancel-edit").style.display="none";
+    document.getElementById("editing-notice").style.display="none";
+
+}
+
 document.getElementById("btn-publish").onclick=async function(){
 
     if(!currentUser){
@@ -3095,10 +3230,14 @@ document.getElementById("btn-publish").onclick=async function(){
         return;
     }
 
+    const isEditing=!!editingChallengeId;
+    const url=isEditing?`/api/challenges/${editingChallengeId}`:"/api/challenges";
+    const method=isEditing?"PUT":"POST";
+
     try{
 
-        const res=await fetch("/api/challenges",{
-            method:"POST",
+        const res=await fetch(url,{
+            method,
             headers:{"Content-Type":"application/json"},
             body:JSON.stringify({
                 icon:iconInput.value||"❓",
@@ -3114,32 +3253,21 @@ document.getElementById("btn-publish").onclick=async function(){
         const data=await res.json();
 
         if(!res.ok){
-            alert(data.error||"Не удалось опубликовать челлендж");
+            alert(data.error||"Не удалось сохранить челлендж");
             return;
         }
 
         await loadChallenges();
         await loadMyChallenges();
 
-        alert(t("publishedAlert"));
+        alert(isEditing?t("challengeUpdatedAlert"):t("publishedAlert"));
 
-        titleInput.value="";
-        descInput.value="";
-        document.getElementById("in-title-en").value="";
-        document.getElementById("in-desc-en").value="";
-        iconInput.value="";
-        colorDefaultCheckbox.checked=true;
-        colorInput.disabled=true;
-        colorInput.value="#ff6a1a";
-        pendingIconImage=null;
-        iconImageInput.value="";
-        removeIconImageBtn.style.display="none";
+        editingChallengeId=null;
+        document.getElementById("btn-publish").textContent=t("editorPublishBtn");
+        document.getElementById("btn-cancel-edit").style.display="none";
+        document.getElementById("editing-notice").style.display="none";
 
-        updateColorPreview();
-        previewTitle.textContent="Название";
-        previewDesc.textContent="Описание";
-        previewIcon.innerHTML="";
-        previewIcon.textContent="❓";
+        resetEditorForm();
 
     }catch(e){
 
@@ -3433,6 +3561,13 @@ function renderMyChallengeCard(item){
         info.appendChild(reason);
     }
 
+    const editBtn=document.createElement("button");
+    editBtn.className="check-btn";
+    editBtn.style.cssText="margin-top:10px;";
+    editBtn.textContent=t("myChallengeEditBtn");
+    editBtn.onclick=()=>startEditChallenge(item);
+    info.appendChild(editBtn);
+
     card.append(iconBox,info);
 
     return card;
@@ -3645,6 +3780,63 @@ function showAuthError(message){
 function hideAuthError(){
 
     document.getElementById("auth-error").style.display="none";
+
+}
+
+function toggleRecoveryForm(){
+
+    const box=document.getElementById("recovery-form");
+    const opening=box.style.display==="none";
+    box.style.display=opening?"block":"none";
+
+    if(opening){
+        document.getElementById("recovery-username").value=document.getElementById("auth-username").value||"";
+        document.getElementById("recovery-status").textContent="";
+    }
+
+}
+
+async function submitRecoveryRequest(){
+
+    const usernameInput=document.getElementById("recovery-username");
+    const statusEl=document.getElementById("recovery-status");
+    const username=usernameInput.value.trim();
+
+    if(!username){
+        statusEl.style.color="#ff5555";
+        statusEl.textContent=t("recoveryNoUsername");
+        return;
+    }
+
+    statusEl.style.color="#8996a8";
+    statusEl.textContent=t("recoverySending");
+
+    try{
+
+        const res=await fetch("/api/recovery-request",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({username})
+        });
+
+        const data=await res.json();
+
+        if(!res.ok){
+            statusEl.style.color="#ff5555";
+            statusEl.textContent=data.error||t("serverErrorAlert");
+            return;
+        }
+
+        statusEl.style.color="#3ddc84";
+        statusEl.textContent=t("recoverySent");
+        usernameInput.value="";
+
+    }catch(e){
+
+        statusEl.style.color="#ff5555";
+        statusEl.textContent=t("serverErrorAlert");
+
+    }
 
 }
 
@@ -4460,6 +4652,16 @@ async function loadAdminUsers(){
 
             row.appendChild(name);
 
+            const actions=document.createElement("div");
+            actions.style.cssText="display:flex;gap:8px;";
+
+            const resetBtn=document.createElement("button");
+            resetBtn.className="check-btn";
+            resetBtn.style.margin="0";
+            resetBtn.textContent="🔑 Сбросить пароль";
+            resetBtn.onclick=()=>resetUserPassword(u.id,u.username);
+            actions.appendChild(resetBtn);
+
             if(u.username!==currentUser){
 
                 const btn=document.createElement("button");
@@ -4468,9 +4670,11 @@ async function loadAdminUsers(){
                 btn.textContent=u.banned?"Разбанить":"Забанить";
                 btn.onclick=()=>toggleUserBan(u.id,u.banned);
 
-                row.appendChild(btn);
+                actions.appendChild(btn);
 
             }
+
+            row.appendChild(actions);
 
             list.appendChild(row);
 
@@ -4479,6 +4683,35 @@ async function loadAdminUsers(){
     }catch(e){
 
         list.textContent="Не удалось загрузить пользователей.";
+
+    }
+
+}
+
+async function resetUserPassword(id,username){
+
+    if(!confirm(`Сбросить пароль игроку ${username}? Старый пароль перестанет работать.`)) return;
+
+    try{
+
+        const res=await fetch(`/api/admin/users/${id}/reset-password`,{method:"POST"});
+        const data=await res.json();
+
+        if(!res.ok){
+            alert(data.error||"Не удалось сбросить пароль");
+            return;
+        }
+
+        // Показываем новый пароль ОДИН раз — дальше он нигде не хранится
+        // в открытом виде, только его хеш в базе.
+        prompt(
+            `Новый пароль для ${data.username} (скопируйте и пришлите игроку лично, окно больше не покажет этот пароль):`,
+            data.newPassword
+        );
+
+    }catch(e){
+
+        alert("Не удалось связаться с сервером");
 
     }
 

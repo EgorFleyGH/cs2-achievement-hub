@@ -10,6 +10,7 @@ const {
   createNotification
 } = require("../db");
 const { OWNER_USERNAME } = require("../config");
+const { notifyDiscord } = require("../discord");
 
 const router = express.Router();
 
@@ -113,8 +114,8 @@ router.post("/challenges/:id/submit-demo", requireAuth, rawDemoBody, async (req,
     // если это видео) и проверить вручную, автоматического разбора
     // содержимого демки/видео здесь не делается.
     const owner = await findUserByUsername(OWNER_USERNAME);
+    const label = isVideo ? "видео" : "демку";
     if (owner) {
-      const label = isVideo ? "видео" : "демку";
       await createNotification(
         owner.id,
         "demo_submitted",
@@ -122,6 +123,10 @@ router.post("/challenges/:id/submit-demo", requireAuth, rawDemoBody, async (req,
         challengeId
       );
     }
+
+    notifyDiscord(
+      `🎬 Игрок ${req.session.username} прислал ${label} на проверку по челленджу «${challenge.title}» (${(buffer.length / 1024 / 1024).toFixed(1)} МБ)`
+    );
 
     res.status(201).json({ ok: true, submissionId: submission.id });
   } catch (e) {

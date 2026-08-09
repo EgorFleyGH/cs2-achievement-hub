@@ -7,6 +7,7 @@ const {
   getSupportUnreadCountForUser
 } = require("../db");
 const { OWNER_USERNAME } = require("../config");
+const { notifyDiscord } = require("../discord");
 
 const router = express.Router();
 
@@ -61,6 +62,13 @@ router.post("/support/messages", requireAuth, messageLimiter, async (req, res) =
   try {
     const fromOwner = req.session.username === OWNER_USERNAME;
     const saved = await createSupportMessage(req.session.userId, fromOwner, message.trim());
+
+    // В Discord пингуем только сообщения ОТ игроков — иначе твои же
+    // ответы в поддержку будут пинговать тебя самого.
+    if (!fromOwner) {
+      notifyDiscord(`💬 Новое сообщение в поддержку от ${req.session.username}: ${message.trim().slice(0, 200)}`);
+    }
+
     res.status(201).json(saved);
   } catch (e) {
     console.error("Ошибка отправки сообщения поддержки:", e);

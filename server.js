@@ -3,6 +3,7 @@ require("dotenv").config();
 const path = require("path");
 const express = require("express");
 const session = require("express-session");
+const pgSession = require("connect-pg-simple")(session);
 const cookieParser = require("cookie-parser");
 
 const authRoutes = require("./routes/auth");
@@ -30,6 +31,19 @@ app.use(cookieParser());
 
 app.use(
   session({
+    store: new pgSession({
+      // Отдельное подключение к той же базе (Supabase), что и остальные
+      // данные — сессии переживут рестарт/передеплой сервиса. Без этого
+      // express-session хранит сессии в памяти процесса, и все, кто был
+      // залогинен, вылетают из аккаунта каждый раз, когда Render
+      // перезапускает бесплатный сервис после простоя.
+      conObject: {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+      },
+      tableName: "user_sessions",
+      createTableIfMissing: true
+    }),
     name: "connect.sid",
     secret: process.env.SESSION_SECRET || "dev-secret-change-me",
     resave: false,

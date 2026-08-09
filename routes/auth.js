@@ -1,8 +1,9 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
-const { findUserByUsername, createUser, setUserAvatar, setUserSteamUrl } = require("../db");
+const { findUserByUsername, createUser, setUserAvatar, setUserSteamUrl, createNotification } = require("../db");
 const { OWNER_USERNAME } = require("../config");
+const { notifyDiscord } = require("../discord");
 
 const router = express.Router();
 
@@ -102,6 +103,53 @@ router.post("/logout", (req, res) => {
     res.clearCookie("connect.sid");
     res.json({ ok: true });
   });
+});
+
+// =========================
+// Запрос на восстановление пароля
+// =========================
+// У сайта нет почты, поэтому самостоятельного сброса нет — запрос
+// просто уведомляет владельца сайта (в самом приложении и в Discord),
+// а дальше он сбрасывает пароль вручную через Админку -> Пользователи
+// и присылает новый пароль игроку сам, в личных сообщениях.
+const recoveryLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Слишком много запросов. Попробуйте позже." }
+});
+
+router.post("/recovery-request", recoveryLimiter, async (req, res) => {
+  const { username } = req.body || {};
+
+  if (typeof username !== "string" || username.trim().length === 0) {
+    return res.status(400).json({ error: "Укажите ник аккаунта" });
+  }
+
+  try {
+    const user = await findUserByUsername(username.trim());
+
+    // Специально не сообщаем, найден ли аккаунт — иначе по ответу можно
+    // было бы перебором выяснять, какие ники вообще зарегистрированы.
+    if (user) {
+      const owner = await findUserByUsername(OWNER_USERNAME);
+      if (owner) {
+        await createNotification(
+          owner.id,
+          "password_recovery",
+          `🔑 Игрок ${user.username} запросил восстановление пароля — сбросьте его в Админке → Пользователи и пришлите новый пароль лично.`,
+          null
+        );
+      }
+      notifyDiscord(`🔑 Запрос на восстановление пароля от игрока ${user.username}`);
+    }
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("Ошибка запроса на восстановление пароля:", e);
+    res.status(500).json({ error: "Не удалось отправить запрос" });
+  }
 });
 
 // =========================
