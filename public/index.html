@@ -58,6 +58,10 @@
     box-sizing:border-box;
 }
 
+textarea{
+    resize:none;
+}
+
 body{
     background:
         radial-gradient(ellipse 900px 500px at 15% -10%, rgba(255,106,26,.07), transparent 60%),
@@ -1301,31 +1305,28 @@ h1{
             <input
                 id="in-title"
                 type="text"
-                maxlength="35"
-                value="Эйс на пистолетке">
+                placeholder="Название вашего челленджа">
 
             <label data-i18n="editorDescLabel">Описание (RU)</label>
 
             <textarea
                 id="in-desc"
                 rows="4"
-                maxlength="140">Убейте всех пятерых противников из пистолета в первом раунде.</textarea>
+                placeholder="Опишите, что нужно сделать"></textarea>
 
             <label data-i18n="editorTitleEnLabel">Название (EN) — необязательно</label>
 
             <input
                 id="in-title-en"
                 type="text"
-                maxlength="35"
-                placeholder="Ace with pistol">
+                placeholder="Challenge title in English">
 
             <label data-i18n="editorDescEnLabel">Описание (EN) — необязательно</label>
 
             <textarea
                 id="in-desc-en"
                 rows="4"
-                maxlength="140"
-                placeholder="Kill all five enemies with a pistol in the first round."></textarea>
+                placeholder="Describe what needs to be done, in English"></textarea>
 
             <p style="color:#8996a8;font-size:12px;line-height:1.6;margin-bottom:15px;" data-i18n="editorTranslateHint">
                 Если не знаете английский — воспользуйтесь переводчиком
@@ -1354,8 +1355,7 @@ h1{
 
             <input
                 id="in-icon"
-                maxlength="2"
-                value="💣">
+                placeholder="❓">
 
             <label data-i18n="editorAvatarLabel">Или загрузите картинку для челленджа</label>
 
@@ -1387,17 +1387,17 @@ h1{
         <div class="card rarity-common" id="preview">
 
             <div class="icon-box" id="ico-box">
-                💣
+                ❓
             </div>
 
             <div style="flex:1;">
 
                 <p class="ach-title" id="out-title">
-                    Эйс на пистолетке
+                    Название
                 </p>
 
                 <p class="ach-desc" id="out-desc">
-                    Убейте всех пятерых противников из пистолета в первом раунде.
+                    Описание
                 </p>
 
             </div>
@@ -1945,12 +1945,11 @@ h1{
                 line-height:1.6;
                 margin-bottom:20px;
                 text-align:center;
+                white-space:pre-line;
                 " data-i18n="supportBody">
-
-                Нашли ошибку?<br>
-                Есть предложение?<br>
-                Или хотите сообщить о проблеме?
-
+Нашли ошибку?
+Есть предложение?
+Или хотите сообщить о проблеме?
             </p>
 
             <div id="support-guest-notice" style="display:none;color:#8996a8;text-align:center;padding:20px;" data-i18n="supportGuestNotice">
@@ -2159,7 +2158,7 @@ const I18N={
         authGoToLoginNeededDone:"Чтобы отмечать выполнение, нужно войти в аккаунт",
         authGoToLoginNeededPublish:"Чтобы публиковать челленджи, нужно войти в аккаунт",
         supportTitle:"Техническая поддержка",
-        supportBody:"Нашли ошибку?<br>Есть предложение?<br>Или хотите сообщить о проблеме?",
+        supportBody:"Нашли ошибку?\nЕсть предложение?\nИли хотите сообщить о проблеме?",
         supportReplyTime:"Обычно отвечаем в течение 24–48 часов.",
         supportGuestNotice:"Войдите в аккаунт, чтобы написать в поддержку.",
         supportInputPlaceholder:"Напишите сообщение...",
@@ -2272,7 +2271,7 @@ const I18N={
         authGoToLoginNeededDone:"You need to log in to mark completion",
         authGoToLoginNeededPublish:"You need to log in to publish challenges",
         supportTitle:"Technical support",
-        supportBody:"Found a bug?<br>Have a suggestion?<br>Or want to report an issue?",
+        supportBody:"Found a bug?\nHave a suggestion?\nOr want to report an issue?",
         supportReplyTime:"We usually reply within 24–48 hours.",
         supportGuestNotice:"Log in to message support.",
         supportInputPlaceholder:"Write a message...",
@@ -2973,7 +2972,7 @@ document.getElementById("btn-publish").onclick=async function(){
         descInput.value="";
         document.getElementById("in-title-en").value="";
         document.getElementById("in-desc-en").value="";
-        iconInput.value="💣";
+        iconInput.value="";
         colorDefaultCheckbox.checked=true;
         colorInput.disabled=true;
         colorInput.value="#ff6a1a";
@@ -2985,7 +2984,7 @@ document.getElementById("btn-publish").onclick=async function(){
         previewTitle.textContent="Название";
         previewDesc.textContent="Описание";
         previewIcon.innerHTML="";
-        previewIcon.textContent="💣";
+        previewIcon.textContent="❓";
 
     }catch(e){
 

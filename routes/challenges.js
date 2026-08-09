@@ -139,18 +139,6 @@ router.post("/challenges", requireAuth, publishLimiter, async (req, res) => {
   if (typeof title !== "string" || title.trim().length === 0) {
     return res.status(400).json({ error: "Название обязательно" });
   }
-  if (title.length > 35) {
-    return res.status(400).json({ error: "Название слишком длинное" });
-  }
-  if (typeof desc === "string" && desc.length > 140) {
-    return res.status(400).json({ error: "Описание слишком длинное" });
-  }
-  if (typeof titleEn === "string" && titleEn.length > 35) {
-    return res.status(400).json({ error: "Английское название слишком длинное" });
-  }
-  if (typeof descEn === "string" && descEn.length > 140) {
-    return res.status(400).json({ error: "Английское описание слишком длинное" });
-  }
   if (typeof color === "string" && color && !/^#[0-9a-fA-F]{6}$/.test(color)) {
     return res.status(400).json({ error: "Некорректный цвет" });
   }
