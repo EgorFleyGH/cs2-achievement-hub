@@ -2782,6 +2782,20 @@ const I18N={
 let currentLang=localStorage.getItem("lang");
 let authMode="login"; // объявлено здесь заранее, чтобы applyLanguage() могло безопасно его читать
 
+// Объявлено здесь же (а не рядом с renderAchievementBadges ниже) по той же
+// причине: updateProfile() вызывается синхронно ещё при загрузке страницы
+// и должна иметь доступ к ACHIEVEMENTS сразу, а не после того, как до неё
+// "дойдёт очередь" при построчном выполнении скрипта.
+const ACHIEVEMENTS=[
+    {key:"first",icon:"🥉",need:c=>c.created>=1,label:"achFirst"},
+    {key:"creator5",icon:"🥈",need:c=>c.created>=5,label:"achCreator5"},
+    {key:"creator15",icon:"🥇",need:c=>c.created>=15,label:"achCreator15"},
+    {key:"liked10",icon:"❤️",need:c=>c.likes>=10,label:"achLiked10"},
+    {key:"liked50",icon:"💖",need:c=>c.likes>=50,label:"achLiked50"},
+    {key:"completed10",icon:"✅",need:c=>c.completed>=10,label:"achCompleted10"},
+    {key:"veteran",icon:"⭐",need:c=>c.createdAt&&((Date.now()-new Date(c.createdAt).getTime())>30*24*60*60*1000),label:"achVeteran"}
+];
+
 function t(key){
 
     const dict=I18N[currentLang]||I18N.ru;
@@ -4064,16 +4078,6 @@ async function viewProfile(username){
 }
 
 // ---- Бейджи достижений (считаются на лету из статистики, без отдельной таблицы) ----
-
-const ACHIEVEMENTS=[
-    {key:"first",icon:"🥉",need:c=>c.created>=1,label:"achFirst"},
-    {key:"creator5",icon:"🥈",need:c=>c.created>=5,label:"achCreator5"},
-    {key:"creator15",icon:"🥇",need:c=>c.created>=15,label:"achCreator15"},
-    {key:"liked10",icon:"❤️",need:c=>c.likes>=10,label:"achLiked10"},
-    {key:"liked50",icon:"💖",need:c=>c.likes>=50,label:"achLiked50"},
-    {key:"completed10",icon:"✅",need:c=>c.completed>=10,label:"achCompleted10"},
-    {key:"veteran",icon:"⭐",need:c=>c.createdAt&&((Date.now()-new Date(c.createdAt).getTime())>30*24*60*60*1000),label:"achVeteran"}
-];
 
 function renderAchievementBadges(container,stats){
 
