@@ -11,7 +11,8 @@ const {
   toggleChallengeDone,
   getUserPublicByUsername,
   createNotification,
-  getUserPendingDemoChallengeIds
+  getUserPendingDemoChallengeIds,
+  getFriendshipBetween
 } = require("../db");
 const { OWNER_USERNAME } = require("../config");
 const { notifyDiscord } = require("../discord");
@@ -48,6 +49,7 @@ function serializeChallenge(challenge, userId, lang, pendingDemoIds) {
     desc: (lang === "en" && challenge.descEn) ? challenge.descEn : challenge.desc,
     translated: lang === "en" ? !!challenge.titleEn : true,
     color: challenge.color,
+    category: challenge.category || "other",
     authorUsername: challenge.authorUsername,
     authorIsOwner: challenge.authorUsername === OWNER_USERNAME,
     likes: challenge.likedBy.length,
@@ -121,11 +123,26 @@ router.get("/users/:username", async (req, res) => {
     const serialized = challenges.map((c) => serializeChallenge(c, userId, lang));
     const totalLikes = serialized.reduce((sum, c) => sum + c.likes, 0);
 
+    // Статус дружбы с этим игроком (для кнопки "Добавить в друзья" на фронте).
+    let friendship = null;
+    if (userId && userId !== user.id) {
+      const f = await getFriendshipBetween(userId, user.id);
+      if (f) {
+        friendship = {
+          id: f.id,
+          status: f.status,
+          isIncoming: f.status === "pending" && f.addressee_id === userId
+        };
+      }
+    }
+
     res.json({
       username: user.username,
       avatar: user.avatar || "",
       steamUrl: user.steam_url || "",
       isOwner: user.username === OWNER_USERNAME,
+      isSelf: userId === user.id,
+      friendship,
       createdAt: user.created_at,
       stats: {
         created: serialized.length,
@@ -163,7 +180,7 @@ function validateChallengeFields({ title, desc, titleEn, descEn, iconImage, colo
 // Публикация нового челленджа (уходит на модерацию)
 // =========================
 router.post("/challenges", requireAuth, publishLimiter, async (req, res) => {
-  const { icon, iconImage, title, desc, titleEn, descEn, color } = req.body || {};
+  const { icon, iconImage, title, desc, titleEn, descEn, color, category } = req.body || {};
 
   const validationError = validateChallengeFields({ title, desc, titleEn, descEn, iconImage, color });
   if (validationError) {
@@ -178,7 +195,8 @@ router.post("/challenges", requireAuth, publishLimiter, async (req, res) => {
       desc: typeof desc === "string" ? desc.trim() : "",
       titleEn: typeof titleEn === "string" && titleEn.trim() ? titleEn.trim() : null,
       descEn: typeof descEn === "string" && descEn.trim() ? descEn.trim() : null,
-      color: typeof color === "string" && color ? color : null
+      color: typeof color === "string" && color ? color : null,
+      category: typeof category === "string" ? category : "other"
     });
 
     notifyDiscord(
@@ -201,7 +219,7 @@ router.post("/challenges", requireAuth, publishLimiter, async (req, res) => {
 // =========================
 router.put("/challenges/:id", requireAuth, publishLimiter, async (req, res) => {
   const id = Number(req.params.id);
-  const { icon, iconImage, title, desc, titleEn, descEn, color } = req.body || {};
+  const { icon, iconImage, title, desc, titleEn, descEn, color, category } = req.body || {};
 
   const validationError = validateChallengeFields({ title, desc, titleEn, descEn, iconImage, color });
   if (validationError) {
@@ -221,7 +239,8 @@ router.put("/challenges/:id", requireAuth, publishLimiter, async (req, res) => {
       desc: typeof desc === "string" ? desc.trim() : "",
       titleEn: typeof titleEn === "string" && titleEn.trim() ? titleEn.trim() : null,
       descEn: typeof descEn === "string" && descEn.trim() ? descEn.trim() : null,
-      color: typeof color === "string" && color ? color : null
+      color: typeof color === "string" && color ? color : null,
+      category: typeof category === "string" ? category : "other"
     });
 
     if (!challenge) {

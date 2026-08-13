@@ -1433,6 +1433,16 @@ h1{
                 Профиль
             </button>
 
+            <button id="tab-friends" class="nav-tab" style="display:none;" onclick="switchTab('scr-friends', this);loadFriendsScreen();" data-i18n="navFriends">
+                Друзья
+                <span id="friends-nav-badge" class="notif-badge" style="display:none;position:static;margin-left:5px;"></span>
+            </button>
+
+            <button id="tab-messages" class="nav-tab" style="display:none;" onclick="switchTab('scr-messages', this);loadMessagesScreen();" data-i18n="navMessages">
+                Сообщения
+                <span id="messages-nav-badge" class="notif-badge" style="display:none;position:static;margin-left:5px;"></span>
+            </button>
+
             <button id="tab-auth" class="nav-tab" onclick="switchTab('scr-auth', this)" data-i18n="navAccount">
                 Аккаунт
             </button>
@@ -1529,6 +1539,17 @@ h1{
                 id="in-desc-en"
                 rows="4"
                 placeholder="Describe what needs to be done, in English"></textarea>
+
+            <label data-i18n="categoryLabel">Категория</label>
+            <select id="in-category" style="margin-bottom:15px;">
+                <option value="pistol" data-i18n="categoryPistol">Пистолеты</option>
+                <option value="rifle" data-i18n="categoryRifle">Винтовки</option>
+                <option value="knife" data-i18n="categoryKnife">Ножи</option>
+                <option value="grenade" data-i18n="categoryGrenade">Гранаты</option>
+                <option value="clutch" data-i18n="categoryClutch">Клатчи</option>
+                <option value="trick" data-i18n="categoryTrick">Трюки</option>
+                <option value="other" data-i18n="categoryOther" selected>Другое</option>
+            </select>
 
             <label data-i18n="editorColorLabel">Цвет карточки</label>
 
@@ -1635,6 +1656,29 @@ h1{
 
         </div>
 
+        <div style="display:flex;justify-content:center;margin-bottom:20px;">
+            <select id="category-filter" onchange="renderGallery()" style="
+                max-width:260px;
+                width:100%;
+                padding:10px 12px;
+                background:var(--panel-raised);
+                border:1px solid var(--line);
+                color:var(--ink);
+                font-family:var(--font-body);
+                font-size:14px;
+                border-radius:6px;
+            ">
+                <option value="" data-i18n="categoryAll">Все категории</option>
+                <option value="pistol" data-i18n="categoryPistol">Пистолеты</option>
+                <option value="rifle" data-i18n="categoryRifle">Винтовки</option>
+                <option value="knife" data-i18n="categoryKnife">Ножи</option>
+                <option value="grenade" data-i18n="categoryGrenade">Гранаты</option>
+                <option value="clutch" data-i18n="categoryClutch">Клатчи</option>
+                <option value="trick" data-i18n="categoryTrick">Трюки</option>
+                <option value="other" data-i18n="categoryOther">Другое</option>
+            </select>
+        </div>
+
         <div
             class="feed-container"
             id="gallery-feed">
@@ -1735,6 +1779,8 @@ h1{
                     <p><b data-i18n="profileStatDate">Регистрация:</b>
                         <span id="profile-date"></span>
                     </p>
+
+                    <div id="profile-badges" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:15px;"></div>
 
                 </div>
 
@@ -1869,11 +1915,85 @@ h1{
                 </div>
             </div>
 
+            <div id="public-profile-badges" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;"></div>
+
+            <div id="public-profile-friend-actions" style="display:none;margin-bottom:25px;"></div>
+
             <div style="text-align:left;">
                 <h3 style="color:#ff6a1a;margin-bottom:15px;" data-i18n="publicProfileChallenges">
                     Опубликованные челленджи
                 </h3>
                 <div id="public-profile-challenges"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================== -->
+<!-- ДРУЗЬЯ -->
+<!-- ===================================== -->
+
+<div id="scr-friends" class="screen">
+
+    <div class="support-box">
+
+        <div class="support-panel">
+
+            <h2 style="color:#ff6a1a;margin-bottom:20px;text-align:center;" data-i18n="friendsTitle">Друзья</h2>
+
+            <div style="display:flex;gap:10px;margin-bottom:25px;">
+                <input id="friend-add-username" type="text" data-i18n-placeholder="friendsAddPlaceholder" placeholder="Ник игрока" style="flex:1;">
+                <button class="save-btn" style="width:auto;padding:0 20px;" onclick="sendFriendRequestByUsername()" data-i18n="friendsAddBtn">Добавить</button>
+            </div>
+            <p id="friend-add-status" style="color:#8996a8;font-size:12px;margin-top:-15px;margin-bottom:20px;"></p>
+
+            <div id="friend-requests-block" style="display:none;margin-bottom:25px;">
+                <h3 style="color:#ff6a1a;margin-bottom:12px;" data-i18n="friendsIncomingTitle">Входящие заявки</h3>
+                <div id="friend-requests-incoming"></div>
+                <div id="friend-requests-outgoing" style="margin-top:15px;"></div>
+            </div>
+
+            <h3 style="color:#ff6a1a;margin-bottom:12px;" data-i18n="friendsListTitle">Мои друзья</h3>
+            <div id="friends-list"></div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================== -->
+<!-- СООБЩЕНИЯ -->
+<!-- ===================================== -->
+
+<div id="scr-messages" class="screen">
+
+    <div style="width:100%;max-width:900px;margin:40px auto;">
+
+        <div class="panel" style="width:100%;display:flex;gap:20px;flex-wrap:wrap;">
+
+            <div id="messages-threads" style="flex:1;min-width:220px;max-height:520px;overflow-y:auto;"></div>
+
+            <div style="flex:2;min-width:280px;">
+
+                <div id="messages-chat-header" style="color:#8996a8;margin-bottom:10px;font-weight:bold;" data-i18n="messagesSelectThread">
+                    Выбери собеседника слева
+                </div>
+
+                <div id="messages-chat-wrap" style="display:none;">
+
+                    <div id="messages-chat-body" class="chat-messages"></div>
+
+                    <div style="display:flex;gap:10px;margin-top:14px;">
+                        <input id="messages-input" type="text" maxlength="1000" data-i18n-placeholder="supportInputPlaceholder" placeholder="Напишите сообщение...">
+                        <button class="save-btn" style="width:auto;padding:0 22px;" onclick="sendDirectMessage()">➤</button>
+                    </div>
+
+                </div>
+
             </div>
 
         </div>
@@ -2333,6 +2453,49 @@ const I18N={
         profileSteamSaved:"Ссылка сохранена",
         profileSteamPlaceholder:"https://steamcommunity.com/id/...",
         publicProfileSteamLink:"Профиль игрока",
+
+        navFriends:"Друзья",
+        navMessages:"Сообщения",
+
+        friendsTitle:"Друзья",
+        friendsAddPlaceholder:"Ник игрока",
+        friendsAddBtn:"Добавить в друзья",
+        friendsIncomingTitle:"Входящие заявки",
+        friendsOutgoingTitle:"Отправленные заявки",
+        friendsListTitle:"Мои друзья",
+        friendsAcceptBtn:"Принять",
+        friendsDeclineBtn:"Отклонить",
+        friendsRemoveBtn:"Удалить из друзей",
+        friendsRemoveConfirm:"Удалить этого пользователя из друзей?",
+        friendsRequestSent:"Заявка отправлена",
+        friendsMessageBtn:"Написать",
+        friendsEmpty:"Пока нет друзей — найди игрока по нику выше.",
+        friendsRequestsEmpty:"Нет активных заявок.",
+        friendsAddedSuccess:"Заявка отправлена!",
+        friendsCancelBtn:"Отменить заявку",
+
+        messagesSelectThread:"Выбери собеседника слева",
+        messagesEmpty:"Пока нет диалогов — напиши другу с его профиля.",
+        messagesFriendsOnly:"Писать можно только друзьям.",
+        supportYou:"Вы",
+
+        achFirst:"Первый челлендж",
+        achCreator5:"Создатель: 5 челленджей",
+        achCreator15:"Создатель: 15 челленджей",
+        achLiked10:"10 лайков",
+        achLiked50:"50 лайков",
+        achCompleted10:"Выполнено 10 челленджей",
+        achVeteran:"Ветеран (30+ дней на сайте)",
+
+        categoryLabel:"Категория",
+        categoryAll:"Все категории",
+        categoryPistol:"Пистолеты",
+        categoryRifle:"Винтовки",
+        categoryKnife:"Ножи",
+        categoryGrenade:"Гранаты",
+        categoryClutch:"Клатчи",
+        categoryTrick:"Трюки",
+        categoryOther:"Другое",
         navProfile:"Профиль",
         navAccount:"Аккаунт",
         navSupport:"Поддержка",
@@ -2568,7 +2731,50 @@ const I18N={
         newsError:"Failed to load news.",
         guestName:"Guest",
         notifEmpty:"No notifications yet.",
-        notifMarkRead:"Mark all as read"
+        notifMarkRead:"Mark all as read",
+
+        navFriends:"Friends",
+        navMessages:"Messages",
+
+        friendsTitle:"Friends",
+        friendsAddPlaceholder:"Player nickname",
+        friendsAddBtn:"Add friend",
+        friendsIncomingTitle:"Incoming requests",
+        friendsOutgoingTitle:"Sent requests",
+        friendsListTitle:"My friends",
+        friendsAcceptBtn:"Accept",
+        friendsDeclineBtn:"Decline",
+        friendsRemoveBtn:"Remove friend",
+        friendsRemoveConfirm:"Remove this user from your friends?",
+        friendsRequestSent:"Request sent",
+        friendsMessageBtn:"Message",
+        friendsEmpty:"No friends yet — find a player by nickname above.",
+        friendsRequestsEmpty:"No active requests.",
+        friendsAddedSuccess:"Request sent!",
+        friendsCancelBtn:"Cancel request",
+
+        messagesSelectThread:"Pick a conversation on the left",
+        messagesEmpty:"No conversations yet — message a friend from their profile.",
+        messagesFriendsOnly:"You can only message friends.",
+        supportYou:"You",
+
+        achFirst:"First challenge",
+        achCreator5:"Creator: 5 challenges",
+        achCreator15:"Creator: 15 challenges",
+        achLiked10:"10 likes",
+        achLiked50:"50 likes",
+        achCompleted10:"Completed 10 challenges",
+        achVeteran:"Veteran (30+ days on site)",
+
+        categoryLabel:"Category",
+        categoryAll:"All categories",
+        categoryPistol:"Pistols",
+        categoryRifle:"Rifles",
+        categoryKnife:"Knives",
+        categoryGrenade:"Grenades",
+        categoryClutch:"Clutches",
+        categoryTrick:"Tricks",
+        categoryOther:"Other"
     }
 
 };
@@ -2806,6 +3012,11 @@ function renderCard(item){
     title.className="ach-title";
     title.textContent=item.title||"Без названия";
 
+    const catBadge=document.createElement("span");
+    catBadge.style.cssText="display:inline-block;margin-top:4px;padding:2px 9px;border-radius:10px;font-size:11px;background:#171e28;border:1px solid #223040;color:#8996a8;";
+    const catKey=item.category||"other";
+    catBadge.textContent=t("category"+catKey.charAt(0).toUpperCase()+catKey.slice(1));
+
     const desc=document.createElement("p");
     desc.className="ach-desc";
     desc.textContent=item.desc||"Нет описания";
@@ -2824,7 +3035,7 @@ function renderCard(item){
         author.append(" 👑");
     }
 
-    info.append(title,desc);
+    info.append(title,catBadge,desc);
 
     if(currentLang==="en"&&item.translated===false){
 
@@ -2887,7 +3098,11 @@ function renderGallery(){
 
     feed.innerHTML="";
 
-    if(challenges.length===0){
+    const filterEl=document.getElementById("category-filter");
+    const filter=filterEl?filterEl.value:"";
+    const visible=filter?challenges.filter(c=>(c.category||"other")===filter):challenges;
+
+    if(visible.length===0){
 
         const empty=document.createElement("p");
         empty.style.cssText="color:#62728a;text-align:center;padding:20px;";
@@ -2897,7 +3112,7 @@ function renderGallery(){
 
     }
 
-    challenges.forEach(item=>{
+    visible.forEach(item=>{
 
         feed.appendChild(renderCard(item));
 
@@ -3227,6 +3442,7 @@ function resetEditorForm(){
     document.getElementById("in-title-en").value="";
     document.getElementById("in-desc-en").value="";
     iconInput.value="";
+    document.getElementById("in-category").value="other";
     colorDefaultCheckbox.checked=true;
     colorInput.disabled=true;
     colorInput.value="#ff6a1a";
@@ -3254,6 +3470,7 @@ function startEditChallenge(item){
     document.getElementById("in-title-en").value=item.titleEn||"";
     document.getElementById("in-desc-en").value=item.descEn||"";
     iconInput.value=item.icon||"";
+    document.getElementById("in-category").value=item.category||"other";
 
     if(item.color){
         colorDefaultCheckbox.checked=false;
@@ -3323,7 +3540,8 @@ document.getElementById("btn-publish").onclick=async function(){
                 desc:descInput.value||"Нет описания",
                 titleEn:document.getElementById("in-title-en").value.trim(),
                 descEn:document.getElementById("in-desc-en").value.trim(),
-                color:colorDefaultCheckbox.checked?null:colorInput.value
+                color:colorDefaultCheckbox.checked?null:colorInput.value,
+                category:document.getElementById("in-category").value
             })
         });
 
@@ -3469,6 +3687,13 @@ function updateProfile(){
     }
 
     document.getElementById("profile-rank").textContent=rank;
+
+    renderAchievementBadges(document.getElementById("profile-badges"), {
+        created:profile.created,
+        likes:profile.likes,
+        completed:profile.completed,
+        createdAt:profile.registeredAt||null
+    });
 
 }
 
@@ -3679,6 +3904,11 @@ function renderMyChallengeCard(item){
     title.className="ach-title";
     title.textContent=item.title||"Без названия";
 
+    const myCatBadge=document.createElement("span");
+    myCatBadge.style.cssText="display:inline-block;margin-top:4px;padding:2px 9px;border-radius:10px;font-size:11px;background:#171e28;border:1px solid #223040;color:#8996a8;";
+    const myCatKey=item.category||"other";
+    myCatBadge.textContent=t("category"+myCatKey.charAt(0).toUpperCase()+myCatKey.slice(1));
+
     const desc=document.createElement("p");
     desc.className="ach-desc";
     desc.textContent=item.desc||"Нет описания";
@@ -3696,7 +3926,7 @@ function renderMyChallengeCard(item){
         status.style.color="#ff5555";
     }
 
-    info.append(title,desc,status);
+    info.append(title,myCatBadge,desc,status);
 
     if(item.status==="rejected"&&item.rejectReason){
         const reason=document.createElement("p");
@@ -3816,10 +4046,531 @@ async function viewProfile(username){
             data.challenges.forEach(item=>list.appendChild(renderCard(item)));
         }
 
+        renderAchievementBadges(document.getElementById("public-profile-badges"), {
+            created:data.stats.created,
+            likes:data.stats.likes,
+            completed:0,
+            createdAt:data.createdAt
+        });
+
+        renderFriendActions(data);
+
     }catch(e){
 
         document.getElementById("public-profile-name").textContent=t("serverErrorAlert");
 
+    }
+
+}
+
+// ---- Бейджи достижений (считаются на лету из статистики, без отдельной таблицы) ----
+
+const ACHIEVEMENTS=[
+    {key:"first",icon:"🥉",need:c=>c.created>=1,label:"achFirst"},
+    {key:"creator5",icon:"🥈",need:c=>c.created>=5,label:"achCreator5"},
+    {key:"creator15",icon:"🥇",need:c=>c.created>=15,label:"achCreator15"},
+    {key:"liked10",icon:"❤️",need:c=>c.likes>=10,label:"achLiked10"},
+    {key:"liked50",icon:"💖",need:c=>c.likes>=50,label:"achLiked50"},
+    {key:"completed10",icon:"✅",need:c=>c.completed>=10,label:"achCompleted10"},
+    {key:"veteran",icon:"⭐",need:c=>c.createdAt&&((Date.now()-new Date(c.createdAt).getTime())>30*24*60*60*1000),label:"achVeteran"}
+];
+
+function renderAchievementBadges(container,stats){
+
+    if(!container) return;
+
+    container.innerHTML="";
+
+    ACHIEVEMENTS.forEach(a=>{
+
+        const unlocked=a.need(stats);
+
+        const badge=document.createElement("span");
+        badge.title=t(a.label);
+        badge.style.cssText="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:14px;font-size:13px;"+
+            (unlocked?"background:rgba(255,106,26,0.15);border:1px solid #ff6a1a;color:#ff6a1a;":"background:#171e28;border:1px solid #223040;color:#3a4756;");
+
+        badge.textContent=a.icon+" "+t(a.label);
+
+        container.appendChild(badge);
+
+    });
+
+}
+
+// ---- Кнопки дружбы/сообщения на публичном профиле ----
+
+function renderFriendActions(data){
+
+    const box=document.getElementById("public-profile-friend-actions");
+    if(!box) return;
+
+    box.innerHTML="";
+
+    if(!currentUser||data.isSelf||data.isOwner&&isOwnerAccount){
+        box.style.display="none";
+        return;
+    }
+
+    box.style.display="block";
+    box.style.cssText+="display:flex;gap:10px;flex-wrap:wrap;";
+
+    if(!data.friendship){
+
+        const btn=document.createElement("button");
+        btn.className="save-btn";
+        btn.style.cssText="width:auto;padding:0 18px;margin:0;";
+        btn.textContent=t("friendsAddBtn");
+        btn.onclick=async()=>{
+            try{
+                const res=await fetch("/api/friends/request/"+encodeURIComponent(data.username),{method:"POST"});
+                const d=await res.json();
+                if(!res.ok){ alert(d.error||t("serverErrorAlert")); return; }
+                viewProfile(data.username);
+            }catch(e){ alert(t("serverErrorAlert")); }
+        };
+        box.appendChild(btn);
+
+    }else if(data.friendship.status==="pending"&&!data.friendship.isIncoming){
+
+        const p=document.createElement("p");
+        p.style.cssText="color:#8996a8;font-size:13px;";
+        p.textContent=t("friendsRequestSent");
+        box.appendChild(p);
+
+    }else if(data.friendship.status==="pending"&&data.friendship.isIncoming){
+
+        const btn=document.createElement("button");
+        btn.className="save-btn";
+        btn.style.cssText="width:auto;padding:0 18px;margin:0;";
+        btn.textContent=t("friendsAcceptBtn");
+        btn.onclick=async()=>{
+            await fetch("/api/friends/"+data.friendship.id+"/accept",{method:"POST"});
+            viewProfile(data.username);
+        };
+        box.appendChild(btn);
+
+    }else if(data.friendship.status==="accepted"){
+
+        const msgBtn=document.createElement("button");
+        msgBtn.className="save-btn";
+        msgBtn.style.cssText="width:auto;padding:0 18px;margin:0;";
+        msgBtn.textContent=t("friendsMessageBtn");
+        msgBtn.onclick=()=>openDirectChatWith(data.username);
+        box.appendChild(msgBtn);
+
+        const removeBtn=document.createElement("button");
+        removeBtn.className="check-btn";
+        removeBtn.style.cssText="width:auto;padding:0 18px;margin:0;";
+        removeBtn.textContent=t("friendsRemoveBtn");
+        removeBtn.onclick=async()=>{
+            if(!confirm(t("friendsRemoveConfirm"))) return;
+            await fetch("/api/friends/"+data.friendship.id,{method:"DELETE"});
+            viewProfile(data.username);
+        };
+        box.appendChild(removeBtn);
+
+    }
+
+}
+
+// ==========================
+// ЭКРАН "ДРУЗЬЯ"
+// ==========================
+
+function renderFriendRow(container, person, actionsBuilder){
+
+    const row=document.createElement("div");
+    row.style.cssText="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #223040;gap:10px;";
+
+    const name=document.createElement("span");
+    name.textContent=person.username;
+    name.style.cssText="cursor:pointer;color:#eef2f8;";
+    name.onclick=()=>viewProfile(person.username);
+
+    const actions=document.createElement("div");
+    actions.style.cssText="display:flex;gap:8px;";
+    actionsBuilder(actions,person);
+
+    row.append(name,actions);
+    container.appendChild(row);
+
+}
+
+function makeSmallBtn(label,cls){
+    const btn=document.createElement("button");
+    btn.className=cls||"check-btn";
+    btn.style.cssText="width:auto;padding:0 12px;margin:0;font-size:12px;";
+    btn.textContent=label;
+    return btn;
+}
+
+async function loadFriendsScreen(){
+
+    const listBox=document.getElementById("friends-list");
+    const reqBlock=document.getElementById("friend-requests-block");
+    const incomingBox=document.getElementById("friend-requests-incoming");
+    const outgoingBox=document.getElementById("friend-requests-outgoing");
+
+    listBox.textContent="...";
+
+    try{
+
+        const [friendsRes,reqRes]=await Promise.all([
+            fetch("/api/friends"),
+            fetch("/api/friends/requests")
+        ]);
+
+        const friends=await friendsRes.json();
+        const requests=await reqRes.json();
+
+        // Заявки
+        incomingBox.innerHTML="";
+        outgoingBox.innerHTML="";
+
+        if(requests.incoming.length===0&&requests.outgoing.length===0){
+
+            reqBlock.style.display="none";
+
+        }else{
+
+            reqBlock.style.display="block";
+
+            requests.incoming.forEach(p=>{
+
+                renderFriendRow(incomingBox,p,(actions,person)=>{
+
+                    const acceptBtn=makeSmallBtn(t("friendsAcceptBtn"),"check-btn done");
+                    acceptBtn.onclick=async()=>{
+                        await fetch("/api/friends/"+person.friendshipId+"/accept",{method:"POST"});
+                        loadFriendsScreen();
+                        loadFriendRequestsBadge();
+                    };
+
+                    const declineBtn=makeSmallBtn(t("friendsDeclineBtn"),"like-btn");
+                    declineBtn.onclick=async()=>{
+                        await fetch("/api/friends/"+person.friendshipId,{method:"DELETE"});
+                        loadFriendsScreen();
+                        loadFriendRequestsBadge();
+                    };
+
+                    actions.append(acceptBtn,declineBtn);
+
+                });
+
+            });
+
+            requests.outgoing.forEach(p=>{
+
+                renderFriendRow(outgoingBox,p,(actions,person)=>{
+
+                    const label=document.createElement("span");
+                    label.style.cssText="color:#8996a8;font-size:12px;";
+                    label.textContent=t("friendsRequestSent");
+
+                    const cancelBtn=makeSmallBtn(t("friendsCancelBtn"),"like-btn");
+                    cancelBtn.onclick=async()=>{
+                        await fetch("/api/friends/"+person.friendshipId,{method:"DELETE"});
+                        loadFriendsScreen();
+                    };
+
+                    actions.append(label,cancelBtn);
+
+                });
+
+            });
+
+        }
+
+        // Список друзей
+        listBox.innerHTML="";
+
+        if(friends.length===0){
+
+            const empty=document.createElement("p");
+            empty.style.cssText="color:#8996a8;text-align:center;padding:15px 0;";
+            empty.textContent=t("friendsEmpty");
+            listBox.appendChild(empty);
+
+        }else{
+
+            friends.forEach(p=>{
+
+                renderFriendRow(listBox,p,(actions,person)=>{
+
+                    const msgBtn=makeSmallBtn(t("friendsMessageBtn"),"save-btn");
+                    msgBtn.onclick=()=>openDirectChatWith(person.username);
+
+                    const removeBtn=makeSmallBtn(t("friendsRemoveBtn"),"like-btn");
+                    removeBtn.onclick=async()=>{
+                        if(!confirm(t("friendsRemoveConfirm"))) return;
+                        await fetch("/api/friends/"+person.friendshipId,{method:"DELETE"});
+                        loadFriendsScreen();
+                    };
+
+                    actions.append(msgBtn,removeBtn);
+
+                });
+
+            });
+
+        }
+
+    }catch(e){
+
+        listBox.textContent=t("serverErrorAlert");
+
+    }
+
+}
+
+async function sendFriendRequestByUsername(){
+
+    const input=document.getElementById("friend-add-username");
+    const status=document.getElementById("friend-add-status");
+    const username=input.value.trim();
+
+    if(!username) return;
+
+    try{
+
+        const res=await fetch("/api/friends/request/"+encodeURIComponent(username),{method:"POST"});
+        const data=await res.json();
+
+        if(!res.ok){
+            status.style.color="#ff5555";
+            status.textContent=data.error||t("serverErrorAlert");
+            return;
+        }
+
+        status.style.color="#3ddc84";
+        status.textContent=t("friendsAddedSuccess");
+        input.value="";
+
+        loadFriendsScreen();
+
+    }catch(e){
+
+        status.style.color="#ff5555";
+        status.textContent=t("serverErrorAlert");
+
+    }
+
+}
+
+// ==========================
+// ЭКРАН "СООБЩЕНИЯ" (личные, только между друзьями)
+// ==========================
+
+let currentDmUsername=null;
+
+async function loadMessagesScreen(){
+
+    const box=document.getElementById("messages-threads");
+    box.textContent="...";
+
+    try{
+
+        const res=await fetch("/api/messages");
+        const threads=await res.json();
+
+        box.innerHTML="";
+
+        if(threads.length===0){
+
+            const empty=document.createElement("p");
+            empty.style.cssText="color:#8996a8;text-align:center;padding:15px 0;";
+            empty.textContent=t("messagesEmpty");
+            box.appendChild(empty);
+            return;
+
+        }
+
+        threads.forEach(th=>{
+
+            const row=document.createElement("div");
+            row.style.cssText="padding:10px;border-bottom:1px solid #223040;cursor:pointer;"+(th.username===currentDmUsername?"background:#171e28;":"");
+            row.onclick=()=>openDirectChatWith(th.username);
+
+            const top=document.createElement("div");
+            top.style.cssText="display:flex;justify-content:space-between;align-items:center;";
+
+            const name=document.createElement("span");
+            name.style.cssText="color:#eef2f8;font-weight:bold;";
+            name.textContent=th.username;
+            top.appendChild(name);
+
+            if(th.unread>0){
+                const badge=document.createElement("span");
+                badge.style.cssText="background:#ff6a1a;color:#1a0e05;font-size:11px;font-weight:bold;padding:2px 7px;border-radius:10px;";
+                badge.textContent=th.unread;
+                top.appendChild(badge);
+            }
+
+            const preview=document.createElement("p");
+            preview.style.cssText="color:#8996a8;font-size:12px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+            preview.textContent=(th.lastMine?t("supportYou")+": ":"")+(th.lastMessage||"");
+
+            row.append(top,preview);
+            box.appendChild(row);
+
+        });
+
+    }catch(e){
+
+        box.textContent=t("serverErrorAlert");
+
+    }
+
+}
+
+async function openDirectChatWith(username){
+
+    currentDmUsername=username;
+
+    // Переключаемся на вкладку сообщений, если открываем из другого места
+    // (например, с публичного профиля).
+    const tabBtn=document.getElementById("tab-messages");
+    if(tabBtn) switchTab("scr-messages",tabBtn);
+
+    const header=document.getElementById("messages-chat-header");
+    const wrap=document.getElementById("messages-chat-wrap");
+    const body=document.getElementById("messages-chat-body");
+
+    header.textContent=username;
+    wrap.style.display="block";
+    body.innerHTML="...";
+
+    try{
+
+        const res=await fetch("/api/messages/"+encodeURIComponent(username));
+        const data=await res.json();
+
+        if(!res.ok){
+            body.textContent=data.error||t("messagesFriendsOnly");
+            return;
+        }
+
+        body.innerHTML="";
+
+        data.forEach(m=>{
+            body.appendChild(renderSupportBubble({message:m.message,created_at:m.createdAt},m.fromMe));
+        });
+
+        body.scrollTop=body.scrollHeight;
+
+        loadMessagesScreen();
+        updateMessagesNavBadge(0);
+
+    }catch(e){
+
+        body.textContent=t("serverErrorAlert");
+
+    }
+
+}
+
+async function sendDirectMessage(){
+
+    if(!currentDmUsername) return;
+
+    const input=document.getElementById("messages-input");
+    const message=input.value.trim();
+    if(!message) return;
+
+    const body=document.getElementById("messages-chat-body");
+
+    try{
+
+        const res=await fetch("/api/messages/"+encodeURIComponent(currentDmUsername),{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({message})
+        });
+
+        const data=await res.json();
+
+        if(!res.ok){
+            alert(data.error||t("serverErrorAlert"));
+            return;
+        }
+
+        body.appendChild(renderSupportBubble({message:data.message,created_at:data.createdAt},true));
+        body.scrollTop=body.scrollHeight;
+
+        input.value="";
+
+        loadMessagesScreen();
+
+    }catch(e){
+
+        alert(t("serverErrorAlert"));
+
+    }
+
+}
+
+// ---- Бейджи непрочитанного для вкладок "Друзья" и "Сообщения" ----
+// (аналогично updateSupportNavBadge/loadSupportUnreadCount)
+
+function updateFriendsNavBadge(count){
+
+    const badge=document.getElementById("friends-nav-badge");
+    if(!badge) return;
+
+    if(count>0){
+        badge.textContent=count>99?"99+":count;
+        badge.style.display="inline-block";
+    }else{
+        badge.style.display="none";
+    }
+
+}
+
+function updateMessagesNavBadge(count){
+
+    const badge=document.getElementById("messages-nav-badge");
+    if(!badge) return;
+
+    if(count>0){
+        badge.textContent=count>99?"99+":count;
+        badge.style.display="inline-block";
+    }else{
+        badge.style.display="none";
+    }
+
+}
+
+async function loadFriendRequestsBadge(){
+
+    if(!currentUser) return;
+
+    try{
+
+        const res=await fetch("/api/friends/requests");
+        if(!res.ok) return;
+        const data=await res.json();
+        updateFriendsNavBadge(data.incoming.length);
+
+    }catch(e){
+        // тихо игнорируем
+    }
+
+}
+
+async function loadMessagesUnreadBadge(){
+
+    if(!currentUser) return;
+
+    try{
+
+        const res=await fetch("/api/messages/unread-count");
+        if(!res.ok) return;
+        const data=await res.json();
+        updateMessagesNavBadge(data.count);
+
+    }catch(e){
+        // тихо игнорируем
     }
 
 }
@@ -4037,6 +4788,10 @@ async function logout(){
     updateNotifBadge(0);
     document.getElementById("notif-wrap").style.display="none";
     updateSupportNavBadge(0);
+    updateFriendsNavBadge(0);
+    updateMessagesNavBadge(0);
+    document.getElementById("tab-friends").style.display="none";
+    document.getElementById("tab-messages").style.display="none";
 
     // Перезагружаем ленту — лайки/выполнено теперь должны показываться
     // как у гостя (без личных отметок).
@@ -4065,8 +4820,12 @@ function onAuthSuccess(username,isOwner,avatar,steamUrl){
     renderOwnerBadges();
 
     document.getElementById("notif-wrap").style.display="inline-block";
+    document.getElementById("tab-friends").style.display="inline-block";
+    document.getElementById("tab-messages").style.display="inline-block";
     loadNotifications();
     loadSupportUnreadCount();
+    loadFriendRequestsBadge();
+    loadMessagesUnreadBadge();
 
     // Перезагружаем ленту — подтягиваем личные лайки/статусы выполнения
     // и пересчитываем статистику под этот аккаунт.
@@ -4379,6 +5138,22 @@ setInterval(()=>{
 setInterval(()=>{
     if(currentUser) loadSupportUnreadCount();
 },30000);
+
+// То же самое для заявок в друзья и личных сообщений.
+setInterval(()=>{
+    if(currentUser){
+        loadFriendRequestsBadge();
+        loadMessagesUnreadBadge();
+    }
+},30000);
+
+// Пока открыта вкладка "Сообщения" — подтягиваем новые сообщения
+// активного диалога почаще, чтобы чат ощущался живым.
+setInterval(()=>{
+    if(currentUser && currentDmUsername && document.getElementById("scr-messages").classList.contains("active")){
+        openDirectChatWith(currentDmUsername);
+    }
+},8000);
 
 // ==========================
 // АДМИН-ПАНЕЛЬ (только владелец — но проверка реальной власти всегда на сервере)

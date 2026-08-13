@@ -83,6 +83,28 @@ async function initDb() {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS friendships (
+      id SERIAL PRIMARY KEY,
+      requester_id INTEGER NOT NULL REFERENCES users(id),
+      addressee_id INTEGER NOT NULL REFERENCES users(id),
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE(requester_id, addressee_id)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS direct_messages (
+      id SERIAL PRIMARY KEY,
+      sender_id INTEGER NOT NULL REFERENCES users(id),
+      receiver_id INTEGER NOT NULL REFERENCES users(id),
+      message TEXT NOT NULL,
+      read BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS news (
       id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
@@ -120,6 +142,7 @@ async function initDb() {
   await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS description_en TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS steam_url TEXT`);
   await pool.query(`ALTER TABLE demo_submissions ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'dem'`);
+  await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS category TEXT`);
 
   // Наполняем новости стартовым содержимым один раз, если пусто —
   // дальше владелец сайта полностью управляет ими через админ-панель.
@@ -241,6 +264,7 @@ function mapChallenge(r) {
     descEn: r.description_en,
     rarity: r.rarity,
     color: r.color,
+    category: r.category,
     likedBy: r.liked_by || [],
     completedBy: r.completed_by || [],
     status: r.status,
@@ -292,7 +316,7 @@ async function getChallengeById(id) {
 // мог бы незаметно подменить одобренный текст на что угодно.
 // WHERE author_id = $... прямо в запросе — так что чужой челлендж
 // отредактировать этой функцией невозможно даже при ошибке на уровне роута.
-async function updateChallenge(challengeId, authorId, { icon, iconImage, title, desc, titleEn, descEn, color }) {
+async function updateChallenge(challengeId, authorId, { icon, iconImage, title, desc, titleEn, descEn, color, category }) {
   const { rows } = await pool.query(
     `UPDATE challenges SET
        icon = $1,
@@ -302,9 +326,10 @@ async function updateChallenge(challengeId, authorId, { icon, iconImage, title, 
        title_en = $5,
        description_en = $6,
        color = $7,
+       category = $8,
        status = 'pending',
        reject_reason = NULL
-     WHERE id = $8 AND author_id = $9
+     WHERE id = $9 AND author_id = $10
      RETURNING *`,
     [
       icon || "❓",
@@ -314,6 +339,7 @@ async function updateChallenge(challengeId, authorId, { icon, iconImage, title, 
       titleEn || null,
       descEn || null,
       typeof color === "string" && color ? color : null,
+      CHALLENGE_CATEGORIES.includes(category) ? category : "other",
       challengeId,
       authorId
     ]
@@ -321,11 +347,13 @@ async function updateChallenge(challengeId, authorId, { icon, iconImage, title, 
   return rows[0] ? mapChallenge(rows[0]) : null;
 }
 
-async function createChallenge(authorId, authorUsername, { icon, iconImage, title, desc, titleEn, descEn, color }) {
+const CHALLENGE_CATEGORIES = ["pistol", "rifle", "knife", "grenade", "clutch", "trick", "other"];
+
+async function createChallenge(authorId, authorUsername, { icon, iconImage, title, desc, titleEn, descEn, color, category }) {
   const { rows } = await pool.query(
     `INSERT INTO challenges
-      (author_id, author_username, icon, icon_image, title, description, title_en, description_en, color, liked_by, completed_by, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '[]'::jsonb, '[]'::jsonb, 'pending')
+      (author_id, author_username, icon, icon_image, title, description, title_en, description_en, color, category, liked_by, completed_by, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, '[]'::jsonb, '[]'::jsonb, 'pending')
      RETURNING *`,
     [
       authorId,
@@ -336,7 +364,8 @@ async function createChallenge(authorId, authorUsername, { icon, iconImage, titl
       desc || "",
       titleEn || null,
       descEn || null,
-      typeof color === "string" && color ? color : null
+      typeof color === "string" && color ? color : null,
+      CHALLENGE_CATEGORIES.includes(category) ? category : "other"
     ]
   );
   return mapChallenge(rows[0]);
@@ -627,6 +656,21 @@ async function getLeaderboard() {
   };
 }
 
+// Список игроков, выполнивших конкретный челлендж — для карточки
+// "кто уже прошёл", с аватарками и ссылкой на их публичный профиль.
+async function getChallengeCompleters(challengeId) {
+  const { rows } = await pool.query(
+    `SELECT u.username, u.avatar
+     FROM challenges c,
+          LATERAL jsonb_array_elements_text(c.completed_by) AS uid
+     JOIN users u ON u.id = uid::int
+     WHERE c.id = $1
+     ORDER BY u.username ASC`,
+    [challengeId]
+  );
+  return rows;
+}
+
 // =========================
 // Поддержка (чат с владельцем сайта)
 // =========================
@@ -683,6 +727,153 @@ async function getSupportUnreadCountForUser(userId) {
   return rows[0].count;
 }
 
+// =========================
+// Друзья
+// =========================
+
+async function sendFriendRequest(requesterId, addresseeId) {
+  const { rows } = await pool.query(
+    `INSERT INTO friendships (requester_id, addressee_id, status)
+     VALUES ($1, $2, 'pending')
+     ON CONFLICT (requester_id, addressee_id) DO NOTHING
+     RETURNING *`,
+    [requesterId, addresseeId]
+  );
+  return rows[0] || null;
+}
+
+async function getFriendshipBetween(userIdA, userIdB) {
+  const { rows } = await pool.query(
+    `SELECT * FROM friendships
+     WHERE (requester_id = $1 AND addressee_id = $2)
+        OR (requester_id = $2 AND addressee_id = $1)`,
+    [userIdA, userIdB]
+  );
+  return rows[0] || null;
+}
+
+async function acceptFriendRequest(friendshipId, userId) {
+  // Принять может только тот, кому запрос адресован.
+  const { rows } = await pool.query(
+    "UPDATE friendships SET status = 'accepted' WHERE id = $1 AND addressee_id = $2 RETURNING *",
+    [friendshipId, userId]
+  );
+  return rows[0] || null;
+}
+
+async function removeFriendship(friendshipId, userId) {
+  // Удалить (отклонить входящий / отменить свой / разорвать дружбу)
+  // может любая из двух сторон.
+  const { rows } = await pool.query(
+    "DELETE FROM friendships WHERE id = $1 AND (requester_id = $2 OR addressee_id = $2) RETURNING id",
+    [friendshipId, userId]
+  );
+  return rows.length > 0;
+}
+
+async function getFriendsList(userId) {
+  const { rows } = await pool.query(
+    `SELECT f.id AS friendship_id, u.id AS user_id, u.username, u.avatar
+     FROM friendships f
+     JOIN users u ON u.id = CASE WHEN f.requester_id = $1 THEN f.addressee_id ELSE f.requester_id END
+     WHERE f.status = 'accepted' AND (f.requester_id = $1 OR f.addressee_id = $1)
+     ORDER BY u.username ASC`,
+    [userId]
+  );
+  return rows;
+}
+
+async function getIncomingFriendRequests(userId) {
+  const { rows } = await pool.query(
+    `SELECT f.id AS friendship_id, u.id AS user_id, u.username, u.avatar
+     FROM friendships f
+     JOIN users u ON u.id = f.requester_id
+     WHERE f.status = 'pending' AND f.addressee_id = $1
+     ORDER BY f.created_at DESC`,
+    [userId]
+  );
+  return rows;
+}
+
+async function getOutgoingFriendRequests(userId) {
+  const { rows } = await pool.query(
+    `SELECT f.id AS friendship_id, u.id AS user_id, u.username, u.avatar
+     FROM friendships f
+     JOIN users u ON u.id = f.addressee_id
+     WHERE f.status = 'pending' AND f.requester_id = $1
+     ORDER BY f.created_at DESC`,
+    [userId]
+  );
+  return rows;
+}
+
+// =========================
+// Личные сообщения
+// =========================
+
+async function sendDirectMessage(senderId, receiverId, message) {
+  const { rows } = await pool.query(
+    "INSERT INTO direct_messages (sender_id, receiver_id, message) VALUES ($1, $2, $3) RETURNING *",
+    [senderId, receiverId, message]
+  );
+  return rows[0];
+}
+
+async function getDirectThread(userIdA, userIdB) {
+  const { rows } = await pool.query(
+    `SELECT * FROM direct_messages
+     WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)
+     ORDER BY id ASC`,
+    [userIdA, userIdB]
+  );
+  return rows;
+}
+
+async function markDirectThreadRead(userId, otherUserId) {
+  await pool.query(
+    "UPDATE direct_messages SET read = true WHERE receiver_id = $1 AND sender_id = $2 AND read = false",
+    [userId, otherUserId]
+  );
+}
+
+// Список диалогов пользователя — по одному на собеседника, с последним
+// сообщением и количеством непрочитанных.
+async function getDirectThreadsList(userId) {
+  const { rows } = await pool.query(
+    `SELECT
+      other.id AS user_id,
+      other.username,
+      other.avatar,
+      (SELECT message FROM direct_messages dm
+        WHERE (dm.sender_id = $1 AND dm.receiver_id = other.id) OR (dm.sender_id = other.id AND dm.receiver_id = $1)
+        ORDER BY dm.id DESC LIMIT 1) AS last_message,
+      (SELECT sender_id FROM direct_messages dm
+        WHERE (dm.sender_id = $1 AND dm.receiver_id = other.id) OR (dm.sender_id = other.id AND dm.receiver_id = $1)
+        ORDER BY dm.id DESC LIMIT 1) AS last_sender_id,
+      (SELECT created_at FROM direct_messages dm
+        WHERE (dm.sender_id = $1 AND dm.receiver_id = other.id) OR (dm.sender_id = other.id AND dm.receiver_id = $1)
+        ORDER BY dm.id DESC LIMIT 1) AS last_at,
+      (SELECT COUNT(*)::int FROM direct_messages dm
+        WHERE dm.receiver_id = $1 AND dm.sender_id = other.id AND dm.read = false) AS unread
+     FROM users other
+     WHERE EXISTS (
+       SELECT 1 FROM direct_messages dm
+       WHERE (dm.sender_id = $1 AND dm.receiver_id = other.id) OR (dm.sender_id = other.id AND dm.receiver_id = $1)
+     )
+     ORDER BY last_at DESC`,
+    [userId]
+  );
+  return rows;
+}
+
+async function getUnreadDirectCount(userId) {
+  const { rows } = await pool.query(
+    "SELECT COUNT(*)::int AS count FROM direct_messages WHERE receiver_id = $1 AND read = false",
+    [userId]
+  );
+  return rows[0].count;
+}
+
 module.exports = {
   initDb,
   findUserByUsername,
@@ -725,6 +916,19 @@ module.exports = {
   getSupportThread,
   getSupportThreadsList,
   markSupportRead,
-  getSupportUnreadCountForUser
+  getSupportUnreadCountForUser,
+  CHALLENGE_CATEGORIES,
+  sendFriendRequest,
+  getFriendshipBetween,
+  acceptFriendRequest,
+  removeFriendship,
+  getFriendsList,
+  getIncomingFriendRequests,
+  getOutgoingFriendRequests,
+  sendDirectMessage,
+  getDirectThread,
+  markDirectThreadRead,
+  getDirectThreadsList,
+  getUnreadDirectCount
 
 };
