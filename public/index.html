@@ -136,22 +136,213 @@ h1,h2,h3,
 
 header{
     height:64px;
-    background:var(--panel-raised);
+    background:linear-gradient(180deg,#0d1219,#0a0e14 90%);
     border-bottom:1px solid var(--line);
-    box-shadow:0 1px 0 rgba(255,106,26,.25);
+    box-shadow:0 1px 0 rgba(255,255,255,.03);
 
     display:flex;
     justify-content:space-between;
     align-items:center;
 
-    padding:0 35px;
+    padding:0 24px;
+
+    position:relative;
+    z-index:100;
 }
 
-.nav-left-box{
+/* ---- Иконки слева (дом / настройки / выход), как в CS2 ---- */
+
+.hdr-icons-left{
     display:flex;
     align-items:center;
-    gap:45px;
+    gap:6px;
+    width:150px;
 }
+
+.hdr-icon-btn{
+    width:32px;
+    height:32px;
+    background:none;
+    border:none;
+    border-radius:6px;
+    color:var(--muted);
+    font-size:15px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .15s,color .15s;
+}
+
+.hdr-icon-btn:hover{
+    background:var(--panel-raised);
+    color:var(--ink);
+}
+
+/* ---- Центральная навигация: 5 пунктов, ИГРАТЬ выделен ---- */
+
+.cs-nav{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    height:64px;
+    flex:1;
+    justify-content:center;
+}
+
+.nav-tab{
+
+    background:none;
+    border:none;
+
+    color:var(--muted);
+    text-decoration:none;
+
+    padding:0 22px;
+
+    cursor:pointer;
+
+    font-family:var(--font-display);
+    font-size:14px;
+    font-weight:700;
+
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+
+    transition:color .15s;
+
+    position:relative;
+    height:64px;
+    display:flex;
+    align-items:center;
+    border-bottom:none;
+}
+
+.nav-tab::after{
+    content:"";
+    position:absolute;
+    left:22px;
+    right:22px;
+    bottom:0;
+    height:2px;
+    background:var(--ink);
+    border-radius:2px;
+    transform:scaleX(0);
+    transform-origin:center;
+    transition:transform .18s;
+}
+
+.nav-tab:hover{
+    color:var(--ink);
+}
+
+.nav-tab.active{
+    color:var(--ink);
+}
+
+.nav-tab.active::after{
+    transform:scaleX(1);
+}
+
+.cs-nav-main{
+    font-size:16px;
+    color:var(--ink) !important;
+}
+
+.cs-nav-main::after{
+    background:var(--orange) !important;
+    height:3px !important;
+}
+
+/* ---- Аватар / уровень справа (замена вкладки "Аккаунт") ---- */
+
+.hdr-avatar-btn{
+    width:150px;
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    background:none;
+    border:none;
+    cursor:pointer;
+    position:relative;
+}
+
+.hdr-avatar-circle{
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    background:var(--panel-raised);
+    border:2px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--font-display);
+    font-weight:700;
+    color:var(--ink);
+    font-size:15px;
+    text-transform:uppercase;
+    transition:border-color .15s;
+}
+
+.hdr-avatar-btn:hover .hdr-avatar-circle{
+    border-color:var(--orange);
+}
+
+.hdr-avatar-level{
+    position:absolute;
+    right:-2px;
+    bottom:-2px;
+    background:var(--orange);
+    color:#1a0e05;
+    font-family:var(--font-mono);
+    font-size:10px;
+    font-weight:700;
+    border-radius:8px;
+    padding:1px 5px;
+    border:2px solid var(--bg);
+}
+
+/* ---- Правая боковая иконка-колонка (друзья/сообщения/лидеры/поддержка/админ) ---- */
+
+.side-rail{
+    position:fixed;
+    top:50%;
+    right:14px;
+    transform:translateY(-50%);
+    z-index:1500;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    background:rgba(13,18,25,.85);
+    border:1px solid var(--line);
+    border-radius:var(--chamfer-sm);
+    padding:8px;
+    backdrop-filter:blur(6px);
+}
+
+.side-rail-btn{
+    width:44px;
+    height:44px;
+    background:var(--panel-raised);
+    border:1px solid var(--line);
+    border-radius:var(--chamfer-sm);
+    color:var(--ink);
+    font-size:19px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    transition:border-color .15s,transform .15s;
+}
+
+.side-rail-btn:hover{
+    border-color:var(--orange);
+    transform:translateX(-2px);
+}
+
+/* ---- Устаревшие классы логотипа больше не используются в шапке, ---- */
+/* ---- но оставлены на случай, если где-то ещё встречаются ---- */
 
 .nav-logo{
     display:flex;
@@ -170,60 +361,6 @@ header{
     font-size:18px;
     font-weight:700;
     letter-spacing:.3px;
-}
-
-nav{
-    display:flex;
-    height:64px;
-}
-
-.nav-tab{
-
-    background:none;
-    border:none;
-
-    color:var(--muted);
-
-    padding:0 20px;
-
-    cursor:pointer;
-
-    font-size:15px;
-    font-weight:600;
-
-    letter-spacing:.4px;
-    text-transform:uppercase;
-
-    transition:color .15s;
-
-    position:relative;
-    border-bottom:none;
-}
-
-.nav-tab::after{
-    content:"";
-    position:absolute;
-    left:20px;
-    right:20px;
-    bottom:0;
-    height:3px;
-    background:var(--orange);
-    border-radius:3px;
-    transform:scaleX(0);
-    transform-origin:center;
-    transition:transform .18s;
-}
-
-.nav-tab:hover{
-    color:var(--ink);
-}
-
-.nav-tab.active{
-    color:var(--orange);
-}
-
-.nav-tab.active::after{
-    transform:scaleX(1);
 }
 
 /* ================= NOTIFICATIONS ================= */
@@ -1060,43 +1197,64 @@ h1{
 @media (max-width: 860px){
 
     header{
-        padding:0 16px;
+        padding:0 12px;
         height:auto;
-        min-height:64px;
+        min-height:56px;
         flex-wrap:wrap;
-        gap:10px;
-        padding-top:10px;
-        padding-bottom:10px;
+        gap:8px;
+        padding-top:8px;
+        padding-bottom:8px;
     }
 
-    .nav-left-box{
-        gap:20px;
-        flex-wrap:wrap;
-        width:100%;
+    .hdr-icons-left{
+        width:auto;
+        order:1;
     }
 
-    nav{
+    .hdr-avatar-btn{
+        width:auto;
+        order:2;
+    }
+
+    .cs-nav{
+        order:3;
         width:100%;
         height:auto;
         overflow-x:auto;
         -webkit-overflow-scrolling:touch;
         scrollbar-width:none;
+        justify-content:flex-start;
     }
 
-    nav::-webkit-scrollbar{
+    .cs-nav::-webkit-scrollbar{
         display:none;
     }
 
     .nav-tab{
         padding:10px 14px;
-        font-size:13px;
+        font-size:12px;
+        height:44px;
         white-space:nowrap;
         flex-shrink:0;
     }
 
-    .donate-btn{
-        font-size:12px;
-        padding:8px 14px;
+    .cs-nav-main{
+        font-size:13px;
+    }
+
+    .side-rail{
+        top:auto;
+        bottom:70px;
+        right:8px;
+        transform:none;
+        flex-direction:row;
+        padding:6px;
+    }
+
+    .side-rail-btn{
+        width:38px;
+        height:38px;
+        font-size:16px;
     }
 
     .container{
@@ -1399,77 +1557,75 @@ h1{
 
 <header>
 
-    <div class="nav-left-box">
-
-        <div class="nav-logo">
-            <span class="game">Counter-Strike 2</span>
-            <span class="site" data-i18n="siteName">Доска челленджей</span>
-        </div>
-
-        <nav>
-
-            <button class="nav-tab active"
-                    onclick="switchTab('scr-welcome',this)" data-i18n="navHome">
-                Главная
-            </button>
-
-            <button class="nav-tab"
-                    id="tab-editor"
-                    onclick="switchTab('scr-editor',this)" data-i18n="navAdd">
-                Добавить челлендж
-            </button>
-
-            <button class="nav-tab"
-                    onclick="switchTab('scr-gallery',this)" data-i18n="navGallery">
-                Все челленджи
-            </button>
-
-            <button class="nav-tab"
-                    onclick="switchTab('scr-leaderboard',this);loadLeaderboard();" data-i18n="navLeaderboard">
-                Лидеры
-            </button>
-            
-            <button class="nav-tab" onclick="switchTab('scr-profile', this);loadMyChallenges();" data-i18n="navProfile">
-                Профиль
-            </button>
-
-            <button id="tab-friends" class="nav-tab" style="display:none;" onclick="switchTab('scr-friends', this);loadFriendsScreen();" data-i18n="navFriends">
-                Друзья
-                <span id="friends-nav-badge" class="notif-badge" style="display:none;position:static;margin-left:5px;"></span>
-            </button>
-
-            <button id="tab-messages" class="nav-tab" style="display:none;" onclick="switchTab('scr-messages', this);loadMessagesScreen();" data-i18n="navMessages">
-                Сообщения
-                <span id="messages-nav-badge" class="notif-badge" style="display:none;position:static;margin-left:5px;"></span>
-            </button>
-
-            <button id="tab-auth" class="nav-tab" onclick="switchTab('scr-auth', this)" data-i18n="navAccount">
-                Аккаунт
-            </button>
-
-            <button id="tab-admin" class="nav-tab" style="display:none;" onclick="switchTab('scr-admin', this)">
-                Админ
-            </button>
-
-            <button class="nav-tab"
-                    onclick="switchTab('scr-support',this);loadSupportChat();" data-i18n="navSupport">
-                Поддержка
-                <span id="support-nav-badge" class="notif-badge" style="display:none;position:static;margin-left:5px;"></span>
-            </button>
-
-        </nav>
-
+    <div class="hdr-icons-left">
+        <button class="hdr-icon-btn" title="Главная" onclick="document.querySelector('.nav-tab[data-cs=play]').click()">🏠</button>
+        <button class="hdr-icon-btn" title="Язык / Настройки" onclick="document.getElementById('lang-switcher').scrollIntoView({behavior:'smooth'});">⚙️</button>
+        <button class="hdr-icon-btn" title="Выйти" onclick="if(currentUser){logout();}">⏻</button>
     </div>
 
-    <a class="donate-btn"
-       href="https://www.donationalerts.com/r/egorfley"
-       target="_blank" data-i18n="donateBtn">
+    <nav class="cs-nav">
 
-        Поддержать автора
+        <button class="nav-tab" data-cs="inventory"
+                onclick="switchTab('scr-profile', this);loadMyChallenges();" data-i18n="navInventory">
+            Инвентарь
+        </button>
 
-    </a>
+        <button class="nav-tab" data-cs="loadout"
+                onclick="switchTab('scr-gallery',this)" data-i18n="navLoadout">
+            Снаряжение
+        </button>
+
+        <button class="nav-tab active cs-nav-main" data-cs="play"
+                onclick="switchTab('scr-welcome',this)" data-i18n="navHome">
+            Играть
+        </button>
+
+        <a class="nav-tab" data-cs="shop"
+           href="https://www.donationalerts.com/r/egorfley" target="_blank" data-i18n="navShop">
+            Магазин
+        </a>
+
+        <button class="nav-tab" data-cs="news"
+                onclick="switchTab('scr-welcome',this)" data-i18n="navNews2">
+            Новости
+        </button>
+
+    </nav>
+
+    <button class="hdr-avatar-btn" id="tab-auth" onclick="switchTab('scr-auth', this)" title="Аккаунт">
+        <span class="hdr-avatar-circle" id="hdr-avatar-circle">?</span>
+        <span class="hdr-avatar-level" id="hdr-avatar-level">–</span>
+    </button>
 
 </header>
+
+<!-- Правая иконка-колонка — друзья/сообщения/лидеры/поддержка/админ -->
+<div class="side-rail">
+
+    <button id="tab-friends" class="side-rail-btn" style="display:none;" onclick="switchTab('scr-friends', this);loadFriendsScreen();" title="Друзья">
+        👥
+        <span id="friends-nav-badge" class="notif-badge" style="display:none;"></span>
+    </button>
+
+    <button id="tab-messages" class="side-rail-btn" style="display:none;" onclick="switchTab('scr-messages', this);loadMessagesScreen();" title="Сообщения">
+        ✉️
+        <span id="messages-nav-badge" class="notif-badge" style="display:none;"></span>
+    </button>
+
+    <button class="side-rail-btn" onclick="switchTab('scr-leaderboard',this);loadLeaderboard();" title="Лидеры">
+        🏆
+    </button>
+
+    <button class="side-rail-btn" onclick="switchTab('scr-support',this);loadSupportChat();" title="Поддержка">
+        💬
+        <span id="support-nav-badge" class="notif-badge" style="display:none;"></span>
+    </button>
+
+    <button id="tab-admin" class="side-rail-btn" style="display:none;" onclick="switchTab('scr-admin', this)" title="Админ">
+        👑
+    </button>
+
+</div>
 
 <div class="container">
 
@@ -1653,6 +1809,10 @@ h1{
             <p data-i18n="gallerySubtitle">
                 Выполняйте задания и отмечайте прогресс
             </p>
+
+            <button id="tab-editor" class="save-btn" style="width:auto;padding:0 26px;margin:15px auto 0;" onclick="switchTab('scr-editor',this)" data-i18n="galleryCreateBtn">
+                + Создать челлендж
+            </button>
 
         </div>
 
@@ -2455,6 +2615,11 @@ const I18N={
         publicProfileSteamLink:"Профиль игрока",
 
         navFriends:"Друзья",
+        navInventory:"В",
+        navLoadout:"Создание Челленджа",
+        navShop:"Донат",
+        navNews2:"Новости",
+        galleryCreateBtn:"+ Создать челлендж",
         navMessages:"Сообщения",
 
         friendsTitle:"Друзья",
@@ -2734,6 +2899,11 @@ const I18N={
         notifMarkRead:"Mark all as read",
 
         navFriends:"Friends",
+        navInventory:"Inventory",
+        navLoadout:"Loadout",
+        navShop:"Shop",
+        navNews2:"News",
+        galleryCreateBtn:"+ Create challenge",
         navMessages:"Messages",
 
         friendsTitle:"Friends",
@@ -3708,6 +3878,30 @@ function updateProfile(){
         completed:profile.completed,
         createdAt:profile.registeredAt||null
     });
+
+    // Аватар и "уровень" в шапке (аналог круглого аватара CS2 с рангом).
+    const hdrCircle=document.getElementById("hdr-avatar-circle");
+    const hdrLevel=document.getElementById("hdr-avatar-level");
+
+    if(hdrCircle){
+
+        if(profile.avatar){
+            hdrCircle.innerHTML="";
+            const img=document.createElement("img");
+            img.src=profile.avatar;
+            img.style.cssText="width:100%;height:100%;object-fit:cover;border-radius:50%;";
+            hdrCircle.appendChild(img);
+        }else{
+            hdrCircle.textContent=(currentUser?currentUser.charAt(0).toUpperCase():"?");
+        }
+
+    }
+
+    if(hdrLevel){
+
+        hdrLevel.textContent=currentUser?profile.created:"–";
+
+    }
 
 }
 
