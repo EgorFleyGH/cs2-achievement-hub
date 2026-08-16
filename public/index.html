@@ -1323,7 +1323,7 @@ h1{
     }
 
     #notif-wrap{
-        top:10px;
+        top:98px;
         right:10px;
     }
 
@@ -1374,7 +1374,7 @@ h1{
 <div class="notif-bell-wrap" id="notif-wrap" style="
     display:none;
     position:fixed;
-    top:14px;
+    top:78px;
     right:14px;
     z-index:2000;
 ">
@@ -1585,14 +1585,9 @@ h1{
             Магазин
         </a>
 
-        <button class="nav-tab" data-cs="news"
-                onclick="switchTab('scr-welcome',this)" data-i18n="navNews2">
-            Новости
-        </button>
-
     </nav>
 
-    <button class="hdr-avatar-btn" id="tab-auth" onclick="switchTab('scr-auth', this)" title="Аккаунт">
+    <button class="hdr-avatar-btn" id="tab-auth" onclick="goToAccountOrProfile(this)" title="Аккаунт">
         <span class="hdr-avatar-circle" id="hdr-avatar-circle">?</span>
         <span class="hdr-avatar-level" id="hdr-avatar-level">–</span>
     </button>
@@ -1904,7 +1899,12 @@ h1{
 
             <button id="change-name" class="save-btn" style="margin:20px auto 30px;width:220px;" data-i18n="profileChangeName">
                 Изменить ник
-            </button>            <p style="color:#8996a8;margin-bottom:35px;" data-i18n="profileTagline">
+            </button>
+
+            <button id="profile-logout-btn" class="save-btn" style="background:#3a4b5f;margin:0 auto 30px;width:220px;display:none;" onclick="logout()" data-i18n="authLogoutBtn">
+                Выйти
+            </button>
+            <p style="color:#8996a8;margin-bottom:35px;" data-i18n="profileTagline">
                 Игрок сообщества CS2 Challenges
             </p>
 
@@ -2615,7 +2615,7 @@ const I18N={
         publicProfileSteamLink:"Профиль игрока",
 
         navFriends:"Друзья",
-        navInventory:"В",
+        navInventory:"Профиль",
         navLoadout:"Создание Челленджа",
         navShop:"Донат",
         navNews2:"Новости",
@@ -3048,7 +3048,25 @@ function switchTab(screenId, btn){
 
     document.getElementById(screenId).classList.add("active");
 
-    btn.classList.add("active");
+    if(btn) btn.classList.add("active");
+
+}
+
+// Клик по аватарке в шапке: если вошёл — сразу в профиль ("Инвентарь"),
+// если нет — на экран входа/регистрации.
+function goToAccountOrProfile(btn){
+
+    if(currentUser){
+
+        const inventoryTab=document.querySelector('.nav-tab[data-cs="inventory"]');
+        switchTab("scr-profile", inventoryTab);
+        loadMyChallenges();
+
+    }else{
+
+        switchTab("scr-auth", btn);
+
+    }
 
 }
 
@@ -4990,6 +5008,7 @@ async function logout(){
     updateMessagesNavBadge(0);
     document.getElementById("tab-friends").style.display="none";
     document.getElementById("tab-messages").style.display="none";
+    document.getElementById("profile-logout-btn").style.display="none";
 
     // Перезагружаем ленту — лайки/выполнено теперь должны показываться
     // как у гостя (без личных отметок).
@@ -5020,6 +5039,7 @@ function onAuthSuccess(username,isOwner,avatar,steamUrl){
     document.getElementById("notif-wrap").style.display="inline-block";
     document.getElementById("tab-friends").style.display="inline-block";
     document.getElementById("tab-messages").style.display="inline-block";
+    document.getElementById("profile-logout-btn").style.display="block";
     loadNotifications();
     loadSupportUnreadCount();
     loadFriendRequestsBadge();
