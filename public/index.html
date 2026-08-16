@@ -341,6 +341,43 @@ header{
     transform:translateX(-2px);
 }
 
+/* ---- Мини-тултип у боковых кнопок вместо стандартного браузерного ---- */
+
+.side-rail-tooltip{
+    position:absolute;
+    right:calc(100% + 10px);
+    top:50%;
+    transform:translate(6px,-50%);
+    background:var(--panel-raised);
+    border:1px solid var(--line);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:12px;
+    font-weight:600;
+    white-space:nowrap;
+    padding:6px 12px;
+    border-radius:var(--chamfer-sm);
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .15s ease,transform .15s ease;
+    box-shadow:0 4px 14px rgba(0,0,0,.4);
+}
+
+.side-rail-tooltip::after{
+    content:"";
+    position:absolute;
+    left:100%;
+    top:50%;
+    transform:translateY(-50%);
+    border:5px solid transparent;
+    border-left-color:var(--panel-raised);
+}
+
+.side-rail-btn:hover .side-rail-tooltip{
+    opacity:1;
+    transform:translate(0,-50%);
+}
+
 /* ---- Устаревшие классы логотипа больше не используются в шапке, ---- */
 /* ---- но оставлены на случай, если где-то ещё встречаются ---- */
 
@@ -1257,6 +1294,10 @@ h1{
         font-size:16px;
     }
 
+    .side-rail-tooltip{
+        display:none;
+    }
+
     .container{
         padding:16px;
     }
@@ -1559,8 +1600,6 @@ h1{
 
     <div class="hdr-icons-left">
         <button class="hdr-icon-btn" title="Главная" onclick="document.querySelector('.nav-tab[data-cs=play]').click()">🏠</button>
-        <button class="hdr-icon-btn" title="Язык / Настройки" onclick="document.getElementById('lang-switcher').scrollIntoView({behavior:'smooth'});">⚙️</button>
-        <button class="hdr-icon-btn" title="Выйти" onclick="if(currentUser){logout();}">⏻</button>
     </div>
 
     <nav class="cs-nav">
@@ -1597,27 +1636,32 @@ h1{
 <!-- Правая иконка-колонка — друзья/сообщения/лидеры/поддержка/админ -->
 <div class="side-rail">
 
-    <button id="tab-friends" class="side-rail-btn" style="display:none;" onclick="switchTab('scr-friends', this);loadFriendsScreen();" title="Друзья">
+    <button id="tab-friends" class="side-rail-btn" style="display:none;" onclick="switchTab('scr-friends', this);loadFriendsScreen();">
         👥
         <span id="friends-nav-badge" class="notif-badge" style="display:none;"></span>
+        <span class="side-rail-tooltip" data-i18n="navFriends">Друзья</span>
     </button>
 
-    <button id="tab-messages" class="side-rail-btn" style="display:none;" onclick="switchTab('scr-messages', this);loadMessagesScreen();" title="Сообщения">
+    <button id="tab-messages" class="side-rail-btn" style="display:none;" onclick="switchTab('scr-messages', this);loadMessagesScreen();">
         ✉️
         <span id="messages-nav-badge" class="notif-badge" style="display:none;"></span>
+        <span class="side-rail-tooltip" data-i18n="navMessages">Сообщения</span>
     </button>
 
-    <button class="side-rail-btn" onclick="switchTab('scr-leaderboard',this);loadLeaderboard();" title="Лидеры">
+    <button class="side-rail-btn" onclick="switchTab('scr-leaderboard',this);loadLeaderboard();">
         🏆
+        <span class="side-rail-tooltip" data-i18n="navLeaderboard">Лидеры</span>
     </button>
 
-    <button class="side-rail-btn" onclick="switchTab('scr-support',this);loadSupportChat();" title="Поддержка">
+    <button class="side-rail-btn" onclick="switchTab('scr-support',this);loadSupportChat();">
         💬
         <span id="support-nav-badge" class="notif-badge" style="display:none;"></span>
+        <span class="side-rail-tooltip" data-i18n="navSupport">Поддержка</span>
     </button>
 
-    <button id="tab-admin" class="side-rail-btn" style="display:none;" onclick="switchTab('scr-admin', this)" title="Админ">
+    <button id="tab-admin" class="side-rail-btn" style="display:none;" onclick="switchTab('scr-admin', this)">
         👑
+        <span class="side-rail-tooltip">Админ</span>
     </button>
 
 </div>
@@ -2616,7 +2660,7 @@ const I18N={
 
         navFriends:"Друзья",
         navInventory:"Профиль",
-        navLoadout:"Создание Челленджа",
+        navLoadout:"Челленджи",
         navShop:"Донат",
         navNews2:"Новости",
         galleryCreateBtn:"+ Создать челлендж",
@@ -2899,8 +2943,8 @@ const I18N={
         notifMarkRead:"Mark all as read",
 
         navFriends:"Friends",
-        navInventory:"Inventory",
-        navLoadout:"Loadout",
+        navInventory:"Profile",
+        navLoadout:"Challenges",
         navShop:"Shop",
         navNews2:"News",
         galleryCreateBtn:"+ Create challenge",
