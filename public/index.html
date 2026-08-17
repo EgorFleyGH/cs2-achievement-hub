@@ -52,6 +52,78 @@
 
 }
 
+/* ================= ФОНОВЫЙ СЛОЙ ================= */
+
+#site-background-layer{
+    position:fixed;
+    inset:0;
+    z-index:-2;
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-color:var(--bg);
+    transition:background-image .4s ease,background .4s ease;
+}
+
+#site-background-layer::after{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    background:rgba(9,13,19,.72);
+    pointer-events:none;
+}
+
+.bg-picker-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+    gap:12px;
+    margin-top:15px;
+}
+
+.bg-picker-item{
+    position:relative;
+    height:80px;
+    border-radius:var(--chamfer-sm);
+    border:2px solid var(--line);
+    background-size:cover;
+    background-position:center;
+    cursor:pointer;
+    overflow:hidden;
+    transition:border-color .15s,transform .15s;
+}
+
+.bg-picker-item:hover{
+    transform:translateY(-2px);
+    border-color:var(--muted);
+}
+
+.bg-picker-item.selected{
+    border-color:var(--orange);
+    box-shadow:0 0 0 2px var(--orange-glow);
+}
+
+.bg-picker-item span{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    background:rgba(9,13,19,.75);
+    color:var(--ink);
+    font-size:11px;
+    padding:4px 6px;
+    text-align:center;
+}
+
+.bg-picker-item.none-option{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--panel-raised);
+    color:var(--muted);
+    font-size:12px;
+}
+
 *{
     margin:0;
     padding:0;
@@ -1411,6 +1483,9 @@ h1{
 
 <body>
 
+<!-- Фоновый слой — под всем содержимым, меняется в зависимости от выбора в профиле -->
+<div id="site-background-layer"></div>
+
 <!-- Переключатель языка — всегда виден, фиксирован в нижнем углу экрана -->
 <div class="notif-bell-wrap" id="notif-wrap" style="
     display:none;
@@ -2020,6 +2095,11 @@ h1{
             </div>
 
             <div style="margin-top:30px;text-align:left;">
+                <label data-i18n="profileBgLabel">Фон интерфейса</label>
+                <div id="bg-picker-grid" class="bg-picker-grid"></div>
+            </div>
+
+            <div style="margin-top:30px;text-align:left;">
                 <h3 style="color:#ff6a1a;margin-bottom:12px;" data-i18n="changePasswordTitle">
                     Сменить пароль
                 </h3>
@@ -2312,6 +2392,7 @@ h1{
             <button id="admin-tab-users" class="nav-tab" onclick="setAdminMode('users')">Пользователи</button>
             <button id="admin-tab-support" class="nav-tab" onclick="setAdminMode('support')">Поддержка</button>
             <button id="admin-tab-stats" class="nav-tab" onclick="setAdminMode('stats')">Статистика</button>
+            <button id="admin-tab-backgrounds" class="nav-tab" onclick="setAdminMode('backgrounds')">Фоны</button>
         </div>
 
         <!-- ==== НОВОСТИ ==== -->
@@ -2433,6 +2514,24 @@ h1{
             <h3 style="color:#ff6a1a;margin-bottom:15px;">Статистика сайта</h3>
 
             <div id="admin-stats-list" style="color:#8996a8;line-height:2;"></div>
+
+        </div>
+
+        <div id="admin-panel-backgrounds" class="panel" style="width:100%;display:none;">
+
+            <h3 style="color:#ff6a1a;margin-bottom:15px;">Добавить фон</h3>
+
+            <label>Название</label>
+            <input id="admin-bg-name" type="text" maxlength="60" placeholder="Например: Dust II">
+
+            <label>Картинка</label>
+            <input id="admin-bg-file" type="file" accept="image/*" style="margin-bottom:15px;">
+
+            <button class="save-btn" onclick="submitBackground()">Добавить фон</button>
+
+            <h3 style="color:#ff6a1a;margin:30px 0 15px;">Существующие фоны</h3>
+
+            <div id="admin-backgrounds-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;"></div>
 
         </div>
 
@@ -2657,6 +2756,8 @@ const I18N={
         profileSteamSaved:"Ссылка сохранена",
         profileSteamPlaceholder:"https://steamcommunity.com/id/...",
         publicProfileSteamLink:"Профиль игрока",
+        profileBgLabel:"Фон интерфейса",
+        profileBgNone:"Без фона",
 
         navFriends:"Друзья",
         navInventory:"Профиль",
@@ -2837,6 +2938,8 @@ const I18N={
         profileSteamSaved:"Link saved",
         profileSteamPlaceholder:"https://steamcommunity.com/id/...",
         publicProfileSteamLink:"Player profile",
+        profileBgLabel:"Interface background",
+        profileBgNone:"No background",
         navProfile:"Profile",
         navAccount:"Account",
         navSupport:"Support",
@@ -5017,7 +5120,7 @@ async function submitAuth(){
             return;
         }
 
-        onAuthSuccess(data.username,data.isOwner,data.avatar,data.steamUrl);
+        onAuthSuccess(data.username,data.isOwner,data.avatar,data.steamUrl,data.backgroundId);
 
     }catch(e){
 
@@ -5053,6 +5156,8 @@ async function logout(){
     document.getElementById("tab-friends").style.display="none";
     document.getElementById("tab-messages").style.display="none";
     document.getElementById("profile-logout-btn").style.display="none";
+    profile.backgroundId=null;
+    applyUserBackground(null);
 
     // Перезагружаем ленту — лайки/выполнено теперь должны показываться
     // как у гостя (без личных отметок).
@@ -5061,7 +5166,7 @@ async function logout(){
 
 }
 
-function onAuthSuccess(username,isOwner,avatar,steamUrl){
+function onAuthSuccess(username,isOwner,avatar,steamUrl,backgroundId){
 
     document.getElementById("auth-guest").style.display="none";
     document.getElementById("auth-user").style.display="block";
@@ -5077,6 +5182,10 @@ function onAuthSuccess(username,isOwner,avatar,steamUrl){
 
     const steamInput=document.getElementById("in-steam-url");
     if(steamInput) steamInput.value=steamUrl||"";
+
+    applyUserBackground(backgroundId||null);
+    profile.backgroundId=backgroundId||null;
+    renderBackgroundPicker();
 
     renderOwnerBadges();
 
@@ -5116,7 +5225,7 @@ async function checkAuth(){
 
         if(res.ok){
             const data=await res.json();
-            onAuthSuccess(data.username,data.isOwner,data.avatar,data.steamUrl);
+            onAuthSuccess(data.username,data.isOwner,data.avatar,data.steamUrl,data.backgroundId);
         }
 
     }catch(e){
@@ -5124,6 +5233,138 @@ async function checkAuth(){
     }
 
 }
+
+// ==========================
+// ФОНЫ ИНТЕРФЕЙСА
+// ==========================
+
+let availableBackgrounds=[];
+
+async function loadBackgroundsCatalog(){
+
+    try{
+
+        const res=await fetch("/api/backgrounds");
+        availableBackgrounds=await res.json();
+
+    }catch(e){
+
+        availableBackgrounds=[];
+
+    }
+
+}
+
+async function applyUserBackground(backgroundId){
+
+    const layer=document.getElementById("site-background-layer");
+    if(!layer) return;
+
+    if(!backgroundId){
+
+        layer.style.backgroundImage="";
+        layer.style.background="";
+        return;
+
+    }
+
+    if(availableBackgrounds.length===0){
+        await loadBackgroundsCatalog();
+    }
+
+    const bg=availableBackgrounds.find(b=>b.id===backgroundId);
+    if(!bg) return;
+
+    if(bg.imageUrl.startsWith("gradient:")){
+
+        layer.style.backgroundImage="";
+        layer.style.background=bg.imageUrl.slice("gradient:".length);
+
+    }else{
+
+        layer.style.background="";
+        layer.style.backgroundImage="url("+bg.imageUrl+")";
+
+    }
+
+}
+
+async function renderBackgroundPicker(){
+
+    const grid=document.getElementById("bg-picker-grid");
+    if(!grid) return;
+
+    if(availableBackgrounds.length===0){
+        await loadBackgroundsCatalog();
+    }
+
+    grid.innerHTML="";
+
+    const noneItem=document.createElement("div");
+    noneItem.className="bg-picker-item none-option"+(!profile.backgroundId?" selected":"");
+    noneItem.textContent=t("profileBgNone");
+    noneItem.onclick=()=>selectBackground(null);
+    grid.appendChild(noneItem);
+
+    availableBackgrounds.forEach(bg=>{
+
+        const item=document.createElement("div");
+        item.className="bg-picker-item"+(profile.backgroundId===bg.id?" selected":"");
+
+        if(bg.imageUrl.startsWith("gradient:")){
+            item.style.background=bg.imageUrl.slice("gradient:".length);
+        }else{
+            item.style.backgroundImage="url("+bg.imageUrl+")";
+        }
+
+        const label=document.createElement("span");
+        label.textContent=bg.name;
+        item.appendChild(label);
+
+        item.onclick=()=>selectBackground(bg.id);
+
+        grid.appendChild(item);
+
+    });
+
+}
+
+async function selectBackground(id){
+
+    if(!currentUser){
+        goToAccountOrProfile(document.getElementById("tab-auth"));
+        return;
+    }
+
+    try{
+
+        const res=await fetch("/api/profile/background",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({backgroundId:id})
+        });
+
+        const data=await res.json();
+
+        if(!res.ok){
+            alert(data.error||t("serverErrorAlert"));
+            return;
+        }
+
+        profile.backgroundId=id;
+        saveProfile();
+        applyUserBackground(id);
+        renderBackgroundPicker();
+
+    }catch(e){
+
+        alert(t("serverErrorAlert"));
+
+    }
+
+}
+
+loadBackgroundsCatalog().then(renderBackgroundPicker);
 
 checkAuth();
 
@@ -5427,7 +5668,7 @@ function setAdminMode(mode){
 
     adminMode=mode;
 
-    ["news","mod","demos","users","support","stats"].forEach(m=>{
+    ["news","mod","demos","users","support","stats","backgrounds"].forEach(m=>{
 
         document.getElementById("admin-tab-"+m).classList.toggle("active",m===mode);
         document.getElementById("admin-panel-"+m).style.display=(m===mode)?"block":"none";
@@ -5440,6 +5681,7 @@ function setAdminMode(mode){
     if(mode==="users") loadAdminUsers();
     if(mode==="support") loadAdminSupportThreads();
     if(mode==="stats") loadAdminStats();
+    if(mode==="backgrounds") loadAdminBackgrounds();
 
 }
 
@@ -5551,6 +5793,130 @@ async function deleteAdminNews(id){
         await fetch(`/api/admin/news/${id}`,{method:"DELETE"});
         loadAdminNews();
         loadNews();
+
+    }catch(e){
+
+        alert("Не удалось связаться с сервером");
+
+    }
+
+}
+
+// ---- Фоны интерфейса ----
+
+async function submitBackground(){
+
+    const name=document.getElementById("admin-bg-name").value.trim();
+    const fileInput=document.getElementById("admin-bg-file");
+    const file=fileInput.files[0];
+
+    if(!name||!file){
+        alert("Впиши название и выбери картинку");
+        return;
+    }
+
+    if(file.size>2_500_000){
+        alert("Картинка слишком большая (макс. ~2.5МБ)");
+        return;
+    }
+
+    const reader=new FileReader();
+
+    reader.onload=async function(){
+
+        try{
+
+            const res=await fetch("/api/admin/backgrounds",{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({name,imageUrl:reader.result})
+            });
+
+            const data=await res.json();
+
+            if(!res.ok){
+                alert(data.error||"Не удалось добавить фон");
+                return;
+            }
+
+            document.getElementById("admin-bg-name").value="";
+            fileInput.value="";
+
+            loadAdminBackgrounds();
+
+        }catch(e){
+
+            alert("Не удалось связаться с сервером");
+
+        }
+
+    }
+
+    reader.readAsDataURL(file);
+
+}
+
+async function loadAdminBackgrounds(){
+
+    const list=document.getElementById("admin-backgrounds-list");
+    list.textContent="Загрузка...";
+
+    try{
+
+        const res=await fetch("/api/admin/backgrounds");
+        const backgrounds=await res.json();
+
+        list.innerHTML="";
+
+        if(backgrounds.length===0){
+            list.textContent="Пока нет фонов.";
+            return;
+        }
+
+        backgrounds.forEach(bg=>{
+
+            const card=document.createElement("div");
+            card.style.cssText="background:var(--panel-raised);border:1px solid var(--line);border-radius:var(--chamfer-sm);overflow:hidden;";
+
+            const img=document.createElement("img");
+            img.src=bg.imageUrl;
+            img.style.cssText="width:100%;height:90px;object-fit:cover;display:block;";
+
+            const info=document.createElement("div");
+            info.style.cssText="padding:8px;";
+
+            const name=document.createElement("p");
+            name.style.cssText="font-size:12px;color:var(--ink);margin-bottom:6px;";
+            name.textContent=bg.name;
+
+            const delBtn=document.createElement("button");
+            delBtn.className="check-btn";
+            delBtn.style.cssText="width:100%;font-size:11px;padding:5px;";
+            delBtn.textContent="Удалить";
+            delBtn.onclick=()=>deleteAdminBackground(bg.id);
+
+            info.append(name,delBtn);
+            card.append(img,info);
+            list.appendChild(card);
+
+        });
+
+    }catch(e){
+
+        list.textContent="Не удалось загрузить фоны.";
+
+    }
+
+}
+
+async function deleteAdminBackground(id){
+
+    if(!confirm("Удалить этот фон?")) return;
+
+    try{
+
+        await fetch(`/api/admin/backgrounds/${id}`,{method:"DELETE"});
+        loadAdminBackgrounds();
 
     }catch(e){
 

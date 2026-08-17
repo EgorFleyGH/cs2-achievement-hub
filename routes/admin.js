@@ -24,7 +24,10 @@ const {
   getDemoSubmissionById,
   setDemoSubmissionStatus,
   markChallengeCompletedForUser,
-  getChallengeById
+  getChallengeById,
+  getAllBackgrounds,
+  createBackground,
+  deleteBackground
 } = require("../db");
 const { OWNER_USERNAME } = require("../config");
 
@@ -486,6 +489,55 @@ router.post("/demos/:id/reject", async (req, res) => {
   } catch (e) {
     console.error("Ошибка отклонения демки:", e);
     res.status(500).json({ error: "Не удалось отклонить демку" });
+  }
+});
+
+// =========================
+// Фоны интерфейса (каталог, управляет владелец)
+// =========================
+router.get("/backgrounds", async (req, res) => {
+  try {
+    const backgrounds = await getAllBackgrounds();
+    res.json(backgrounds.map((b) => ({ id: b.id, name: b.name, imageUrl: b.image_url })));
+  } catch (e) {
+    console.error("Ошибка загрузки фонов:", e);
+    res.status(500).json({ error: "Не удалось загрузить фоны" });
+  }
+});
+
+router.post("/backgrounds", async (req, res) => {
+  const { name, imageUrl } = req.body || {};
+
+  if (typeof name !== "string" || name.trim().length === 0) {
+    return res.status(400).json({ error: "Название обязательно" });
+  }
+  if (name.length > 60) {
+    return res.status(400).json({ error: "Название слишком длинное" });
+  }
+  if (typeof imageUrl !== "string" || !imageUrl.startsWith("data:image/")) {
+    return res.status(400).json({ error: "Нужна картинка" });
+  }
+  if (imageUrl.length > 3_000_000) {
+    return res.status(400).json({ error: "Картинка слишком большая" });
+  }
+
+  try {
+    const bg = await createBackground(name.trim(), imageUrl);
+    res.status(201).json({ id: bg.id, name: bg.name, imageUrl: bg.image_url });
+  } catch (e) {
+    console.error("Ошибка добавления фона:", e);
+    res.status(500).json({ error: "Не удалось добавить фон" });
+  }
+});
+
+router.delete("/backgrounds/:id", async (req, res) => {
+  try {
+    const deleted = await deleteBackground(Number(req.params.id));
+    if (!deleted) return res.status(404).json({ error: "Фон не найден" });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("Ошибка удаления фона:", e);
+    res.status(500).json({ error: "Не удалось удалить фон" });
   }
 });
 

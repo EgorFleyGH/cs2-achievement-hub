@@ -1,7 +1,16 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
-const { findUserByUsername, createUser, setUserAvatar, setUserSteamUrl, resetUserPassword, createNotification } = require("../db");
+const {
+  findUserByUsername,
+  createUser,
+  setUserAvatar,
+  setUserSteamUrl,
+  resetUserPassword,
+  createNotification,
+  getAllBackgrounds,
+  setUserBackground
+} = require("../db");
 const { OWNER_USERNAME } = require("../config");
 const { notifyDiscord } = require("../discord");
 
@@ -55,7 +64,7 @@ router.post("/register", authLimiter, async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
 
-    res.status(201).json({ id: user.id, username: user.username, avatar: user.avatar || "", steamUrl: user.steam_url || "", isOwner: user.username === OWNER_USERNAME });
+    res.status(201).json({ id: user.id, username: user.username, avatar: user.avatar || "", steamUrl: user.steam_url || "", backgroundId: user.background_id || null, isOwner: user.username === OWNER_USERNAME });
   } catch (e) {
     console.error("Ошибка регистрации:", e);
     res.status(500).json({ error: "Не удалось зарегистрироваться, попробуйте позже" });
@@ -88,7 +97,7 @@ router.post("/login", authLimiter, async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
 
-    res.json({ id: user.id, username: user.username, avatar: user.avatar || "", steamUrl: user.steam_url || "", isOwner: user.username === OWNER_USERNAME });
+    res.json({ id: user.id, username: user.username, avatar: user.avatar || "", steamUrl: user.steam_url || "", backgroundId: user.background_id || null, isOwner: user.username === OWNER_USERNAME });
   } catch (e) {
     console.error("Ошибка входа:", e);
     res.status(500).json({ error: "Не удалось войти, попробуйте позже" });
@@ -173,6 +182,7 @@ router.get("/me", async (req, res) => {
       username: req.session.username,
       avatar: user.avatar || "",
       steamUrl: user.steam_url || "",
+      backgroundId: user.background_id || null,
       isOwner: req.session.username === OWNER_USERNAME
     });
   } catch (e) {
@@ -235,6 +245,42 @@ router.post("/profile/steam", async (req, res) => {
   } catch (e) {
     console.error("Ошибка сохранения Steam-ссылки:", e);
     res.status(500).json({ error: "Не удалось сохранить ссылку" });
+  }
+});
+
+// =========================
+// Фоны профиля
+// =========================
+
+// Публично — список доступных фонов виден всем, логин не нужен.
+router.get("/backgrounds", async (req, res) => {
+  try {
+    const backgrounds = await getAllBackgrounds();
+    res.json(backgrounds.map((b) => ({ id: b.id, name: b.name, imageUrl: b.image_url })));
+  } catch (e) {
+    console.error("Ошибка загрузки фонов:", e);
+    res.status(500).json({ error: "Не удалось загрузить фоны" });
+  }
+});
+
+router.post("/profile/background", async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Нужно войти в аккаунт" });
+  }
+
+  const { backgroundId } = req.body || {};
+  const id = backgroundId === null ? null : Number(backgroundId);
+
+  if (id !== null && (!Number.isInteger(id) || id <= 0)) {
+    return res.status(400).json({ error: "Некорректный фон" });
+  }
+
+  try {
+    await setUserBackground(req.session.userId, id);
+    res.json({ backgroundId: id });
+  } catch (e) {
+    console.error("Ошибка сохранения фона:", e);
+    res.status(500).json({ error: "Не удалось сохранить фон" });
   }
 });
 

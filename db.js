@@ -105,6 +105,15 @@ async function initDb() {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS backgrounds (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      image_url TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS news (
       id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
@@ -141,6 +150,7 @@ async function initDb() {
   await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS title_en TEXT`);
   await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS description_en TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS steam_url TEXT`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS background_id INTEGER`);
   await pool.query(`ALTER TABLE demo_submissions ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'dem'`);
   await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS category TEXT`);
 
@@ -172,7 +182,27 @@ async function initDb() {
     );
   }
 
-  console.log("База данных готова (таблицы users, challenges, news, notifications)");
+  // Стартовые фоны — CSS-градиенты, чтобы фича сразу работала без картинок.
+  // Владелец сайта сможет добавить свои через админ-панель (обычные картинки,
+  // не обязательно градиенты) — значение image_url просто выведется как есть.
+  const bgCount = await pool.query("SELECT COUNT(*)::int AS count FROM backgrounds");
+  if (bgCount.rows[0].count === 0) {
+    await pool.query(
+      `INSERT INTO backgrounds (name, image_url) VALUES
+        ($1, $2),
+        ($3, $4),
+        ($5, $6),
+        ($7, $8)`,
+      [
+        "Тёмная сталь", "gradient:linear-gradient(160deg,#0a0e14 0%,#1a2332 45%,#0a0e14 100%)",
+        "Пустыня (Dust)", "gradient:linear-gradient(160deg,#2b2013 0%,#4a3a22 45%,#1a1408 100%)",
+        "Ночной город", "gradient:linear-gradient(160deg,#0a1420 0%,#123a4a 45%,#050a12 100%)",
+        "Пожар", "gradient:linear-gradient(160deg,#2b0a05 0%,#6a1a0a 45%,#150502 100%)"
+      ]
+    );
+  }
+
+  console.log("База данных готова (таблицы users, challenges, news, notifications, backgrounds)");
 }
 
 // =========================
@@ -233,6 +263,49 @@ async function setUserSteamUrl(userId, steamUrl) {
   const { rows } = await pool.query(
     "UPDATE users SET steam_url = $1 WHERE id = $2 RETURNING id, username, steam_url",
     [steamUrl, userId]
+  );
+  return rows[0] || null;
+}
+
+// =========================
+// Фоны (выбираются пользователем, управляются владельцем)
+// =========================
+
+async function getAllBackgrounds() {
+  const { rows } = await pool.query("SELECT * FROM backgrounds ORDER BY id ASC");
+  return rows;
+}
+
+async function createBackground(name, imageUrl) {
+  const { rows } = await pool.query(
+    "INSERT INTO backgrounds (name, image_url) VALUES ($1, $2) RETURNING *",
+    [name, imageUrl]
+  );
+  return rows[0];
+}
+
+async function deleteBackground(id) {
+  const { rows } = await pool.query(
+    "DELETE FROM backgrounds WHERE id = $1 RETURNING id",
+    [id]
+  );
+  return rows.length > 0;
+}
+
+async function setUserBackground(userId, backgroundId) {
+  const { rows } = await pool.query(
+    "UPDATE users SET background_id = $1 WHERE id = $2 RETURNING id, background_id",
+    [backgroundId, userId]
+  );
+  return rows[0] || null;
+}
+
+async function getUserBackground(userId) {
+  const { rows } = await pool.query(
+    `SELECT b.* FROM users u
+     JOIN backgrounds b ON b.id = u.background_id
+     WHERE u.id = $1`,
+    [userId]
   );
   return rows[0] || null;
 }
@@ -883,6 +956,11 @@ module.exports = {
   resetUserPassword,
   setUserAvatar,
   setUserSteamUrl,
+  getAllBackgrounds,
+  createBackground,
+  deleteBackground,
+  setUserBackground,
+  getUserBackground,
   getUserPublicByUsername,
   getApprovedChallenges,
   getApprovedChallengesByUsername,
