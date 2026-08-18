@@ -5815,8 +5815,8 @@ async function submitBackground(){
         return;
     }
 
-    if(file.size>2_500_000){
-        alert("Картинка слишком большая (макс. ~2.5МБ)");
+    if(file.size>2_000_000){
+        alert("Картинка слишком большая (макс. ~2МБ)");
         return;
     }
 
@@ -5832,7 +5832,20 @@ async function submitBackground(){
                 body:JSON.stringify({name,imageUrl:reader.result})
             });
 
-            const data=await res.json();
+            let data={};
+            try{
+                data=await res.json();
+            }catch(parseErr){
+                // Сервер ответил не-JSON'ом (например, отклонил запрос
+                // из-за лимита на размер тела) — покажем понятную причину
+                // вместо общего "не удалось связаться с сервером".
+                if(res.status===413){
+                    alert("Картинка слишком большая для сервера — попробуй файл поменьше.");
+                }else{
+                    alert("Сервер ответил неожиданно (код "+res.status+"). Попробуй ещё раз.");
+                }
+                return;
+            }
 
             if(!res.ok){
                 alert(data.error||"Не удалось добавить фон");
