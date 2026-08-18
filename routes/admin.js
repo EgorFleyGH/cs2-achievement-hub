@@ -517,7 +517,7 @@ router.post("/backgrounds", async (req, res) => {
   if (typeof imageUrl !== "string" || !imageUrl.startsWith("data:image/")) {
     return res.status(400).json({ error: "Нужна картинка" });
   }
-  if (imageUrl.length > 3_000_000) {
+  if (imageUrl.length > 6_000_000) {
     return res.status(400).json({ error: "Картинка слишком большая" });
   }
 

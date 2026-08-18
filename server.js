@@ -28,7 +28,7 @@ app.set("trust proxy", 1);
 
 // Увеличенный лимит — аватарки и картинки-иконки челленджей
 // приходят как base64 (data URL) прямо в теле JSON-запроса.
-app.use(express.json({ limit: "4mb" }));
+app.use(express.json({ limit: "8mb" }));
 app.use(cookieParser());
 
 app.use(
