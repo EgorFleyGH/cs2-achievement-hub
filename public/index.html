@@ -5878,9 +5878,21 @@ async function loadAdminBackgrounds(){
             const card=document.createElement("div");
             card.style.cssText="background:var(--panel-raised);border:1px solid var(--line);border-radius:var(--chamfer-sm);overflow:hidden;";
 
-            const img=document.createElement("img");
-            img.src=bg.imageUrl;
-            img.style.cssText="width:100%;height:90px;object-fit:cover;display:block;";
+            const preview=document.createElement("div");
+            preview.style.cssText="width:100%;height:90px;display:block;";
+
+            if(bg.imageUrl.startsWith("gradient:")){
+
+                preview.style.background=bg.imageUrl.slice("gradient:".length);
+
+            }else{
+
+                const img=document.createElement("img");
+                img.src=bg.imageUrl;
+                img.style.cssText="width:100%;height:100%;object-fit:cover;display:block;";
+                preview.appendChild(img);
+
+            }
 
             const info=document.createElement("div");
             info.style.cssText="padding:8px;";
@@ -5896,7 +5908,7 @@ async function loadAdminBackgrounds(){
             delBtn.onclick=()=>deleteAdminBackground(bg.id);
 
             info.append(name,delBtn);
-            card.append(img,info);
+            card.append(preview,info);
             list.appendChild(card);
 
         });
