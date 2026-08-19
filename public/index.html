@@ -2527,7 +2527,7 @@ h1{
             <label>Картинка</label>
             <input id="admin-bg-file" type="file" accept="image/*" style="margin-bottom:15px;">
 
-            <button class="save-btn" onclick="submitBackground()">Добавить фон</button>
+            <button id="admin-bg-submit-btn" class="save-btn" onclick="submitBackground()">Добавить фон</button>
 
             <h3 style="color:#ff6a1a;margin:30px 0 15px;">Существующие фоны</h3>
 
@@ -5809,6 +5809,7 @@ async function submitBackground(){
     const name=document.getElementById("admin-bg-name").value.trim();
     const fileInput=document.getElementById("admin-bg-file");
     const file=fileInput.files[0];
+    const submitBtn=document.getElementById("admin-bg-submit-btn");
 
     if(!name||!file){
         alert("Впиши название и выбери картинку");
@@ -5823,6 +5824,10 @@ async function submitBackground(){
     const reader=new FileReader();
 
     reader.onload=async function(){
+
+        const originalBtnText=submitBtn.textContent;
+        submitBtn.disabled=true;
+        submitBtn.textContent="Загрузка...";
 
         try{
 
@@ -5860,6 +5865,11 @@ async function submitBackground(){
         }catch(e){
 
             alert("Не удалось связаться с сервером");
+
+        }finally{
+
+            submitBtn.disabled=false;
+            submitBtn.textContent=originalBtnText;
 
         }
 
