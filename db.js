@@ -114,6 +114,15 @@ async function initDb() {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS agents (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      image_url TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS news (
       id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
@@ -151,6 +160,7 @@ async function initDb() {
   await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS description_en TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS steam_url TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS background_id INTEGER`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS agent_id INTEGER`);
   await pool.query(`ALTER TABLE demo_submissions ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'dem'`);
   await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS category TEXT`);
 
@@ -306,6 +316,60 @@ async function getUserBackground(userId) {
      JOIN backgrounds b ON b.id = u.background_id
      WHERE u.id = $1`,
     [userId]
+  );
+  return rows[0] || null;
+}
+
+// =========================
+// Агенты (персонажи) — каталог ведёт владелец, игроки выбирают в профиле
+// =========================
+
+async function getAllAgents() {
+  const { rows } = await pool.query("SELECT * FROM agents ORDER BY id ASC");
+  return rows;
+}
+
+async function createAgent(name, imageUrl) {
+  const { rows } = await pool.query(
+    "INSERT INTO agents (name, image_url) VALUES ($1, $2) RETURNING *",
+    [name, imageUrl]
+  );
+  return rows[0];
+}
+
+async function deleteAgent(id) {
+  const { rows } = await pool.query(
+    "DELETE FROM agents WHERE id = $1 RETURNING id",
+    [id]
+  );
+  return rows.length > 0;
+}
+
+async function setUserAgent(userId, agentId) {
+  const { rows } = await pool.query(
+    "UPDATE users SET agent_id = $1 WHERE id = $2 RETURNING id, agent_id",
+    [agentId, userId]
+  );
+  return rows[0] || null;
+}
+
+async function getUserAgent(userId) {
+  const { rows } = await pool.query(
+    `SELECT a.* FROM users u
+     JOIN agents a ON a.id = u.agent_id
+     WHERE u.id = $1`,
+    [userId]
+  );
+  return rows[0] || null;
+}
+
+// По нику — для отображения выбранного агента на публичном профиле.
+async function getUserAgentByUsername(username) {
+  const { rows } = await pool.query(
+    `SELECT a.* FROM users u
+     JOIN agents a ON a.id = u.agent_id
+     WHERE u.username = $1`,
+    [username]
   );
   return rows[0] || null;
 }
@@ -961,6 +1025,12 @@ module.exports = {
   deleteBackground,
   setUserBackground,
   getUserBackground,
+  getAllAgents,
+  createAgent,
+  deleteAgent,
+  setUserAgent,
+  getUserAgent,
+  getUserAgentByUsername,
   getUserPublicByUsername,
   getApprovedChallenges,
   getApprovedChallengesByUsername,

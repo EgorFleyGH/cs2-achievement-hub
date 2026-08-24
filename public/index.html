@@ -739,6 +739,22 @@ header{
 
 }
 
+.home-agent-slot{
+    flex-shrink:0;
+    width:220px;
+    height:340px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+}
+
+.home-agent-slot img{
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+    filter:drop-shadow(0 20px 25px rgba(0,0,0,.5));
+}
+
 .menu-right{
 
     width:360px;
@@ -1749,6 +1765,10 @@ h1{
 
     <div class="menu-layout">
 
+        <div id="home-agent-slot" class="home-agent-slot" style="display:none;">
+            <img id="home-agent-img" src="" alt="">
+        </div>
+
         <div class="menu-left">
 
             <div class="logo-text">
@@ -2100,6 +2120,11 @@ h1{
             </div>
 
             <div style="margin-top:30px;text-align:left;">
+                <label data-i18n="profileAgentLabel">Агент (персонаж)</label>
+                <div id="agent-picker-grid" class="bg-picker-grid"></div>
+            </div>
+
+            <div style="margin-top:30px;text-align:left;">
                 <h3 style="color:#ff6a1a;margin-bottom:12px;" data-i18n="changePasswordTitle">
                     Сменить пароль
                 </h3>
@@ -2393,6 +2418,7 @@ h1{
             <button id="admin-tab-support" class="nav-tab" onclick="setAdminMode('support')">Поддержка</button>
             <button id="admin-tab-stats" class="nav-tab" onclick="setAdminMode('stats')">Статистика</button>
             <button id="admin-tab-backgrounds" class="nav-tab" onclick="setAdminMode('backgrounds')">Фоны</button>
+            <button id="admin-tab-agents" class="nav-tab" onclick="setAdminMode('agents')">Агенты</button>
         </div>
 
         <!-- ==== НОВОСТИ ==== -->
@@ -2532,6 +2558,24 @@ h1{
             <h3 style="color:#ff6a1a;margin:30px 0 15px;">Существующие фоны</h3>
 
             <div id="admin-backgrounds-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;"></div>
+
+        </div>
+
+        <div id="admin-panel-agents" class="panel" style="width:100%;display:none;">
+
+            <h3 style="color:#ff6a1a;margin-bottom:15px;">Добавить агента</h3>
+
+            <label>Название</label>
+            <input id="admin-agent-name" type="text" maxlength="60" placeholder="Например: Спецназовец">
+
+            <label>Картинка (фигура персонажа)</label>
+            <input id="admin-agent-file" type="file" accept="image/*" style="margin-bottom:15px;">
+
+            <button id="admin-agent-submit-btn" class="save-btn" onclick="submitAgent()">Добавить агента</button>
+
+            <h3 style="color:#ff6a1a;margin:30px 0 15px;">Существующие агенты</h3>
+
+            <div id="admin-agents-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;"></div>
 
         </div>
 
@@ -3098,6 +3142,11 @@ const I18N={
 
 let currentLang=localStorage.getItem("lang");
 let authMode="login"; // объявлено здесь заранее, чтобы applyLanguage() могло безопасно его читать
+
+// Объявлено здесь же (а не рядом с applyUserAgent ниже) по той же причине,
+// что и ACHIEVEMENTS: updateProfile() вызывается синхронно ещё при
+// загрузке страницы и должна иметь доступ к этой переменной сразу.
+let currentAgentImageUrl=null;
 
 // Объявлено здесь же (а не рядом с renderAchievementBadges ниже) по той же
 // причине: updateProfile() вызывается синхронно ещё при загрузке страницы
@@ -4009,11 +4058,15 @@ function updateProfile(){
 
     document.getElementById("profile-name").textContent=profile.name;
 
-    if(profile.avatar!=""){
+    if(currentAgentImageUrl){
 
-    document.getElementById("profile-avatar").src=profile.avatar;
+        document.getElementById("profile-avatar").src=currentAgentImageUrl;
 
-}
+    }else if(profile.avatar!=""){
+
+        document.getElementById("profile-avatar").src=profile.avatar;
+
+    }
 
     let rank=t("rankNovice");
 
@@ -4050,10 +4103,12 @@ function updateProfile(){
 
     if(hdrCircle){
 
-        if(profile.avatar){
+        const hdrImageUrl=currentAgentImageUrl||profile.avatar;
+
+        if(hdrImageUrl){
             hdrCircle.innerHTML="";
             const img=document.createElement("img");
-            img.src=profile.avatar;
+            img.src=hdrImageUrl;
             img.style.cssText="width:100%;height:100%;object-fit:cover;border-radius:50%;";
             hdrCircle.appendChild(img);
         }else{
@@ -4392,7 +4447,9 @@ async function viewProfile(username){
         document.getElementById("public-profile-created").textContent=data.stats.created;
         document.getElementById("public-profile-likes").textContent=data.stats.likes;
 
-        if(data.avatar){
+        if(data.agentImageUrl){
+            document.getElementById("public-profile-avatar").src=data.agentImageUrl;
+        }else if(data.avatar){
             document.getElementById("public-profile-avatar").src=data.avatar;
         }else{
             document.getElementById("public-profile-avatar").src="https://placehold.co/180x180/png?text=%F0%9F%91%A4";
@@ -5120,7 +5177,7 @@ async function submitAuth(){
             return;
         }
 
-        onAuthSuccess(data.username,data.isOwner,data.avatar,data.steamUrl,data.backgroundId);
+        onAuthSuccess(data.username,data.isOwner,data.avatar,data.steamUrl,data.backgroundId,data.agentId);
 
     }catch(e){
 
@@ -5142,6 +5199,7 @@ async function logout(){
 
     profile.name=t("guestName");
     profile.avatar="";
+    profile.agentId=null;
     currentUser=null;
     isOwnerAccount=false;
     saveProfile();
@@ -5158,6 +5216,7 @@ async function logout(){
     document.getElementById("profile-logout-btn").style.display="none";
     profile.backgroundId=null;
     applyUserBackground(null);
+    applyUserAgent(null);
 
     // Перезагружаем ленту — лайки/выполнено теперь должны показываться
     // как у гостя (без личных отметок).
@@ -5166,7 +5225,7 @@ async function logout(){
 
 }
 
-function onAuthSuccess(username,isOwner,avatar,steamUrl,backgroundId){
+function onAuthSuccess(username,isOwner,avatar,steamUrl,backgroundId,agentId){
 
     document.getElementById("auth-guest").style.display="none";
     document.getElementById("auth-user").style.display="block";
@@ -5175,6 +5234,7 @@ function onAuthSuccess(username,isOwner,avatar,steamUrl,backgroundId){
     // Имя в профиле теперь берётся из аккаунта, а не из ручного "FL"
     profile.name=username;
     if(avatar) profile.avatar=avatar;
+    profile.agentId=agentId||null;
     currentUser=username;
     isOwnerAccount=!!isOwner;
     saveProfile();
@@ -5186,6 +5246,9 @@ function onAuthSuccess(username,isOwner,avatar,steamUrl,backgroundId){
     applyUserBackground(backgroundId||null);
     profile.backgroundId=backgroundId||null;
     renderBackgroundPicker();
+
+    applyUserAgent(agentId||null);
+    renderAgentPicker();
 
     renderOwnerBadges();
 
@@ -5225,7 +5288,7 @@ async function checkAuth(){
 
         if(res.ok){
             const data=await res.json();
-            onAuthSuccess(data.username,data.isOwner,data.avatar,data.steamUrl,data.backgroundId);
+            onAuthSuccess(data.username,data.isOwner,data.avatar,data.steamUrl,data.backgroundId,data.agentId);
         }
 
     }catch(e){
@@ -5355,6 +5418,135 @@ async function selectBackground(id){
         saveProfile();
         applyUserBackground(id);
         renderBackgroundPicker();
+
+    }catch(e){
+
+        alert(t("serverErrorAlert"));
+
+    }
+
+}
+
+// ==========================
+// АГЕНТЫ (персонажи)
+// ==========================
+
+let availableAgents=[];
+
+async function loadAgentsCatalog(){
+
+    try{
+
+        const res=await fetch("/api/agents");
+        availableAgents=await res.json();
+
+    }catch(e){
+
+        availableAgents=[];
+
+    }
+
+}
+
+async function applyUserAgent(agentId){
+
+    const slot=document.getElementById("home-agent-slot");
+    const img=document.getElementById("home-agent-img");
+
+    if(!agentId){
+
+        currentAgentImageUrl=null;
+        if(slot) slot.style.display="none";
+        if(img) img.src="";
+        updateProfile();
+        return;
+
+    }
+
+    if(availableAgents.length===0){
+        await loadAgentsCatalog();
+    }
+
+    const agent=availableAgents.find(a=>a.id===agentId);
+
+    if(!agent){
+        currentAgentImageUrl=null;
+        if(slot) slot.style.display="none";
+        updateProfile();
+        return;
+    }
+
+    currentAgentImageUrl=agent.imageUrl;
+
+    if(img) img.src=agent.imageUrl;
+    if(slot) slot.style.display="flex";
+
+    // Обновляем аватары везде (шапка, профиль) — агент теперь в приоритете.
+    updateProfile();
+
+}
+
+async function renderAgentPicker(){
+
+    const grid=document.getElementById("agent-picker-grid");
+    if(!grid) return;
+
+    if(availableAgents.length===0){
+        await loadAgentsCatalog();
+    }
+
+    grid.innerHTML="";
+
+    const noneItem=document.createElement("div");
+    noneItem.className="bg-picker-item none-option"+(!profile.agentId?" selected":"");
+    noneItem.textContent=t("profileBgNone");
+    noneItem.onclick=()=>selectAgent(null);
+    grid.appendChild(noneItem);
+
+    availableAgents.forEach(agent=>{
+
+        const item=document.createElement("div");
+        item.className="bg-picker-item"+(profile.agentId===agent.id?" selected":"");
+        item.style.backgroundImage="url("+agent.imageUrl+")";
+
+        const label=document.createElement("span");
+        label.textContent=agent.name;
+        item.appendChild(label);
+
+        item.onclick=()=>selectAgent(agent.id);
+
+        grid.appendChild(item);
+
+    });
+
+}
+
+async function selectAgent(id){
+
+    if(!currentUser){
+        goToAccountOrProfile(document.getElementById("tab-auth"));
+        return;
+    }
+
+    try{
+
+        const res=await fetch("/api/profile/agent",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({agentId:id})
+        });
+
+        const data=await res.json();
+
+        if(!res.ok){
+            alert(data.error||t("serverErrorAlert"));
+            return;
+        }
+
+        profile.agentId=id;
+        saveProfile();
+        applyUserAgent(id);
+        renderAgentPicker();
 
     }catch(e){
 
@@ -5668,7 +5860,7 @@ function setAdminMode(mode){
 
     adminMode=mode;
 
-    ["news","mod","demos","users","support","stats","backgrounds"].forEach(m=>{
+    ["news","mod","demos","users","support","stats","backgrounds","agents"].forEach(m=>{
 
         document.getElementById("admin-tab-"+m).classList.toggle("active",m===mode);
         document.getElementById("admin-panel-"+m).style.display=(m===mode)?"block":"none";
@@ -5682,6 +5874,7 @@ function setAdminMode(mode){
     if(mode==="support") loadAdminSupportThreads();
     if(mode==="stats") loadAdminStats();
     if(mode==="backgrounds") loadAdminBackgrounds();
+    if(mode==="agents") loadAdminAgents();
 
 }
 
@@ -5952,6 +6145,150 @@ async function deleteAdminBackground(id){
 
         await fetch(`/api/admin/backgrounds/${id}`,{method:"DELETE"});
         loadAdminBackgrounds();
+
+    }catch(e){
+
+        alert("Не удалось связаться с сервером");
+
+    }
+
+}
+
+// ---- Агенты (персонажи) ----
+
+async function submitAgent(){
+
+    const name=document.getElementById("admin-agent-name").value.trim();
+    const fileInput=document.getElementById("admin-agent-file");
+    const file=fileInput.files[0];
+    const submitBtn=document.getElementById("admin-agent-submit-btn");
+
+    if(!name||!file){
+        alert("Впиши название и выбери картинку");
+        return;
+    }
+
+    if(file.size>4_000_000){
+        alert("Картинка слишком большая (макс. ~4МБ)");
+        return;
+    }
+
+    const reader=new FileReader();
+
+    reader.onload=async function(){
+
+        const originalBtnText=submitBtn.textContent;
+        submitBtn.disabled=true;
+        submitBtn.textContent="Загрузка...";
+
+        try{
+
+            const res=await fetch("/api/admin/agents",{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({name,imageUrl:reader.result})
+            });
+
+            let data={};
+            try{
+                data=await res.json();
+            }catch(parseErr){
+                if(res.status===413){
+                    alert("Картинка слишком большая для сервера — попробуй файл поменьше.");
+                }else{
+                    alert("Сервер ответил неожиданно (код "+res.status+"). Попробуй ещё раз.");
+                }
+                return;
+            }
+
+            if(!res.ok){
+                alert(data.error||"Не удалось добавить агента");
+                return;
+            }
+
+            document.getElementById("admin-agent-name").value="";
+            fileInput.value="";
+
+            loadAdminAgents();
+
+        }catch(e){
+
+            alert("Не удалось связаться с сервером");
+
+        }finally{
+
+            submitBtn.disabled=false;
+            submitBtn.textContent=originalBtnText;
+
+        }
+
+    }
+
+    reader.readAsDataURL(file);
+
+}
+
+async function loadAdminAgents(){
+
+    const list=document.getElementById("admin-agents-list");
+    list.textContent="Загрузка...";
+
+    try{
+
+        const res=await fetch("/api/admin/agents");
+        const agents=await res.json();
+
+        list.innerHTML="";
+
+        if(agents.length===0){
+            list.textContent="Пока нет агентов.";
+            return;
+        }
+
+        agents.forEach(agent=>{
+
+            const card=document.createElement("div");
+            card.style.cssText="background:var(--panel-raised);border:1px solid var(--line);border-radius:var(--chamfer-sm);overflow:hidden;";
+
+            const img=document.createElement("img");
+            img.src=agent.imageUrl;
+            img.style.cssText="width:100%;height:120px;object-fit:contain;display:block;background:var(--bg);";
+
+            const info=document.createElement("div");
+            info.style.cssText="padding:8px;";
+
+            const name=document.createElement("p");
+            name.style.cssText="font-size:12px;color:var(--ink);margin-bottom:6px;";
+            name.textContent=agent.name;
+
+            const delBtn=document.createElement("button");
+            delBtn.className="check-btn";
+            delBtn.style.cssText="width:100%;font-size:11px;padding:5px;";
+            delBtn.textContent="Удалить";
+            delBtn.onclick=()=>deleteAdminAgent(agent.id);
+
+            info.append(name,delBtn);
+            card.append(img,info);
+            list.appendChild(card);
+
+        });
+
+    }catch(e){
+
+        list.textContent="Не удалось загрузить агентов.";
+
+    }
+
+}
+
+async function deleteAdminAgent(id){
+
+    if(!confirm("Удалить этого агента?")) return;
+
+    try{
+
+        await fetch(`/api/admin/agents/${id}`,{method:"DELETE"});
+        loadAdminAgents();
 
     }catch(e){
 

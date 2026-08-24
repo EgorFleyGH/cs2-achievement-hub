@@ -12,7 +12,8 @@ const {
   getUserPublicByUsername,
   createNotification,
   getUserPendingDemoChallengeIds,
-  getFriendshipBetween
+  getFriendshipBetween,
+  getUserAgentByUsername
 } = require("../db");
 const { OWNER_USERNAME } = require("../config");
 const { notifyDiscord } = require("../discord");
@@ -136,10 +137,13 @@ router.get("/users/:username", async (req, res) => {
       }
     }
 
+    const agent = await getUserAgentByUsername(user.username);
+
     res.json({
       username: user.username,
       avatar: user.avatar || "",
       steamUrl: user.steam_url || "",
+      agentImageUrl: agent ? agent.image_url : "",
       isOwner: user.username === OWNER_USERNAME,
       isSelf: userId === user.id,
       friendship,

@@ -27,7 +27,10 @@ const {
   getChallengeById,
   getAllBackgrounds,
   createBackground,
-  deleteBackground
+  deleteBackground,
+  getAllAgents,
+  createAgent,
+  deleteAgent
 } = require("../db");
 const { OWNER_USERNAME } = require("../config");
 
@@ -538,6 +541,55 @@ router.delete("/backgrounds/:id", async (req, res) => {
   } catch (e) {
     console.error("Ошибка удаления фона:", e);
     res.status(500).json({ error: "Не удалось удалить фон" });
+  }
+});
+
+// =========================
+// Агенты (персонажи) — каталог, управляет владелец
+// =========================
+router.get("/agents", async (req, res) => {
+  try {
+    const agents = await getAllAgents();
+    res.json(agents.map((a) => ({ id: a.id, name: a.name, imageUrl: a.image_url })));
+  } catch (e) {
+    console.error("Ошибка загрузки агентов:", e);
+    res.status(500).json({ error: "Не удалось загрузить агентов" });
+  }
+});
+
+router.post("/agents", async (req, res) => {
+  const { name, imageUrl } = req.body || {};
+
+  if (typeof name !== "string" || name.trim().length === 0) {
+    return res.status(400).json({ error: "Название обязательно" });
+  }
+  if (name.length > 60) {
+    return res.status(400).json({ error: "Название слишком длинное" });
+  }
+  if (typeof imageUrl !== "string" || !imageUrl.startsWith("data:image/")) {
+    return res.status(400).json({ error: "Нужна картинка" });
+  }
+  if (imageUrl.length > 6_000_000) {
+    return res.status(400).json({ error: "Картинка слишком большая" });
+  }
+
+  try {
+    const agent = await createAgent(name.trim(), imageUrl);
+    res.status(201).json({ id: agent.id, name: agent.name, imageUrl: agent.image_url });
+  } catch (e) {
+    console.error("Ошибка добавления агента:", e);
+    res.status(500).json({ error: "Не удалось добавить агента" });
+  }
+});
+
+router.delete("/agents/:id", async (req, res) => {
+  try {
+    const deleted = await deleteAgent(Number(req.params.id));
+    if (!deleted) return res.status(404).json({ error: "Агент не найден" });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("Ошибка удаления агента:", e);
+    res.status(500).json({ error: "Не удалось удалить агента" });
   }
 });
 

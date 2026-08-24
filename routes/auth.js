@@ -9,7 +9,9 @@ const {
   resetUserPassword,
   createNotification,
   getAllBackgrounds,
-  setUserBackground
+  setUserBackground,
+  getAllAgents,
+  setUserAgent
 } = require("../db");
 const { OWNER_USERNAME } = require("../config");
 const { notifyDiscord } = require("../discord");
@@ -64,7 +66,7 @@ router.post("/register", authLimiter, async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
 
-    res.status(201).json({ id: user.id, username: user.username, avatar: user.avatar || "", steamUrl: user.steam_url || "", backgroundId: user.background_id || null, isOwner: user.username === OWNER_USERNAME });
+    res.status(201).json({ id: user.id, username: user.username, avatar: user.avatar || "", steamUrl: user.steam_url || "", backgroundId: user.background_id || null, agentId: user.agent_id || null, isOwner: user.username === OWNER_USERNAME });
   } catch (e) {
     console.error("Ошибка регистрации:", e);
     res.status(500).json({ error: "Не удалось зарегистрироваться, попробуйте позже" });
@@ -97,7 +99,7 @@ router.post("/login", authLimiter, async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
 
-    res.json({ id: user.id, username: user.username, avatar: user.avatar || "", steamUrl: user.steam_url || "", backgroundId: user.background_id || null, isOwner: user.username === OWNER_USERNAME });
+    res.json({ id: user.id, username: user.username, avatar: user.avatar || "", steamUrl: user.steam_url || "", backgroundId: user.background_id || null, agentId: user.agent_id || null, isOwner: user.username === OWNER_USERNAME });
   } catch (e) {
     console.error("Ошибка входа:", e);
     res.status(500).json({ error: "Не удалось войти, попробуйте позже" });
@@ -183,6 +185,7 @@ router.get("/me", async (req, res) => {
       avatar: user.avatar || "",
       steamUrl: user.steam_url || "",
       backgroundId: user.background_id || null,
+      agentId: user.agent_id || null,
       isOwner: req.session.username === OWNER_USERNAME
     });
   } catch (e) {
@@ -260,6 +263,37 @@ router.get("/backgrounds", async (req, res) => {
   } catch (e) {
     console.error("Ошибка загрузки фонов:", e);
     res.status(500).json({ error: "Не удалось загрузить фоны" });
+  }
+});
+
+router.get("/agents", async (req, res) => {
+  try {
+    const agents = await getAllAgents();
+    res.json(agents.map((a) => ({ id: a.id, name: a.name, imageUrl: a.image_url })));
+  } catch (e) {
+    console.error("Ошибка загрузки агентов:", e);
+    res.status(500).json({ error: "Не удалось загрузить агентов" });
+  }
+});
+
+router.post("/profile/agent", async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Нужно войти в аккаунт" });
+  }
+
+  const { agentId } = req.body || {};
+  const id = agentId === null ? null : Number(agentId);
+
+  if (id !== null && (!Number.isInteger(id) || id <= 0)) {
+    return res.status(400).json({ error: "Некорректный агент" });
+  }
+
+  try {
+    await setUserAgent(req.session.userId, id);
+    res.json({ agentId: id });
+  } catch (e) {
+    console.error("Ошибка сохранения агента:", e);
+    res.status(500).json({ error: "Не удалось сохранить агента" });
   }
 });
 
