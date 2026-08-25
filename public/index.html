@@ -707,6 +707,13 @@ header{
 
 }
 
+/* Когда выбран агент — сдвигаем контент, чтобы не перекрывался
+   фигурой персонажа слева. */
+body.has-agent .container{
+    margin-left:260px;
+    margin-right:auto;
+}
+
 .screen{
 
     display:none;
@@ -740,18 +747,23 @@ header{
 }
 
 .home-agent-slot{
-    flex-shrink:0;
-    width:220px;
-    height:340px;
+    position:fixed;
+    left:0;
+    bottom:0;
+    width:260px;
+    height:calc(100vh - 64px);
     display:flex;
     align-items:flex-end;
     justify-content:center;
+    z-index:5;
+    pointer-events:none;
 }
 
 .home-agent-slot img{
     max-width:100%;
     max-height:100%;
     object-fit:contain;
+    object-position:bottom;
     filter:drop-shadow(0 20px 25px rgba(0,0,0,.5));
 }
 
@@ -1321,6 +1333,14 @@ h1{
 
 @media (max-width: 860px){
 
+    .home-agent-slot{
+        display:none !important;
+    }
+
+    body.has-agent .container{
+        margin-left:auto;
+    }
+
     header{
         padding:0 12px;
         height:auto;
@@ -1501,6 +1521,11 @@ h1{
 
 <!-- Фоновый слой — под всем содержимым, меняется в зависимости от выбора в профиле -->
 <div id="site-background-layer"></div>
+
+<!-- Агент (персонаж) — фиксирован слева, виден на любой странице сайта -->
+<div id="home-agent-slot" class="home-agent-slot" style="display:none;">
+    <img id="home-agent-img" src="" alt="">
+</div>
 
 <!-- Переключатель языка — всегда виден, фиксирован в нижнем углу экрана -->
 <div class="notif-bell-wrap" id="notif-wrap" style="
@@ -1764,10 +1789,6 @@ h1{
 <div id="scr-welcome" class="screen active">
 
     <div class="menu-layout">
-
-        <div id="home-agent-slot" class="home-agent-slot" style="display:none;">
-            <img id="home-agent-img" src="" alt="">
-        </div>
 
         <div class="menu-left">
 
@@ -4058,11 +4079,7 @@ function updateProfile(){
 
     document.getElementById("profile-name").textContent=profile.name;
 
-    if(currentAgentImageUrl){
-
-        document.getElementById("profile-avatar").src=currentAgentImageUrl;
-
-    }else if(profile.avatar!=""){
+    if(profile.avatar!=""){
 
         document.getElementById("profile-avatar").src=profile.avatar;
 
@@ -4103,12 +4120,10 @@ function updateProfile(){
 
     if(hdrCircle){
 
-        const hdrImageUrl=currentAgentImageUrl||profile.avatar;
-
-        if(hdrImageUrl){
+        if(profile.avatar){
             hdrCircle.innerHTML="";
             const img=document.createElement("img");
-            img.src=hdrImageUrl;
+            img.src=profile.avatar;
             img.style.cssText="width:100%;height:100%;object-fit:cover;border-radius:50%;";
             hdrCircle.appendChild(img);
         }else{
@@ -4447,9 +4462,7 @@ async function viewProfile(username){
         document.getElementById("public-profile-created").textContent=data.stats.created;
         document.getElementById("public-profile-likes").textContent=data.stats.likes;
 
-        if(data.agentImageUrl){
-            document.getElementById("public-profile-avatar").src=data.agentImageUrl;
-        }else if(data.avatar){
+        if(data.avatar){
             document.getElementById("public-profile-avatar").src=data.avatar;
         }else{
             document.getElementById("public-profile-avatar").src="https://placehold.co/180x180/png?text=%F0%9F%91%A4";
@@ -5458,7 +5471,7 @@ async function applyUserAgent(agentId){
         currentAgentImageUrl=null;
         if(slot) slot.style.display="none";
         if(img) img.src="";
-        updateProfile();
+        document.body.classList.remove("has-agent");
         return;
 
     }
@@ -5472,7 +5485,7 @@ async function applyUserAgent(agentId){
     if(!agent){
         currentAgentImageUrl=null;
         if(slot) slot.style.display="none";
-        updateProfile();
+        document.body.classList.remove("has-agent");
         return;
     }
 
@@ -5480,9 +5493,7 @@ async function applyUserAgent(agentId){
 
     if(img) img.src=agent.imageUrl;
     if(slot) slot.style.display="flex";
-
-    // Обновляем аватары везде (шапка, профиль) — агент теперь в приоритете.
-    updateProfile();
+    document.body.classList.add("has-agent");
 
 }
 
