@@ -707,14 +707,13 @@ header{
 
 }
 
-/* Когда выбран агент — сдвигаем контент, чтобы не перекрывался
-   фигурой персонажа слева. Важно уменьшить и ширину, а не только
-   отступ, иначе блок становится шире экрана и всё "уезжает". */
-body.has-agent .container{
-    max-width:none;
-    width:calc(100% - 260px);
-    margin-left:260px;
-    margin-right:0;
+/* Когда выбран агент — вместо того чтобы пересчитывать ширину и
+   отступы самого .container (это уже один раз поехало криво),
+   просто выделяем персонажу полосу слева через padding у body —
+   а .container как центрировался сам внутри оставшегося места,
+   так и продолжает. */
+body.has-agent{
+    padding-left:260px;
 }
 
 .screen{
@@ -1340,8 +1339,8 @@ h1{
         display:none !important;
     }
 
-    body.has-agent .container{
-        margin-left:auto;
+    body.has-agent{
+        padding-left:0;
     }
 
     header{
