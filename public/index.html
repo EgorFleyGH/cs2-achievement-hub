@@ -707,14 +707,9 @@ header{
 
 }
 
-/* Когда выбран агент — вместо того чтобы пересчитывать ширину и
-   отступы самого .container (это уже один раз поехало криво),
-   просто выделяем персонажу полосу слева через padding у body —
-   а .container как центрировался сам внутри оставшегося места,
-   так и продолжает. */
-body.has-agent{
-    padding-left:260px;
-}
+/* Персонаж наложен поверх контента (без сдвига раскладки) — сам блок
+   .home-agent-slot уже position:fixed и pointer-events:none, так что
+   ничего дополнительно готовить под него не нужно. */
 
 .screen{
 
@@ -757,7 +752,7 @@ body.has-agent{
     display:flex;
     align-items:flex-end;
     justify-content:center;
-    z-index:5;
+    z-index:50;
     pointer-events:none;
 }
 
@@ -1337,10 +1332,6 @@ h1{
 
     .home-agent-slot{
         display:none !important;
-    }
-
-    body.has-agent{
-        padding-left:0;
     }
 
     header{
