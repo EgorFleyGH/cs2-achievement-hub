@@ -16,6 +16,7 @@ const supportRoutes = require("./routes/support");
 const friendsRoutes = require("./routes/friends");
 const messagesRoutes = require("./routes/messages");
 const demoRoutes = require("./routes/demos");
+const clansRoutes = require("./routes/clans");
 const { initDb } = require("./db");
 
 const app = express();
@@ -68,6 +69,7 @@ app.use("/api", supportRoutes);
 app.use("/api", friendsRoutes);
 app.use("/api", messagesRoutes);
 app.use("/api", demoRoutes);
+app.use("/api", clansRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Отдаём фронтенд как статику

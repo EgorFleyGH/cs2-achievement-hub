@@ -123,6 +123,27 @@ async function initDb() {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS clans (
+      id SERIAL PRIMARY KEY,
+      name TEXT UNIQUE NOT NULL,
+      tag TEXT,
+      description TEXT,
+      owner_id INTEGER NOT NULL REFERENCES users(id),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS clan_invites (
+      id SERIAL PRIMARY KEY,
+      clan_id INTEGER NOT NULL REFERENCES clans(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE(clan_id, user_id)
+    )
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS news (
       id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
@@ -161,6 +182,7 @@ async function initDb() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS steam_url TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS background_id INTEGER`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS agent_id INTEGER`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS clan_id INTEGER`);
   await pool.query(`ALTER TABLE demo_submissions ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'dem'`);
   await pool.query(`ALTER TABLE challenges ADD COLUMN IF NOT EXISTS category TEXT`);
 
@@ -1011,6 +1033,187 @@ async function getUnreadDirectCount(userId) {
   return rows[0].count;
 }
 
+// =========================
+// Кланы (команды)
+// =========================
+
+async function createClan(ownerId, name, tag, description) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const { rows } = await client.query(
+      "INSERT INTO clans (name, tag, description, owner_id) VALUES ($1, $2, $3, $4) RETURNING *",
+      [name, tag || null, description || null, ownerId]
+    );
+    const clan = rows[0];
+
+    await client.query("UPDATE users SET clan_id = $1 WHERE id = $2", [clan.id, ownerId]);
+
+    await client.query("COMMIT");
+    return clan;
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+async function getClanById(id) {
+  const { rows } = await pool.query("SELECT * FROM clans WHERE id = $1", [id]);
+  return rows[0] || null;
+}
+
+async function getClanByUserId(userId) {
+  const { rows } = await pool.query(
+    `SELECT c.* FROM clans c
+     JOIN users u ON u.clan_id = c.id
+     WHERE u.id = $1`,
+    [userId]
+  );
+  return rows[0] || null;
+}
+
+async function getClanMembers(clanId) {
+  const { rows } = await pool.query(
+    "SELECT id, username, avatar FROM users WHERE clan_id = $1 ORDER BY username ASC",
+    [clanId]
+  );
+  return rows;
+}
+
+async function findClanByName(name) {
+  const { rows } = await pool.query("SELECT * FROM clans WHERE LOWER(name) = LOWER($1)", [name]);
+  return rows[0] || null;
+}
+
+async function inviteToClan(clanId, userId) {
+  const { rows } = await pool.query(
+    `INSERT INTO clan_invites (clan_id, user_id)
+     VALUES ($1, $2)
+     ON CONFLICT (clan_id, user_id) DO NOTHING
+     RETURNING *`,
+    [clanId, userId]
+  );
+  return rows[0] || null;
+}
+
+async function getUserClanInvites(userId) {
+  const { rows } = await pool.query(
+    `SELECT ci.id AS invite_id, c.id AS clan_id, c.name, c.tag
+     FROM clan_invites ci
+     JOIN clans c ON c.id = ci.clan_id
+     WHERE ci.user_id = $1
+     ORDER BY ci.created_at DESC`,
+    [userId]
+  );
+  return rows;
+}
+
+async function getClanInvitesSent(clanId) {
+  const { rows } = await pool.query(
+    `SELECT ci.id AS invite_id, u.id AS user_id, u.username
+     FROM clan_invites ci
+     JOIN users u ON u.id = ci.user_id
+     WHERE ci.clan_id = $1
+     ORDER BY ci.created_at DESC`,
+    [clanId]
+  );
+  return rows;
+}
+
+async function acceptClanInvite(inviteId, userId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM clan_invites WHERE id = $1 AND user_id = $2",
+    [inviteId, userId]
+  );
+  const invite = rows[0];
+  if (!invite) return null;
+
+  await pool.query("UPDATE users SET clan_id = $1 WHERE id = $2", [invite.clan_id, userId]);
+  await pool.query("DELETE FROM clan_invites WHERE user_id = $1", [userId]);
+
+  return getClanById(invite.clan_id);
+}
+
+async function declineClanInvite(inviteId, userId) {
+  const { rows } = await pool.query(
+    "DELETE FROM clan_invites WHERE id = $1 AND user_id = $2 RETURNING id",
+    [inviteId, userId]
+  );
+  return rows.length > 0;
+}
+
+async function leaveClan(userId) {
+  const clan = await getClanByUserId(userId);
+  if (!clan) return null;
+
+  if (clan.owner_id === userId) {
+    await pool.query("UPDATE users SET clan_id = NULL WHERE clan_id = $1", [clan.id]);
+    await pool.query("DELETE FROM clans WHERE id = $1", [clan.id]);
+    return { disbanded: true };
+  }
+
+  await pool.query("UPDATE users SET clan_id = NULL WHERE id = $1", [userId]);
+  return { disbanded: false };
+}
+
+async function kickFromClan(clanId, ownerId, targetUserId) {
+  const clan = await getClanById(clanId);
+  if (!clan || clan.owner_id !== ownerId) return false;
+  if (targetUserId === ownerId) return false;
+
+  const { rows } = await pool.query(
+    "UPDATE users SET clan_id = NULL WHERE id = $1 AND clan_id = $2 RETURNING id",
+    [targetUserId, clanId]
+  );
+  return rows.length > 0;
+}
+
+async function deleteClan(clanId, ownerId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM clans WHERE id = $1 AND owner_id = $2",
+    [clanId, ownerId]
+  );
+  if (!rows[0]) return false;
+
+  await pool.query("UPDATE users SET clan_id = NULL WHERE clan_id = $1", [clanId]);
+  await pool.query("DELETE FROM clans WHERE id = $1", [clanId]);
+  return true;
+}
+
+async function getClanStats(clanId) {
+  const { rows } = await pool.query(
+    `SELECT
+       COUNT(*)::int AS created,
+       COALESCE(SUM(jsonb_array_length(liked_by)), 0)::int AS likes
+     FROM challenges c
+     JOIN users u ON u.id = c.author_id
+     WHERE u.clan_id = $1 AND c.status = 'approved'`,
+    [clanId]
+  );
+  return rows[0];
+}
+
+async function getClanLeaderboard() {
+  const { rows } = await pool.query(`
+    SELECT
+      cl.id,
+      cl.name,
+      cl.tag,
+      COUNT(DISTINCT c.id)::int AS created,
+      COALESCE(SUM(jsonb_array_length(c.liked_by)), 0)::int AS likes
+    FROM clans cl
+    JOIN users u ON u.clan_id = cl.id
+    LEFT JOIN challenges c ON c.author_id = u.id AND c.status = 'approved'
+    GROUP BY cl.id, cl.name, cl.tag
+    ORDER BY likes DESC, created DESC
+    LIMIT 10
+  `);
+  return rows;
+}
+
 module.exports = {
   initDb,
   findUserByUsername,
@@ -1031,6 +1234,21 @@ module.exports = {
   setUserAgent,
   getUserAgent,
   getUserAgentByUsername,
+  createClan,
+  getClanById,
+  getClanByUserId,
+  getClanMembers,
+  findClanByName,
+  inviteToClan,
+  getUserClanInvites,
+  getClanInvitesSent,
+  acceptClanInvite,
+  declineClanInvite,
+  leaveClan,
+  kickFromClan,
+  deleteClan,
+  getClanStats,
+  getClanLeaderboard,
   getUserPublicByUsername,
   getApprovedChallenges,
   getApprovedChallengesByUsername,
